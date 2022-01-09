@@ -1,9 +1,16 @@
 //! Styles for the application
 
-use eframe::egui::{self, FontData, FontDefinitions, FontFamily, TextStyle};
+use eframe::egui::{
+	self,
+	Color32,
+	FontData,
+	FontDefinitions,
+	FontFamily,
+	TextStyle,
+};
 
 pub fn setup_styles(ctx: &egui::CtxRef) {
-	let mut style = (*ctx.style()).to_owned();
+	let mut style = (*ctx.style()).clone();
 
 	#[cfg(debug_assertions)]
 	{
@@ -23,24 +30,24 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 
 	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Heading)
 	{
-		*size = 34_f32
+		*size = 34_f32;
 	}
 
 	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Body) {
-		*size = 24_f32
+		*size = 24_f32;
 	}
 	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Button) {
-		*size = 26_f32
+		*size = 26_f32;
 	}
 
 	if let Some((_, size)) =
 		fonts.family_and_size.get_mut(&TextStyle::Monospace)
 	{
-		*size = 22_f32
+		*size = 22_f32;
 	}
 
 	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Small) {
-		*size = 16_f32
+		*size = 16_f32;
 	}
 
 	fonts.font_data.insert(

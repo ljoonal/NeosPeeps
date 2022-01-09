@@ -15,11 +15,16 @@ impl NeosPeepsApp {
 			" is a tool that lists your NeosVR friends."
 		));
 		ui.label("It's purpose is to provide a more lightweight & quicker experience than launching the game.");
-		ui.label("Or alternatively for desktop users to have it on a second monitor.");
+		ui.label(
+			"Or alternatively for desktop users to have it on a second monitor.",
+		);
 		ui.spacing();
-		ui.label(concat!(env!("CARGO_PKG_NAME"), " is an unofficial tool, and is not affiliated with the developers of NeosVR."));
+		ui.label(concat!(
+			env!("CARGO_PKG_NAME"),
+			" is an unofficial tool, and is not affiliated with the developers of NeosVR."
+		));
 		ui.hyperlink_to(
-			"Did you know that NeosPeeps is open source?",
+			"Did you know that NeosPeeps' source code is available?",
 			env!("CARGO_PKG_REPOSITORY"),
 		);
 		ui.spacing();

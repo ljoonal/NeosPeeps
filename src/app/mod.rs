@@ -1,20 +1,29 @@
-use crate::{api::NeosApi, image::ImageDetails};
+use crate::image::TextureDetails;
 use eframe::{
-	egui::{self, Button},
+	egui::{self, warn_if_debug_build, Button},
 	epi,
 };
+use neos::{
+	api_client::{
+		AnyNeos,
+		NeosRequestUserSessionIdentifier,
+		NeosUnauthenticated,
+	},
+	NeosUserSession,
+};
 use std::sync::{Arc, RwLock};
-use std::thread;
 
 mod about;
 mod friends;
 mod login;
 
+#[allow(clippy::module_name_repetitions)]
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(Default, serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct NeosPeepsApp {
-	username: String,
+	user_session: Arc<RwLock<Option<NeosUserSession>>>,
+	identifier: NeosRequestUserSessionIdentifier,
 	#[serde(skip)]
 	password: String,
 	#[serde(skip)]
@@ -22,12 +31,33 @@ pub struct NeosPeepsApp {
 	#[serde(skip)]
 	logging_in: Arc<RwLock<bool>>,
 	#[serde(skip)]
-	default_profile_picture: Option<ImageDetails>,
+	default_profile_picture: Option<TextureDetails>,
 	#[serde(skip)]
 	about_popup_showing: bool,
-	neos_api: Arc<RwLock<Option<NeosApi>>>,
+	#[serde(skip)]
+	neos_api: Arc<RwLock<AnyNeos>>,
 	#[serde(skip)]
 	friends: Arc<RwLock<Vec<neos::NeosFriend>>>,
+}
+
+impl Default for NeosPeepsApp {
+	fn default() -> Self {
+		let api = NeosUnauthenticated::new(crate::USER_AGENT.to_owned());
+
+		Self {
+			user_session: Arc::default(),
+			identifier: NeosRequestUserSessionIdentifier::Username(
+				String::default(),
+			),
+			password: String::default(),
+			loading_data: Arc::default(),
+			logging_in: Arc::default(),
+			default_profile_picture: Option::default(),
+			about_popup_showing: Default::default(),
+			neos_api: Arc::new(RwLock::new(AnyNeos::Unauthenticated(api))),
+			friends: Arc::default(),
+		}
+	}
 }
 
 impl epi::App for NeosPeepsApp {
@@ -47,27 +77,9 @@ impl epi::App for NeosPeepsApp {
 		if let Some(storage) = storage {
 			*self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default();
 
-			if self.neos_api.read().unwrap().is_some() {
-				*self.logging_in.write().unwrap() = true;
-
-				let neos_api_arc = self.neos_api.clone();
-				let logging_in = self.logging_in.clone();
-				let frame = frame.clone();
-				thread::spawn(move || {
-					if let Some(neos_api) = &*neos_api_arc.read().unwrap() {
-						match neos_api.extend_session() {
-							Ok(_) => {
-								println!("NeosApi: {:?}", neos_api);
-							}
-							Err(e) => {
-								*neos_api_arc.write().unwrap() = None;
-								println!("Error with Neos API: {}", e);
-							}
-						}
-					}
-					*logging_in.write().unwrap() = false;
-					frame.request_repaint();
-				});
+			let user_session = (*self.user_session.read().unwrap()).clone();
+			if let Some(user_session) = user_session {
+				self.try_use_session(user_session, frame.clone());
 			}
 		}
 	}
@@ -82,6 +94,7 @@ impl epi::App for NeosPeepsApp {
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
+				warn_if_debug_build(ui);
 				if ui.button("About").clicked() {
 					self.about_popup_showing = !self.about_popup_showing;
 				}
@@ -89,14 +102,17 @@ impl epi::App for NeosPeepsApp {
 				ui.separator();
 
 				if !*self.logging_in.read().unwrap()
-					&& self.neos_api.read().unwrap().is_some()
+					&& self.neos_api.read().unwrap().is_authenticated()
 				{
 					if ui.add(Button::new("Refresh")).clicked() {
 						self.refresh_friends(frame.clone());
 					}
 					ui.separator();
 					if ui.add(Button::new("Log out")).clicked() {
-						*self.neos_api.write().unwrap() = None;
+						/*
+						let neos_writer = self.neos_api.write();
+						*neos_writer = neos_writer.unwrap().try_logout().0;
+						*/
 					}
 					ui.separator();
 				}
@@ -110,11 +126,16 @@ impl epi::App for NeosPeepsApp {
 		egui::CentralPanel::default().show(ctx, |ui| {
 			egui::ScrollArea::vertical().show(ui, |ui| {
 				ui.with_layout(
-					egui::Layout::top_down_justified(egui::Align::Center),
+					egui::Layout::top_down(egui::Align::Center),
 					|ui| {
 						if self.about_popup_showing {
 							self.about_page(ui);
-						} else if self.neos_api.read().unwrap().is_some() {
+						} else if self
+							.neos_api
+							.read()
+							.unwrap()
+							.is_authenticated()
+						{
 							self.friends_page(ui, frame);
 						} else {
 							self.login_page(ui, frame.clone());

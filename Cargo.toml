@@ -1,33 +1,35 @@
 [package]
 name = "neos_peeps"
-version = "0.0.0-alpha.1"
+version = "0.0.0-alpha.2"
 edition = "2021"
 authors = ["ljoonal"]
 description = "An application to view your neos friends."
 repository = "https://git.ljoonal.xyz/ljoonal/NeosPeeps"
+# Temporary, thinking about which license to use.
+license = "UNLICENSED"
+keywords = ["neos"]
+categories = ["games"]
+publish = false
 
 # https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-neos = "0.0.0-alpha.1"
+neos = { version = "0.0.1", features = ["api_client"] }
 
-eframe = { version = "0.16.0", default-features = false, features = [
+eframe = { version = "0.16", default-features = false, features = [
 	"egui_glow",
 	"persistence",
-] }
-minreq = { version = "2.4.2", features = [
-	"https-rustls-probe",
-	"json-using-serde",
 ] }
 
 serde = "1"
 serde_json = "1"
 
 rand = { version = "0.8" }
-chrono = "0.4.19"
+chrono = "0.4"
+#arc-swap = "^1.5"
 
 [dependencies.image]
-version = "0.23.14"
+version = "0.23"
 default-features = false
 
 features = ["bmp", "png", "hdr", "tiff", "jpeg", "jpeg_rayon", "tga", "gif"]

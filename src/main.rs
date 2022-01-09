@@ -1,4 +1,7 @@
-#![warn(clippy::all)]
+#![deny(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+#![warn(clippy::cargo)]
 
 const USER_AGENT: &str = concat!(
 	env!("CARGO_PKG_NAME"),
@@ -9,7 +12,6 @@ const USER_AGENT: &str = concat!(
 	")"
 );
 
-mod api;
 mod app;
 mod image;
 mod styling;

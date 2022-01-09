@@ -2,14 +2,16 @@
 
 use std::cmp::Ordering;
 
-use crate::image::ImageDetails;
-use neos::{NeosFriend, NeosUserOnlineStatus};
+use crate::image::TextureDetails;
+use neos::{api_client::AnyNeos, NeosFriend, NeosUserOnlineStatus};
 
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Color32, RichText, Ui, Vec2},
+	egui::{Color32, Grid, Layout, RichText, ScrollArea, Ui, Vec2},
 	epi,
 };
+
+const ROW_HEIGHT: f32 = 128f32;
 
 fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 	// First sort on if the friends are marked as online
@@ -51,17 +53,16 @@ fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 }
 
 impl NeosPeepsApp {
-	fn friend_card(&self, ui: &mut Ui, friend: &NeosFriend) {
-		const CARD_HEIGHT: f32 = 128f32;
-
+	fn friend_row(&self, ui: &mut Ui, friend: &NeosFriend) {
 		ui.horizontal(|ui| {
 			// Should never be None, but let's be safe...
 			if let Some(pfp) = self.default_profile_picture.as_ref() {
-				ui.image(pfp.id, Vec2::new(CARD_HEIGHT, CARD_HEIGHT));
-
-				ui.separator();
+				ui.image(pfp.id, Vec2::new(ROW_HEIGHT, ROW_HEIGHT));
 			}
+			ui.separator();
+		});
 
+		ui.horizontal(|ui| {
 			ui.vertical(|ui| {
 				let (r, g, b) = friend.user_status.online_status.color();
 				ui.heading(&friend.friend_username);
@@ -75,11 +76,21 @@ impl NeosPeepsApp {
 			});
 
 			ui.separator();
+		});
 
+		ui.horizontal(|ui| {
 			ui.vertical(|ui| {
-				ui.label("Not in a world");
+				ui.label(
+					"Current session: ".to_owned()
+						+ friend
+							.user_status
+							.current_session_access_level
+							.as_ref(),
+				);
 			});
 		});
+
+		ui.end_row();
 	}
 
 	/// Refreshes friends in a background thread
@@ -91,8 +102,9 @@ impl NeosPeepsApp {
 			*loading.write().unwrap() = true;
 			frame.request_repaint();
 
-			if let Some(neos_api) = &*neos_api.read().unwrap() {
-				match neos_api.fetch_friends() {
+			if let AnyNeos::Authenticated(neos_api) = &*neos_api.read().unwrap()
+			{
+				match neos_api.get_friends() {
 					Ok(mut friends) => {
 						friends.sort_by(order_friends);
 						*friends_arc.write().unwrap() = friends;
@@ -109,7 +121,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		ui.heading(&("Peeps of ".to_owned() + &self.username));
+		ui.heading(&("Peeps of ".to_owned() + self.identifier.inner()));
 		if *self.loading_data.read().unwrap() {
 			ui.label("Loading...");
 		}
@@ -120,12 +132,32 @@ impl NeosPeepsApp {
 			))
 			.expect("Failed to load image");
 			self.default_profile_picture =
-				Some(ImageDetails::from_image(frame.clone(), user_img));
+				Some(TextureDetails::from_image(frame.clone(), &user_img));
 		}
 
-		for friend in self.friends.read().unwrap().iter() {
-			ui.separator();
-			self.friend_card(ui, friend);
-		}
+		let friends = self.friends.read().unwrap();
+
+		ui.with_layout(
+			Layout::top_down_justified(eframe::egui::Align::Center),
+			|ui| {
+				ScrollArea::vertical().show_rows(
+					ui,
+					ROW_HEIGHT,
+					friends.len(),
+					|ui, row_range| {
+						Grid::new("friends_list")
+							.start_row(row_range.start)
+							.min_col_width(ROW_HEIGHT)
+							.min_row_height(ROW_HEIGHT)
+							.num_columns(3)
+							.show(ui, |ui| {
+								for row in row_range {
+									self.friend_row(ui, &friends[row]);
+								}
+							});
+					},
+				);
+			},
+		);
 	}
 }
