@@ -14,7 +14,7 @@ publish = false
 # https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-neos = { version = "0.0.1", features = ["api_client"] }
+neos = { version = "0.1.0-alpha.1", features = ["api_client"] }
 
 eframe = { version = "0.16", default-features = false, features = [
 	"egui_glow",

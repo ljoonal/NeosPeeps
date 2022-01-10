@@ -72,7 +72,7 @@ impl NeosPeepsApp {
 					)
 					.color(Color32::from_rgb(r, g, b)),
 				);
-				ui.label(RichText::new(&friend.id).small().monospace());
+				ui.label(RichText::new(friend.id.as_ref()).small().monospace());
 			});
 
 			ui.separator();
