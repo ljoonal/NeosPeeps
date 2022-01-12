@@ -27,6 +27,8 @@ pub struct NeosPeepsApp {
 	#[serde(skip)]
 	password: String,
 	#[serde(skip)]
+	totp: String,
+	#[serde(skip)]
 	loading_data: Arc<RwLock<bool>>,
 	#[serde(skip)]
 	logging_in: Arc<RwLock<bool>>,
@@ -49,6 +51,7 @@ impl Default for NeosPeepsApp {
 			identifier: NeosRequestUserSessionIdentifier::Username(
 				String::default(),
 			),
+			totp: String::default(),
 			password: String::default(),
 			loading_data: Arc::default(),
 			logging_in: Arc::default(),
@@ -77,7 +80,7 @@ impl epi::App for NeosPeepsApp {
 		if let Some(storage) = storage {
 			*self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default();
 
-			let user_session = (*self.user_session.read().unwrap()).clone();
+			let user_session = self.user_session.read().unwrap().clone();
 			if let Some(user_session) = user_session {
 				self.try_use_session(user_session, frame.clone());
 			}
@@ -109,10 +112,7 @@ impl epi::App for NeosPeepsApp {
 					}
 					ui.separator();
 					if ui.add(Button::new("Log out")).clicked() {
-						/*
-						let neos_writer = self.neos_api.write();
-						*neos_writer = neos_writer.unwrap().try_logout().0;
-						*/
+						self.logout(frame.clone());
 					}
 					ui.separator();
 				}

@@ -2,13 +2,12 @@
 
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Button, ComboBox, Layout, SelectableLabel, TextEdit, Ui, Vec2},
+	egui::{Button, ComboBox, SelectableLabel, TextEdit, Ui},
 	epi,
 };
 use neos::{
 	api_client::{
-		NeosRequestUserSession,
-		NeosRequestUserSessionIdentifier,
+		AnyNeos, NeosRequestUserSession, NeosRequestUserSessionIdentifier,
 		NeosUnauthenticated,
 	},
 	NeosUserSession,
@@ -102,6 +101,34 @@ impl NeosPeepsApp {
 		});
 	}
 
+	pub fn logout(&mut self, frame: epi::Frame) {
+		{
+			let mut logging_in = self.logging_in.write().unwrap();
+			if *logging_in {
+				return;
+			}
+			*logging_in = true;
+		}
+		frame.request_repaint();
+
+		let neos_api = self.neos_api.clone();
+		let logging_in = self.logging_in.clone();
+		thread::spawn(move || {
+			let new_api = match neos_api.read().unwrap().clone() {
+				AnyNeos::Authenticated(neos_api) => {
+					neos_api.logout().ok();
+					neos_api.downgrade()
+				}
+				AnyNeos::Unauthenticated(neos_api) => neos_api,
+			};
+
+			*neos_api.write().unwrap() = new_api.into();
+
+			*logging_in.write().unwrap() = false;
+			frame.request_repaint();
+		});
+	}
+
 	fn identifier_picker(&mut self, ui: &mut Ui, is_loading: bool) {
 		ComboBox::from_label("Login type")
 			.selected_text(self.identifier.as_ref())
@@ -175,31 +202,55 @@ impl NeosPeepsApp {
 			ui.group(|ui| {
 				self.identifier_picker(ui, is_loading);
 
-				ui.add_enabled(
-					!is_loading,
+				ui.add(
 					TextEdit::singleline(&mut self.password)
 						.password(true)
 						.hint_text("Password")
 						.interactive(!is_loading),
 				);
-				if ui.add(Button::new("Log in")).clicked()
+
+				let totp_resp = ui.add(
+					TextEdit::singleline(&mut self.totp)
+						.hint_text("2FA")
+						.interactive(!is_loading)
+						.desired_width(80_f32),
+				);
+
+				if totp_resp.changed() {
+					self.totp = self
+						.totp
+						.chars()
+						.filter(|v| v.is_numeric())
+						.take(6)
+						.collect();
+				}
+
+				let submit_button_resp = ui.add(Button::new("Log in"));
+
+				if submit_button_resp.clicked()
 					&& !self.identifier.inner().is_empty()
 					&& !self.password.is_empty()
-					&& !is_loading
+					&& !is_loading && (self.totp.is_empty()
+					|| self.totp.chars().count() == 6)
 				{
 					let rand_string: String = thread_rng()
 						.sample_iter(&Alphanumeric)
 						.take(30)
 						.map(char::from)
 						.collect();
-					let session_request =
+					let mut session_request =
 						NeosRequestUserSession::with_identifier(
 							self.identifier.clone(),
-							&self.password,
+							std::mem::take(&mut self.password),
 						)
 						.remember_me(true)
 						.machine_id(rand_string);
-					self.password = String::new();
+
+					if !self.totp.is_empty() {
+						session_request = session_request
+							.totp(std::mem::take(&mut self.totp));
+					}
+
 					self.login_new(session_request, frame);
 				}
 			});
