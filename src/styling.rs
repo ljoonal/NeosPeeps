@@ -1,13 +1,6 @@
 //! Styles for the application
 
-use eframe::egui::{
-	self,
-	Color32,
-	FontData,
-	FontDefinitions,
-	FontFamily,
-	TextStyle,
-};
+use eframe::egui::{self, FontData, FontDefinitions, FontFamily, TextStyle};
 
 pub fn setup_styles(ctx: &egui::CtxRef) {
 	let mut style = (*ctx.style()).clone();
@@ -17,8 +10,8 @@ pub fn setup_styles(ctx: &egui::CtxRef) {
 		style.debug.debug_on_hover = true;
 	}
 
-	style.spacing.item_spacing.y = 8f32;
-	style.spacing.button_padding.y = 5f32;
+	style.spacing.item_spacing.y = 8_f32;
+	style.spacing.button_padding.y = 5_f32;
 
 	ctx.set_style(style);
 

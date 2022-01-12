@@ -11,7 +11,7 @@ use eframe::{
 	epi,
 };
 
-const ROW_HEIGHT: f32 = 128f32;
+const ROW_HEIGHT: f32 = 128_f32;
 
 fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 	// First sort on if the friends are marked as online
