@@ -50,7 +50,7 @@ impl NeosPeepsApp {
 					}
 					Err(err) => {
 						*neos_api_arc.write().unwrap() =
-							neos_api.downgrade().0.into();
+							neos_api.downgrade().into();
 						println!(
 							"Error with Neos API user session extension: {}",
 							err

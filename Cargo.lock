@@ -965,9 +965,9 @@ checksum = "e1bcdd74c20ad5d95aacd60ef9ba40fdf77f767051040541df557b7a9b2a2121"
 
 [[package]]
 name = "neos"
-version = "0.1.0-alpha.1"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "331a8b07af94c370a61c74976b7f04da9074f8f0bfc9808ec060d08e2d067121"
+checksum = "cacf0c7036603ae7bc1f5136b6da3dd299495d6c5c50900ac0ee030ea578c058"
 dependencies = [
  "chrono",
  "minreq",
