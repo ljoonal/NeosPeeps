@@ -5,8 +5,7 @@ edition = "2021"
 authors = ["ljoonal"]
 description = "An application to view your neos friends."
 repository = "https://git.ljoonal.xyz/ljoonal/NeosPeeps"
-# Temporary, thinking about which license to use.
-license = "UNLICENSED"
+license-file = "LICENSE.md"
 keywords = ["neos"]
 categories = ["games"]
 publish = false
@@ -33,6 +32,17 @@ version = "0.23"
 default-features = false
 
 features = ["bmp", "png", "hdr", "tiff", "jpeg", "jpeg_rayon", "tga", "gif"]
+
+[profile.release]
+# Optimizing mostly for size.
+opt-level = "s"
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+
+# For now run `strip target/release/neos_peeps`
+#cargo-features = ["strip"]
+#strip = true               # Automatically strip symbols from the binary.
 
 [patch.crates-io]
 
