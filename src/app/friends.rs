@@ -53,7 +53,11 @@ fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 }
 
 impl NeosPeepsApp {
-	fn friend_row(&self, ui: &mut Ui, friend: &NeosFriend) {
+	fn friend_row(
+		&self,
+		ui: &mut Ui,
+		(friend, picture): &(NeosFriend, Option<TextureDetails>),
+	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			// Should never be None, but let's be safe...
 			if let Some(pfp) = self.runtime.default_profile_picture.as_ref() {
@@ -122,7 +126,8 @@ impl NeosPeepsApp {
 				match neos_api.get_friends() {
 					Ok(mut friends) => {
 						friends.sort_by(order_friends);
-						*friends_arc.write().unwrap() = friends;
+						*friends_arc.write().unwrap() =
+							friends.into_iter().map(|v| (v, None)).collect();
 					}
 					Err(e) => {
 						println!("Error with Neos API: {}", e);

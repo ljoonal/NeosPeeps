@@ -6,6 +6,8 @@ use std::{
 
 use crate::image::TextureDetails;
 
+pub type FriendAndPic = (neos::NeosFriend, Option<TextureDetails>);
+
 pub struct RuntimeOnly {
 	pub password: String,
 	pub totp: String,
@@ -13,7 +15,7 @@ pub struct RuntimeOnly {
 	pub default_profile_picture: Option<TextureDetails>,
 	pub about_popup_showing: bool,
 	pub neos_api: Arc<RwLock<AnyNeos>>,
-	pub friends: Arc<RwLock<Vec<neos::NeosFriend>>>,
+	pub friends: Arc<RwLock<Vec<FriendAndPic>>>,
 	pub last_friends_refresh: Arc<RwLock<Instant>>,
 }
 

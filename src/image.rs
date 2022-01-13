@@ -3,6 +3,7 @@ use eframe::{
 	epi,
 };
 use image::{DynamicImage, GenericImageView};
+use neos::AssetUrl;
 
 pub struct TextureDetails {
 	pub id: TextureId,
@@ -42,4 +43,37 @@ impl Drop for TextureDetails {
 	fn drop(&mut self) {
 		self.frame.free_texture(self.id);
 	}
+}
+
+fn get_image(url: &AssetUrl) -> Result<DynamicImage, &'static str> {
+	use std::io::Cursor;
+
+	let mut path = std::env::temp_dir();
+	path.push(url.filename());
+	let image = if let Ok(reader) = image::io::Reader::open(&path) {
+		reader.decode()
+	} else {
+		let data = fetch_image(url)?;
+		std::fs::write(path, &data).ok();
+		image::io::Reader::new(Cursor::new(data))
+			.with_guessed_format()
+			.map_err(|_| "Failed to parse image data")?
+			.decode()
+	}
+	.map_err(|_| "Failed to decode image")?;
+
+	Ok(image)
+}
+
+fn fetch_image(url: &AssetUrl) -> Result<Vec<u8>, &'static str> {
+	let res = minreq::get(url.to_string())
+		.with_header("User-Agent", crate::USER_AGENT)
+		.send()
+		.map_err(|_| "Failed to send image request")?;
+
+	if res.status_code < 200 || res.status_code >= 300 {
+		return Err("Image request status indicated failure");
+	}
+
+	Ok(res.into_bytes())
 }

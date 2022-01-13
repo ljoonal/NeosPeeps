@@ -27,6 +27,10 @@ rand = { version = "0.8" }
 chrono = "0.4"
 #arc-swap = "^1.5"
 
+[dependencies.minreq]
+version = "2.5"
+features = ["https-rustls-probe", "json-using-serde"]
+
 [dependencies.image]
 version = "0.23"
 default-features = false
@@ -46,7 +50,7 @@ panic = "abort"
 
 [patch.crates-io]
 
-#neos = { path = "../neos_rs/" }
+neos = { path = "../neos_rs/" }
 
 # If you want to use the bleeding edge version of `egui`:
 # eframe = { git = "https://github.com/emilk/egui", branch = "master" }
