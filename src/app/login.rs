@@ -25,16 +25,16 @@ impl NeosPeepsApp {
 		frame: epi::Frame,
 	) {
 		{
-			let mut logging_in = self.logging_in.write().unwrap();
-			if *logging_in {
-				return;
+			let mut loading = self.runtime.loading.write().unwrap();
+			if loading.login_op() {
+				return; // Only allow one login op at once
 			}
-			*logging_in = true;
+			*loading = crate::data::LoadingState::LoggingIn;
 		}
 		frame.request_repaint();
 
-		let neos_api_arc = self.neos_api.clone();
-		let logging_in = self.logging_in.clone();
+		let neos_api_arc = self.runtime.neos_api.clone();
+		let loading = self.runtime.loading.clone();
 		thread::spawn(move || {
 			{
 				let neos_api = NeosUnauthenticated::from(
@@ -58,7 +58,7 @@ impl NeosPeepsApp {
 				}
 			}
 
-			*logging_in.write().unwrap() = false;
+			*loading.write().unwrap() = crate::data::LoadingState::None;
 			frame.request_repaint();
 		});
 	}
@@ -69,17 +69,17 @@ impl NeosPeepsApp {
 		frame: epi::Frame,
 	) {
 		{
-			let mut logging_in = self.logging_in.write().unwrap();
-			if *logging_in {
+			let mut loading = self.runtime.loading.write().unwrap();
+			if loading.login_op() {
 				return;
 			}
-			*logging_in = true;
+			*loading = crate::data::LoadingState::LoggingIn;
 		}
 		frame.request_repaint();
 
-		let neos_api_arc = self.neos_api.clone();
+		let neos_api_arc = self.runtime.neos_api.clone();
 		let user_session = self.user_session.clone();
-		let logging_in = self.logging_in.clone();
+		let loading = self.runtime.loading.clone();
 		thread::spawn(move || {
 			let neos_api: NeosUnauthenticated =
 				neos_api_arc.read().unwrap().clone().into();
@@ -96,23 +96,23 @@ impl NeosPeepsApp {
 				}
 			}
 
-			*logging_in.write().unwrap() = false;
+			*loading.write().unwrap() = crate::data::LoadingState::None;
 			frame.request_repaint();
 		});
 	}
 
 	pub fn logout(&mut self, frame: epi::Frame) {
 		{
-			let mut logging_in = self.logging_in.write().unwrap();
-			if *logging_in {
+			let mut loading = self.runtime.loading.write().unwrap();
+			if loading.login_op() {
 				return;
 			}
-			*logging_in = true;
+			*loading = crate::data::LoadingState::LoggingOut;
 		}
 		frame.request_repaint();
 
-		let neos_api = self.neos_api.clone();
-		let logging_in = self.logging_in.clone();
+		let neos_api = self.runtime.neos_api.clone();
+		let loading = self.runtime.loading.clone();
 		thread::spawn(move || {
 			let new_api = match neos_api.read().unwrap().clone() {
 				AnyNeos::Authenticated(neos_api) => {
@@ -124,7 +124,7 @@ impl NeosPeepsApp {
 
 			*neos_api.write().unwrap() = new_api.into();
 
-			*logging_in.write().unwrap() = false;
+			*loading.write().unwrap() = crate::data::LoadingState::None;
 			frame.request_repaint();
 		});
 	}
@@ -190,7 +190,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn login_page(&mut self, ui: &mut Ui, frame: epi::Frame) {
-		let is_loading = *self.logging_in.read().unwrap();
+		let is_loading = self.runtime.loading.read().unwrap().is_loading();
 
 		ui.heading("Log in");
 		ui.label("Currently Neos' Oauth doesn't implement the required details for this application, thus logging in is the only way to actually use it.");
@@ -203,21 +203,22 @@ impl NeosPeepsApp {
 				self.identifier_picker(ui, is_loading);
 
 				ui.add(
-					TextEdit::singleline(&mut self.password)
+					TextEdit::singleline(&mut self.runtime.password)
 						.password(true)
 						.hint_text("Password")
 						.interactive(!is_loading),
 				);
 
 				let totp_resp = ui.add(
-					TextEdit::singleline(&mut self.totp)
+					TextEdit::singleline(&mut self.runtime.totp)
 						.hint_text("2FA")
 						.interactive(!is_loading)
 						.desired_width(80_f32),
 				);
 
 				if totp_resp.changed() {
-					self.totp = self
+					self.runtime.totp = self
+						.runtime
 						.totp
 						.chars()
 						.filter(|v| v.is_numeric())
@@ -229,9 +230,9 @@ impl NeosPeepsApp {
 
 				if submit_button_resp.clicked()
 					&& !self.identifier.inner().is_empty()
-					&& !self.password.is_empty()
-					&& !is_loading && (self.totp.is_empty()
-					|| self.totp.chars().count() == 6)
+					&& !self.runtime.password.is_empty()
+					&& !is_loading && (self.runtime.totp.is_empty()
+					|| self.runtime.totp.chars().count() == 6)
 				{
 					let rand_string: String = thread_rng()
 						.sample_iter(&Alphanumeric)
@@ -241,14 +242,14 @@ impl NeosPeepsApp {
 					let mut session_request =
 						NeosRequestUserSession::with_identifier(
 							self.identifier.clone(),
-							std::mem::take(&mut self.password),
+							std::mem::take(&mut self.runtime.password),
 						)
 						.remember_me(true)
 						.machine_id(rand_string);
 
-					if !self.totp.is_empty() {
+					if !self.runtime.totp.is_empty() {
 						session_request = session_request
-							.totp(std::mem::take(&mut self.totp));
+							.totp(std::mem::take(&mut self.runtime.totp));
 					}
 
 					self.login_new(session_request, frame);

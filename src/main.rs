@@ -13,6 +13,7 @@ const USER_AGENT: &str = concat!(
 );
 
 mod app;
+mod data;
 mod image;
 mod styling;
 

@@ -1,17 +1,12 @@
-use crate::image::TextureDetails;
 use eframe::{
-	egui::{self, warn_if_debug_build, Button},
+	egui::{self, Button},
 	epi,
 };
-use neos::{
-	api_client::{
-		AnyNeos,
-		NeosRequestUserSessionIdentifier,
-		NeosUnauthenticated,
-	},
-	NeosUserSession,
+use neos::{api_client::NeosRequestUserSessionIdentifier, NeosUserSession};
+use std::{
+	sync::{Arc, RwLock},
+	time::{Duration, Instant},
 };
-use std::sync::{Arc, RwLock};
 
 mod about;
 mod friends;
@@ -25,40 +20,22 @@ pub struct NeosPeepsApp {
 	user_session: Arc<RwLock<Option<NeosUserSession>>>,
 	identifier: NeosRequestUserSessionIdentifier,
 	#[serde(skip)]
-	password: String,
-	#[serde(skip)]
-	totp: String,
-	#[serde(skip)]
-	loading_data: Arc<RwLock<bool>>,
-	#[serde(skip)]
-	logging_in: Arc<RwLock<bool>>,
-	#[serde(skip)]
-	default_profile_picture: Option<TextureDetails>,
-	#[serde(skip)]
-	about_popup_showing: bool,
-	#[serde(skip)]
-	neos_api: Arc<RwLock<AnyNeos>>,
-	#[serde(skip)]
-	friends: Arc<RwLock<Vec<neos::NeosFriend>>>,
+	runtime: crate::data::RuntimeOnly,
+	refresh_frequency: Duration,
 }
 
 impl Default for NeosPeepsApp {
 	fn default() -> Self {
-		let api = NeosUnauthenticated::new(crate::USER_AGENT.to_owned());
+		use crate::data::RuntimeOnly;
+		let runtime = RuntimeOnly::default();
 
 		Self {
 			user_session: Arc::default(),
 			identifier: NeosRequestUserSessionIdentifier::Username(
 				String::default(),
 			),
-			totp: String::default(),
-			password: String::default(),
-			loading_data: Arc::default(),
-			logging_in: Arc::default(),
-			default_profile_picture: Option::default(),
-			about_popup_showing: Default::default(),
-			neos_api: Arc::new(RwLock::new(AnyNeos::Unauthenticated(api))),
-			friends: Arc::default(),
+			runtime,
+			refresh_frequency: Duration::from_secs(120),
 		}
 	}
 }
@@ -95,25 +72,47 @@ impl epi::App for NeosPeepsApp {
 	/// second. Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`,
 	/// `Window` or `Area`.
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
+		if !self.runtime.loading.read().unwrap().is_loading()
+			&& self.runtime.neos_api.read().unwrap().is_authenticated()
+			&& *self.runtime.last_friends_refresh.read().unwrap()
+				+ self.refresh_frequency
+				< Instant::now()
+		{
+			self.refresh_friends(frame.clone());
+		}
+
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
-				warn_if_debug_build(ui);
 				if ui.button("About").clicked() {
-					self.about_popup_showing = !self.about_popup_showing;
+					self.runtime.about_popup_showing =
+						!self.runtime.about_popup_showing;
 				}
 
 				ui.separator();
 
-				if !*self.logging_in.read().unwrap()
-					&& self.neos_api.read().unwrap().is_authenticated()
+				if !self.runtime.loading.read().unwrap().login_op()
+					&& self.runtime.neos_api.read().unwrap().is_authenticated()
 				{
-					if ui.add(Button::new("Refresh")).clicked() {
-						self.refresh_friends(frame.clone());
-					}
-					ui.separator();
-					if ui.add(Button::new("Log out")).clicked() {
-						self.logout(frame.clone());
-					}
+					ui.menu_button("Account", |ui| {
+						if ui
+							.add_enabled(
+								!self
+									.runtime
+									.loading
+									.read()
+									.unwrap()
+									.is_loading(),
+								Button::new("Refresh"),
+							)
+							.clicked()
+						{
+							self.refresh_friends(frame.clone());
+						}
+						ui.separator();
+						if ui.add(Button::new("Log out")).clicked() {
+							self.logout(frame.clone());
+						}
+					});
 					ui.separator();
 				}
 
@@ -128,9 +127,10 @@ impl epi::App for NeosPeepsApp {
 				ui.with_layout(
 					egui::Layout::top_down(egui::Align::Center),
 					|ui| {
-						if self.about_popup_showing {
+						if self.runtime.about_popup_showing {
 							self.about_page(ui);
 						} else if self
+							.runtime
 							.neos_api
 							.read()
 							.unwrap()

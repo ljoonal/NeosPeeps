@@ -1,13 +1,13 @@
 //! The friends page of the app
 
-use std::cmp::Ordering;
+use std::{cmp::Ordering, time::Instant};
 
 use crate::image::TextureDetails;
 use neos::{api_client::AnyNeos, NeosFriend, NeosUserOnlineStatus};
 
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Color32, Grid, Layout, RichText, ScrollArea, Ui, Vec2},
+	egui::{Color32, Grid, Label, Layout, RichText, ScrollArea, Ui, Vec2},
 	epi,
 };
 
@@ -54,16 +54,17 @@ fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 
 impl NeosPeepsApp {
 	fn friend_row(&self, ui: &mut Ui, friend: &NeosFriend) {
-		ui.horizontal(|ui| {
+		ui.with_layout(Layout::left_to_right(), |ui| {
 			// Should never be None, but let's be safe...
-			if let Some(pfp) = self.default_profile_picture.as_ref() {
+			if let Some(pfp) = self.runtime.default_profile_picture.as_ref() {
 				ui.image(pfp.id, Vec2::new(ROW_HEIGHT, ROW_HEIGHT));
 			}
-			ui.separator();
 		});
 
-		ui.horizontal(|ui| {
+		ui.with_layout(Layout::left_to_right(), |ui| {
+			ui.separator();
 			ui.vertical(|ui| {
+				ui.set_max_width(ROW_HEIGHT * 2_f32);
 				let (r, g, b) = friend.user_status.online_status.color();
 				ui.heading(&friend.friend_username);
 				ui.label(
@@ -74,19 +75,26 @@ impl NeosPeepsApp {
 				);
 				ui.label(RichText::new(friend.id.as_ref()).small().monospace());
 			});
-
-			ui.separator();
 		});
 
-		ui.horizontal(|ui| {
+		ui.with_layout(Layout::left_to_right(), |ui| {
+			ui.separator();
 			ui.vertical(|ui| {
-				ui.label(
-					"Current session: ".to_owned()
-						+ friend
+				if friend.user_status.online_status
+					== NeosUserOnlineStatus::Offline
+				{
+					ui.add(Label::new("Offline").wrap(false));
+				} else {
+					ui.add(
+						Label::new("Current session access level").wrap(false),
+					);
+					ui.label(
+						friend
 							.user_status
 							.current_session_access_level
 							.as_ref(),
-				);
+					);
+				}
 			});
 		});
 
@@ -95,13 +103,20 @@ impl NeosPeepsApp {
 
 	/// Refreshes friends in a background thread
 	pub fn refresh_friends(&mut self, frame: epi::Frame) {
-		let friends_arc = self.friends.clone();
-		let neos_api = self.neos_api.clone();
-		let loading = self.loading_data.clone();
-		std::thread::spawn(move || {
-			*loading.write().unwrap() = true;
-			frame.request_repaint();
+		{
+			let mut loading = self.runtime.loading.write().unwrap();
+			if loading.is_loading() {
+				return;
+			}
+			*loading = crate::data::LoadingState::FetchingFriends;
+		}
+		frame.request_repaint();
 
+		let friends_arc = self.runtime.friends.clone();
+		let neos_api = self.runtime.neos_api.clone();
+		let loading = self.runtime.loading.clone();
+		let last_friends_refresh = self.runtime.last_friends_refresh.clone();
+		std::thread::spawn(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api.read().unwrap()
 			{
 				match neos_api.get_friends() {
@@ -115,48 +130,46 @@ impl NeosPeepsApp {
 				}
 			}
 
-			*loading.write().unwrap() = false;
+			*last_friends_refresh.write().unwrap() = Instant::now();
+			*loading.write().unwrap() = crate::data::LoadingState::None;
 			frame.request_repaint();
 		});
 	}
 
 	pub fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
 		ui.heading(&("Peeps of ".to_owned() + self.identifier.inner()));
-		if *self.loading_data.read().unwrap() {
+		if self.runtime.loading.read().unwrap().is_loading() {
 			ui.label("Loading...");
 		}
 
-		if self.default_profile_picture.is_none() {
+		if self.runtime.default_profile_picture.is_none() {
 			let user_img = image::load_from_memory(include_bytes!(
 				"../../static/user.png"
 			))
 			.expect("Failed to load image");
-			self.default_profile_picture =
+			self.runtime.default_profile_picture =
 				Some(TextureDetails::from_image(frame.clone(), &user_img));
 		}
 
-		let friends = self.friends.read().unwrap();
+		let friends = self.runtime.friends.read().unwrap();
 
-		ui.with_layout(
-			Layout::top_down_justified(eframe::egui::Align::Center),
-			|ui| {
-				ScrollArea::vertical().show_rows(
-					ui,
-					ROW_HEIGHT,
-					friends.len(),
-					|ui, row_range| {
-						Grid::new("friends_list")
-							.start_row(row_range.start)
-							.min_col_width(ROW_HEIGHT)
-							.min_row_height(ROW_HEIGHT)
-							.num_columns(3)
-							.show(ui, |ui| {
-								for row in row_range {
-									self.friend_row(ui, &friends[row]);
-								}
-							});
-					},
-				);
+		ScrollArea::both().show_rows(
+			ui,
+			ROW_HEIGHT,
+			friends.len(),
+			|ui, row_range| {
+				ui.set_width(ui.available_width());
+				Grid::new("friends_list")
+					.start_row(row_range.start)
+					.min_col_width(ROW_HEIGHT)
+					.num_columns(3)
+					.show(ui, |ui| {
+						ui.set_height(ROW_HEIGHT);
+						ui.set_width(ui.available_width());
+						for row in row_range {
+							self.friend_row(ui, &friends[row]);
+						}
+					});
 			},
 		);
 	}

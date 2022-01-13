@@ -1,7 +1,7 @@
 //! The about page of the app
 
 use super::NeosPeepsApp;
-use eframe::egui::Ui;
+use eframe::egui::{warn_if_debug_build, Ui};
 
 impl NeosPeepsApp {
 	pub fn about_page(&mut self, ui: &mut Ui) {
@@ -10,6 +10,7 @@ impl NeosPeepsApp {
 			"/",
 			env!("CARGO_PKG_VERSION")
 		));
+		warn_if_debug_build(ui);
 		ui.label(concat!(
 			env!("CARGO_PKG_NAME"),
 			" is a tool that lists your NeosVR friends."
@@ -30,7 +31,8 @@ impl NeosPeepsApp {
 		ui.spacing();
 
 		if ui.button("Back").clicked() {
-			self.about_popup_showing = !self.about_popup_showing;
+			self.runtime.about_popup_showing =
+				!self.runtime.about_popup_showing;
 		}
 	}
 }
