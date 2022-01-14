@@ -32,7 +32,7 @@ impl Default for Stored {
 	}
 }
 
-/// AssetUrl ID's as keys.
+/// [`neos::AssetUrl`] ID's as keys.
 pub type PicturesMap = HashMap<String, Option<TextureDetails>>;
 
 pub struct RuntimeOnly {
