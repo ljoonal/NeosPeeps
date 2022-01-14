@@ -259,14 +259,15 @@ fn unload_unused_friend_pics(
 	friends: &[NeosFriend],
 ) {
 	use rayon::prelude::*;
-	pics.retain(|id, _| {
-		friends
-			.par_iter()
-			.find_any(|friend| match get_pfp_url(friend) {
-				Some(pfp_url) => pfp_url.id() == *id,
-				None => false,
-			})
-			.is_some()
+	pics.retain(|id, pic| {
+		pic.is_none() // Prevent multiple fetches.
+			|| friends
+				.par_iter()
+				.find_any(|friend| match get_pfp_url(friend) {
+					Some(pfp_url) => pfp_url.id() == *id,
+					None => false,
+				})
+				.is_some()
 	});
 }
 
