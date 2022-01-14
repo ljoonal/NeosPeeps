@@ -14,7 +14,6 @@ use neos::{
 };
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-use std::thread;
 
 impl NeosPeepsApp {
 	/// Makes the current API try to use a session, or switch to unauthenticated
@@ -35,7 +34,7 @@ impl NeosPeepsApp {
 
 		let neos_api_arc = self.runtime.neos_api.clone();
 		let loading = self.runtime.loading.clone();
-		thread::spawn(move || {
+		rayon::spawn(move || {
 			{
 				let neos_api = NeosUnauthenticated::from(
 					neos_api_arc.read().unwrap().clone(),
@@ -78,9 +77,9 @@ impl NeosPeepsApp {
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
-		let user_session = self.user_session.clone();
+		let user_session_arc = self.stored.user_session.clone();
 		let loading = self.runtime.loading.clone();
-		thread::spawn(move || {
+		rayon::spawn(move || {
 			let neos_api: NeosUnauthenticated =
 				neos_api_arc.read().unwrap().clone().into();
 
@@ -89,7 +88,8 @@ impl NeosPeepsApp {
 					println!("Logged in to Neos' API");
 					*neos_api_arc.write().unwrap() =
 						neos_api.upgrade(neos_user_session.clone()).into();
-					*user_session.write().unwrap() = Some(neos_user_session);
+					*user_session_arc.write().unwrap() =
+						Some(neos_user_session);
 				}
 				Err(err) => {
 					println!("Error with Neos API login request: {}", err);
@@ -111,10 +111,10 @@ impl NeosPeepsApp {
 		}
 		frame.request_repaint();
 
-		let neos_api = self.runtime.neos_api.clone();
+		let neos_api_arc = self.runtime.neos_api.clone();
 		let loading = self.runtime.loading.clone();
-		thread::spawn(move || {
-			let new_api = match neos_api.read().unwrap().clone() {
+		rayon::spawn(move || {
+			let new_api = match neos_api_arc.read().unwrap().clone() {
 				AnyNeos::Authenticated(neos_api) => {
 					neos_api.logout().ok();
 					neos_api.downgrade()
@@ -122,7 +122,7 @@ impl NeosPeepsApp {
 				AnyNeos::Unauthenticated(neos_api) => neos_api,
 			};
 
-			*neos_api.write().unwrap() = new_api.into();
+			*neos_api_arc.write().unwrap() = new_api.into();
 
 			*loading.write().unwrap() = crate::data::LoadingState::None;
 			frame.request_repaint();
@@ -131,59 +131,61 @@ impl NeosPeepsApp {
 
 	fn identifier_picker(&mut self, ui: &mut Ui, is_loading: bool) {
 		ComboBox::from_label("Login type")
-			.selected_text(self.identifier.as_ref())
+			.selected_text(self.stored.identifier.as_ref())
 			.show_ui(ui, |ui| {
 				if ui
 					.add(SelectableLabel::new(
 						matches!(
-							self.identifier,
+							self.stored.identifier,
 							NeosRequestUserSessionIdentifier::Username(_)
 						),
 						"Username",
 					))
 					.clicked()
 				{
-					self.identifier =
+					self.stored.identifier =
 						NeosRequestUserSessionIdentifier::Username(
-							self.identifier.inner().into(),
+							self.stored.identifier.inner().into(),
 						);
 				}
 
 				if ui
 					.add(SelectableLabel::new(
 						matches!(
-							self.identifier,
+							self.stored.identifier,
 							NeosRequestUserSessionIdentifier::Email(_)
 						),
 						"Email",
 					))
 					.clicked()
 				{
-					self.identifier = NeosRequestUserSessionIdentifier::Email(
-						self.identifier.inner().into(),
-					);
+					self.stored.identifier =
+						NeosRequestUserSessionIdentifier::Email(
+							self.stored.identifier.inner().into(),
+						);
 				}
 
 				if ui
 					.add(SelectableLabel::new(
 						matches!(
-							self.identifier,
+							self.stored.identifier,
 							NeosRequestUserSessionIdentifier::OwnerID(_)
 						),
 						"OwnerID",
 					))
 					.clicked()
 				{
-					self.identifier = NeosRequestUserSessionIdentifier::OwnerID(
-						self.identifier.inner().into(),
-					);
+					self.stored.identifier =
+						NeosRequestUserSessionIdentifier::OwnerID(
+							self.stored.identifier.inner().into(),
+						);
 				}
 			});
 
-		let label = self.identifier.as_ref().to_string();
+		let label = self.stored.identifier.as_ref().to_string();
 
 		ui.add(
-			TextEdit::singleline(self.identifier.inner_mut())
+			TextEdit::singleline(self.stored.identifier.inner_mut())
 				.hint_text(label)
 				.interactive(!is_loading),
 		);
@@ -229,7 +231,7 @@ impl NeosPeepsApp {
 				let submit_button_resp = ui.add(Button::new("Log in"));
 
 				if submit_button_resp.clicked()
-					&& !self.identifier.inner().is_empty()
+					&& !self.stored.identifier.inner().is_empty()
 					&& !self.runtime.password.is_empty()
 					&& !is_loading && (self.runtime.totp.is_empty()
 					|| self.runtime.totp.chars().count() == 6)
@@ -241,7 +243,7 @@ impl NeosPeepsApp {
 						.collect();
 					let mut session_request =
 						NeosRequestUserSession::with_identifier(
-							self.identifier.clone(),
+							self.stored.identifier.clone(),
 							std::mem::take(&mut self.runtime.password),
 						)
 						.remember_me(true)

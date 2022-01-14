@@ -1,12 +1,39 @@
-use neos::api_client::{AnyNeos, NeosUnauthenticated};
+use neos::{
+	api_client::{
+		AnyNeos, NeosRequestUserSessionIdentifier, NeosUnauthenticated,
+	},
+	NeosUserSession,
+};
+use serde::{Deserialize, Serialize};
 use std::{
+	collections::HashMap,
 	sync::{Arc, RwLock},
 	time::{Duration, Instant},
 };
 
 use crate::image::TextureDetails;
 
-pub type FriendAndPic = (neos::NeosFriend, Option<TextureDetails>);
+#[derive(Serialize, Deserialize)]
+pub struct Stored {
+	pub user_session: Arc<RwLock<Option<NeosUserSession>>>,
+	pub identifier: NeosRequestUserSessionIdentifier,
+	pub refresh_frequency: Duration,
+}
+
+impl Default for Stored {
+	fn default() -> Self {
+		Self {
+			user_session: Arc::default(),
+			identifier: NeosRequestUserSessionIdentifier::Username(
+				String::default(),
+			),
+			refresh_frequency: Duration::from_secs(120),
+		}
+	}
+}
+
+/// AssetUrl ID's as keys.
+pub type PicturesMap = HashMap<String, Option<TextureDetails>>;
 
 pub struct RuntimeOnly {
 	pub password: String,
@@ -15,7 +42,8 @@ pub struct RuntimeOnly {
 	pub default_profile_picture: Option<TextureDetails>,
 	pub about_popup_showing: bool,
 	pub neos_api: Arc<RwLock<AnyNeos>>,
-	pub friends: Arc<RwLock<Vec<FriendAndPic>>>,
+	pub friends: Arc<RwLock<Vec<neos::NeosFriend>>>,
+	pub friend_pics: Arc<RwLock<PicturesMap>>,
 	pub last_friends_refresh: Arc<RwLock<Instant>>,
 }
 
@@ -49,6 +77,7 @@ impl Default for RuntimeOnly {
 			about_popup_showing: Default::default(),
 			neos_api: Arc::new(RwLock::new(AnyNeos::Unauthenticated(api))),
 			friends: Arc::default(),
+			friend_pics: Arc::default(),
 			last_friends_refresh: Arc::new(RwLock::new(
 				Instant::now() - Duration::from_secs(u64::MAX / 2),
 			)),

@@ -2,11 +2,9 @@ use eframe::{
 	egui::{self, Button},
 	epi,
 };
-use neos::{api_client::NeosRequestUserSessionIdentifier, NeosUserSession};
-use std::{
-	sync::{Arc, RwLock},
-	time::{Duration, Instant},
-};
+use std::time::Instant;
+
+use crate::data::Stored;
 
 mod about;
 mod friends;
@@ -17,11 +15,9 @@ mod login;
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct NeosPeepsApp {
-	user_session: Arc<RwLock<Option<NeosUserSession>>>,
-	identifier: NeosRequestUserSessionIdentifier,
+	stored: Stored,
 	#[serde(skip)]
 	runtime: crate::data::RuntimeOnly,
-	refresh_frequency: Duration,
 }
 
 impl Default for NeosPeepsApp {
@@ -29,14 +25,7 @@ impl Default for NeosPeepsApp {
 		use crate::data::RuntimeOnly;
 		let runtime = RuntimeOnly::default();
 
-		Self {
-			user_session: Arc::default(),
-			identifier: NeosRequestUserSessionIdentifier::Username(
-				String::default(),
-			),
-			runtime,
-			refresh_frequency: Duration::from_secs(120),
-		}
+		Self { stored: Stored::default(), runtime }
 	}
 }
 
@@ -57,7 +46,7 @@ impl epi::App for NeosPeepsApp {
 		if let Some(storage) = storage {
 			*self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default();
 
-			let user_session = self.user_session.read().unwrap().clone();
+			let user_session = self.stored.user_session.read().unwrap().clone();
 			if let Some(user_session) = user_session {
 				self.try_use_session(user_session, frame.clone());
 			}
@@ -75,7 +64,7 @@ impl epi::App for NeosPeepsApp {
 		if !self.runtime.loading.read().unwrap().is_loading()
 			&& self.runtime.neos_api.read().unwrap().is_authenticated()
 			&& *self.runtime.last_friends_refresh.read().unwrap()
-				+ self.refresh_frequency
+				+ self.stored.refresh_frequency
 				< Instant::now()
 		{
 			self.refresh_friends(frame.clone());

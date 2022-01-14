@@ -19,6 +19,7 @@ mod styling;
 
 fn main() {
 	let app = app::NeosPeepsApp::default();
+	let boxed_app = Box::new(app);
 	let native_options = eframe::NativeOptions::default();
-	eframe::run_native(Box::new(app), native_options);
+	eframe::run_native(boxed_app, native_options);
 }

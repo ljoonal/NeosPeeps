@@ -26,6 +26,9 @@ serde_json = "1"
 rand = { version = "0.8" }
 chrono = "0.4"
 #arc-swap = "^1.5"
+rayon = "1.5.1"
+
+webp = "0.2"
 
 [dependencies.minreq]
 version = "2.5"
@@ -35,7 +38,17 @@ features = ["https-rustls-probe", "json-using-serde"]
 version = "0.23"
 default-features = false
 
-features = ["bmp", "png", "hdr", "tiff", "jpeg", "jpeg_rayon", "tga", "gif"]
+features = [
+	#	"bmp",
+	#	"webp", # Alpha is not supported :/
+	"png",
+	#	"hdr",
+	#	"tiff",
+	"jpeg",
+	"jpeg_rayon",
+	#	"tga",
+	"gif",
+]
 
 [profile.release]
 # Optimizing mostly for size.
