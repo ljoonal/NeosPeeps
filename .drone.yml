@@ -29,11 +29,6 @@ platform:
   arch: amd64
 
 steps:
-- name: build
-  image: rust:latest
-  commands:
-  - cargo build --all-features
-
 - name: test
   image: rust:latest
   commands:
