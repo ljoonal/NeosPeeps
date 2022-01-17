@@ -1,0 +1,44 @@
+---
+kind: pipeline
+name: nightly
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: lint
+  pull: always
+  image: rustlang/rust:nightly
+  commands:
+  - rustup component add clippy || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
+  - cargo fmt --check
+  - cargo clippy --all-features -Z unstable-options --future-incompat-report
+  failure: ignore
+
+trigger:
+  event:
+  - push
+
+---
+kind: pipeline
+name: stable
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  image: rust:latest
+  commands:
+  - cargo build --all-features
+
+- name: test
+  image: rust:latest
+  commands:
+  - cargo test --all-features
+
+trigger:
+  event:
+  - push
