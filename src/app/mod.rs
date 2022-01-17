@@ -3,7 +3,10 @@ use crate::{
 	image::TextureDetails,
 };
 use eframe::{egui, epi};
-use std::{sync::Arc, time::Instant};
+use std::{
+	sync::Arc,
+	time::{Instant, SystemTime},
+};
 
 mod about;
 mod bar;
@@ -81,11 +84,11 @@ impl epi::App for NeosPeepsApp {
 			&& is_authenticated
 			&& *self.runtime.last_background_refresh.read().unwrap()
 				+ self.stored.refresh_frequency
-				< Instant::now()
+				< SystemTime::now()
 		{
 			self.runtime.cull_textures();
 			*self.runtime.last_background_refresh.clone().write().unwrap() =
-				Instant::now();
+				SystemTime::now();
 			self.refresh_friends(frame.clone());
 			self.refresh_sessions(frame.clone());
 		}

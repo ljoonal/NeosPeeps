@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::{
 	collections::{HashMap, HashSet},
 	sync::{Arc, Mutex, RwLock},
-	time::{Duration, Instant},
+	time::{Duration, Instant, SystemTime},
 };
 
 use crate::image::TextureDetails;
@@ -65,7 +65,7 @@ pub struct RuntimeOnly {
 	pub neos_api: Arc<RwLock<AnyNeos>>,
 	pub friends: Arc<RwLock<Vec<neos::NeosFriend>>>,
 	pub sessions: Arc<RwLock<Vec<neos::NeosSession>>>,
-	pub last_background_refresh: Arc<RwLock<Instant>>,
+	pub last_background_refresh: Arc<RwLock<SystemTime>>,
 	textures: Arc<RwLock<TexturesMap>>,
 	used_textures: RwLock<HashSet<String>>,
 }
@@ -158,7 +158,7 @@ impl Default for RuntimeOnly {
 			friends: Arc::default(),
 			sessions: Arc::default(),
 			last_background_refresh: Arc::new(RwLock::new(
-				Instant::now() - Duration::from_secs(u64::MAX / 2),
+				SystemTime::UNIX_EPOCH,
 			)),
 			textures: Arc::default(),
 			used_textures: RwLock::default(),
