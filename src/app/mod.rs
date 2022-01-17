@@ -9,6 +9,7 @@ use crate::data::Stored;
 mod about;
 mod friends;
 mod login;
+mod sessions;
 
 #[allow(clippy::module_name_repetitions)]
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.

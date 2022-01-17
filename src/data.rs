@@ -33,7 +33,10 @@ impl Default for Stored {
 }
 
 /// [`neos::AssetUrl`] ID's as keys.
-pub type PicturesMap = HashMap<String, Option<TextureDetails>>;
+pub type AssetsMap = HashMap<String, Option<TextureDetails>>;
+
+/// [`neos::ThumbnailUrl`] ID's as keys.
+pub type ThumbnailsMap = HashMap<String, Option<TextureDetails>>;
 
 pub struct RuntimeOnly {
 	pub password: String,
@@ -43,7 +46,8 @@ pub struct RuntimeOnly {
 	pub about_popup_showing: bool,
 	pub neos_api: Arc<RwLock<AnyNeos>>,
 	pub friends: Arc<RwLock<Vec<neos::NeosFriend>>>,
-	pub friend_pics: Arc<RwLock<PicturesMap>>,
+	pub friend_pics: Arc<RwLock<AssetsMap>>,
+	pub session_pics: Arc<RwLock<ThumbnailsMap>>,
 	pub last_friends_refresh: Arc<RwLock<Instant>>,
 }
 
@@ -78,6 +82,7 @@ impl Default for RuntimeOnly {
 			neos_api: Arc::new(RwLock::new(AnyNeos::Unauthenticated(api))),
 			friends: Arc::default(),
 			friend_pics: Arc::default(),
+			session_pics: Arc::default(),
 			last_friends_refresh: Arc::new(RwLock::new(
 				Instant::now() - Duration::from_secs(u64::MAX / 2),
 			)),

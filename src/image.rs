@@ -1,4 +1,8 @@
-use std::path::PathBuf;
+use std::{
+	collections::HashMap,
+	path::PathBuf,
+	sync::{Arc, RwLock},
+};
 
 use eframe::{
 	egui::{TextureId, Vec2},
@@ -47,6 +51,40 @@ impl Drop for TextureDetails {
 	}
 }
 
+pub fn load_asset_pic(
+	asset_url: &neos::AssetUrl,
+	pics: Arc<RwLock<HashMap<String, Option<TextureDetails>>>>,
+	frame: &epi::Frame,
+) {
+	{
+		let mut pics = pics.write().unwrap();
+		if pics.contains_key(asset_url.id()) {
+			return;
+		}
+		pics.insert(asset_url.id().to_owned(), None);
+	}
+
+	let asset_url = asset_url.clone();
+	let frame = frame.clone();
+	rayon::spawn(move || match crate::image::get(&asset_url) {
+		Ok(image) => {
+			let (size, image) = crate::image::to_epi_format(&image);
+			pics.write().unwrap().insert(
+				asset_url.id().to_owned(),
+				Some(TextureDetails::new(frame.clone(), size, image)),
+			);
+			frame.request_repaint();
+		}
+		Err(err) => {
+			println!(
+				"Failed to fetch the profile picture `{}`: {}",
+				&asset_url.to_string(),
+				err
+			);
+		}
+	});
+}
+
 pub fn get(url: &AssetUrl) -> Result<DynamicImage, String> {
 	let path = get_path(url);
 
@@ -74,9 +112,7 @@ pub fn get(url: &AssetUrl) -> Result<DynamicImage, String> {
 }
 
 fn get_path(url: &AssetUrl) -> PathBuf {
-	let mut path = std::env::temp_dir();
-	path.push(url.filename());
-	path
+	crate::TEMP_DIR.join(url.filename())
 }
 
 fn fetch_asset(url: &AssetUrl) -> Result<Vec<u8>, String> {
@@ -88,7 +124,8 @@ fn fetch_asset(url: &AssetUrl) -> Result<Vec<u8>, String> {
 		.map_err(|_| "Failed to send image request".to_owned())?;
 
 	if res.status_code < 200 || res.status_code >= 300 {
-		return Err("Image request status indicated failure".to_owned());
+		return Err("Image request status indicated failure".to_owned()
+			+ &res.status_code.to_string());
 	}
 
 	let data = res.into_bytes();

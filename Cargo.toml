@@ -13,7 +13,7 @@ publish = false
 # https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-neos = { version = "0.2.0-alpha.1", features = ["api_client"] }
+neos = { version = "0.2.0-alpha.2", features = ["api_client"] }
 
 eframe = { version = "0.16", default-features = false, features = [
 	"egui_glow",
@@ -27,6 +27,7 @@ rand = { version = "0.8" }
 chrono = "0.4"
 #arc-swap = "^1.5"
 rayon = "1.5.1"
+lazy_static = "1.4"
 
 webp = "0.2"
 

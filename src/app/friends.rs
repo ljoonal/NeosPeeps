@@ -7,10 +7,13 @@ use std::{
 	time::Instant,
 };
 
-use crate::image::TextureDetails;
+use crate::image::{load_asset_pic, TextureDetails};
 use neos::{api_client::AnyNeos, AssetUrl, NeosFriend, NeosUserOnlineStatus};
 
-use super::NeosPeepsApp;
+use super::{
+	sessions::{find_focused_session, load_all_user_session_thumbnails},
+	NeosPeepsApp,
+};
 use eframe::{
 	egui::{Color32, Grid, Label, Layout, RichText, ScrollArea, Ui, Vec2},
 	epi,
@@ -58,13 +61,37 @@ fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 }
 
 impl NeosPeepsApp {
-	fn friend_row(
-		&self,
-		ui: &mut Ui,
-		friend: &NeosFriend,
-		pfp: &TextureDetails,
-	) {
+	fn friend_row(&self, ui: &mut Ui, frame: &epi::Frame, friend: &NeosFriend) {
+		load_all_user_session_thumbnails(
+			&friend.user_status.active_sessions,
+			&self.runtime.session_pics,
+			frame,
+		);
+
 		ui.with_layout(Layout::left_to_right(), |ui| {
+			let pfp_url: Option<&AssetUrl> = match get_pfp_url(friend) {
+				Some(asset_url) => {
+					load_asset_pic(
+						asset_url,
+						self.runtime.friend_pics.clone(),
+						frame,
+					);
+					Some(asset_url)
+				}
+				None => None,
+			};
+
+			let friend_pics = self.runtime.friend_pics.read().unwrap();
+
+			// Gets the profile picture from URL.
+			let pfp: &TextureDetails = match pfp_url {
+				Some(pfp_url) => match friend_pics.get(pfp_url.id()) {
+					Some(Some(pfp)) => pfp,
+					_ => self.runtime.default_profile_picture.as_ref().unwrap(),
+				},
+				None => self.runtime.default_profile_picture.as_ref().unwrap(),
+			};
+
 			ui.image(pfp.id, Vec2::new(ROW_HEIGHT, ROW_HEIGHT));
 		});
 
@@ -86,21 +113,48 @@ impl NeosPeepsApp {
 
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			ui.separator();
+
+			let session = find_focused_session(&friend.id, &friend.user_status);
+
 			ui.vertical(|ui| {
-				if friend.user_status.online_status
+				if let Some(session) = session {
+					ui.label(&session.name);
+					ui.label(&format!(
+						"{}/{}",
+						&session.joined_users, &session.max_users
+					));
+				} else if friend.user_status.online_status
 					== NeosUserOnlineStatus::Offline
 				{
-					ui.add(Label::new("Offline").wrap(false));
+					ui.label("Current session access level");
 				} else {
-					ui.add(
-						Label::new("Current session access level").wrap(false),
-					);
-					ui.label(
-						friend
-							.user_status
-							.current_session_access_level
-							.as_ref(),
-					);
+					ui.label("Not in a session");
+				}
+			});
+
+			ui.vertical(|ui| {
+				if let Some(session) = session {
+					if let Some(thumbnail) = &session.thumbnail {
+						load_asset_pic(
+							thumbnail,
+							self.runtime.session_pics.clone(),
+							frame,
+						);
+
+						let session_pics =
+							self.runtime.session_pics.read().unwrap();
+
+						if let Some(Some(session_pic)) =
+							session_pics.get(thumbnail.id())
+						{
+							let scaling =
+								ui.available_height() / session_pic.size.y;
+							ui.image(
+								session_pic.id,
+								session_pic.size * scaling,
+							);
+						}
+					}
 				}
 			});
 		});
@@ -164,8 +218,6 @@ impl NeosPeepsApp {
 			self.runtime.default_profile_picture =
 				Some(TextureDetails::from_image(frame.clone(), &user_img));
 		}
-		let default_profile_pic =
-			self.runtime.default_profile_picture.as_ref().unwrap();
 
 		let friends = self.runtime.friends.read().unwrap();
 
@@ -184,35 +236,7 @@ impl NeosPeepsApp {
 						ui.set_width(ui.available_width());
 						for row in row_range {
 							let friend = &friends[row];
-
-							let pfp_url: Option<&AssetUrl> =
-								match get_pfp_url(friend) {
-									Some(asset_url) => {
-										load_friend_pic(
-											asset_url,
-											self.runtime.friend_pics.clone(),
-											frame,
-										);
-										Some(asset_url)
-									}
-									None => None,
-								};
-
-							let friend_pics =
-								self.runtime.friend_pics.read().unwrap();
-
-							// Gets the profile picture from URL.
-							let pfp: &TextureDetails = match pfp_url {
-								Some(pfp_url) => {
-									match friend_pics.get(pfp_url.id()) {
-										Some(Some(pfp)) => pfp,
-										_ => default_profile_pic,
-									}
-								}
-								None => default_profile_pic,
-							};
-
-							self.friend_row(ui, friend, pfp);
+							self.friend_row(ui, frame, friend);
 						}
 					});
 			},
@@ -220,41 +244,7 @@ impl NeosPeepsApp {
 	}
 }
 
-fn load_friend_pic(
-	asset_url: &neos::AssetUrl,
-	pics: Arc<RwLock<HashMap<String, Option<TextureDetails>>>>,
-	frame: &epi::Frame,
-) {
-	{
-		let mut pics = pics.write().unwrap();
-		if pics.contains_key(asset_url.id()) {
-			return;
-		}
-		pics.insert(asset_url.id().to_owned(), None);
-	}
-
-	let asset_url = asset_url.clone();
-	let frame = frame.clone();
-	rayon::spawn(move || match crate::image::get(&asset_url) {
-		Ok(image) => {
-			let (size, image) = crate::image::to_epi_format(&image);
-			pics.write().unwrap().insert(
-				asset_url.id().to_owned(),
-				Some(TextureDetails::new(frame.clone(), size, image)),
-			);
-			frame.request_repaint();
-		}
-		Err(err) => {
-			println!(
-				"Failed to fetch the profile picture `{}`: {}",
-				asset_url.id(),
-				err
-			);
-		}
-	});
-}
-
-fn unload_unused_friend_pics(
+pub fn unload_unused_friend_pics(
 	pics: &mut HashMap<String, Option<TextureDetails>>,
 	friends: &[NeosFriend],
 ) {
@@ -271,7 +261,7 @@ fn unload_unused_friend_pics(
 	});
 }
 
-const fn get_pfp_url(friend: &NeosFriend) -> &Option<AssetUrl> {
+pub const fn get_pfp_url(friend: &NeosFriend) -> &Option<AssetUrl> {
 	match &friend.profile {
 		Some(profile) => &profile.icon_url,
 		None => &None,

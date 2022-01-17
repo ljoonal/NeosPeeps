@@ -34,7 +34,7 @@ impl NeosPeepsApp {
 
 		let neos_api_arc = self.runtime.neos_api.clone();
 		let loading = self.runtime.loading.clone();
-		rayon::spawn(move || {
+		std::thread::spawn(move || {
 			{
 				let neos_api = NeosUnauthenticated::from(
 					neos_api_arc.read().unwrap().clone(),
@@ -79,7 +79,7 @@ impl NeosPeepsApp {
 		let neos_api_arc = self.runtime.neos_api.clone();
 		let user_session_arc = self.stored.user_session.clone();
 		let loading = self.runtime.loading.clone();
-		rayon::spawn(move || {
+		std::thread::spawn(move || {
 			let neos_api: NeosUnauthenticated =
 				neos_api_arc.read().unwrap().clone().into();
 
@@ -113,7 +113,7 @@ impl NeosPeepsApp {
 
 		let neos_api_arc = self.runtime.neos_api.clone();
 		let loading = self.runtime.loading.clone();
-		rayon::spawn(move || {
+		std::thread::spawn(move || {
 			let new_api = match neos_api_arc.read().unwrap().clone() {
 				AnyNeos::Authenticated(neos_api) => {
 					neos_api.logout().ok();

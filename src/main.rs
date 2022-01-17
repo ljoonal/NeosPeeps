@@ -3,6 +3,8 @@
 #![warn(clippy::nursery)]
 #![warn(clippy::cargo)]
 
+use std::path::{PathBuf, MAIN_SEPARATOR};
+
 const USER_AGENT: &str = concat!(
 	env!("CARGO_PKG_NAME"),
 	"/",
@@ -11,6 +13,14 @@ const USER_AGENT: &str = concat!(
 	env!("CARGO_PKG_REPOSITORY"),
 	")"
 );
+
+lazy_static::lazy_static! {
+	static ref TEMP_DIR: PathBuf = {
+		let dir = std::env::temp_dir().join(env!("CARGO_PKG_NAME"));
+		std::fs::create_dir_all(&dir).unwrap();
+		dir.canonicalize().unwrap()
+	};
+}
 
 mod app;
 mod data;
