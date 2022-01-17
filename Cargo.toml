@@ -59,7 +59,7 @@ codegen-units = 1
 lto = "fat"
 panic = "abort"
 
-[target.'cfg(windows)'.build-dependencies]
+[build-dependencies]
 winres = "0.1"
 
 # For now run `strip target/release/neos_peeps`
