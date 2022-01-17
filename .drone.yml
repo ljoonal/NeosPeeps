@@ -19,21 +19,3 @@ steps:
 trigger:
   event:
   - push
-
----
-kind: pipeline
-name: stable
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: test
-  image: rust:latest
-  commands:
-  - cargo test --all-features
-
-trigger:
-  event:
-  - push
