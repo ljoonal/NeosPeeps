@@ -7,7 +7,7 @@ cargo build --release && strip target/release/neos_peeps && sstrip target/releas
 sha256sum target/release/neos_peeps > target/release/neos_peeps.sha256
 
 # Build for windows
-cargo build --release --target target/x86_64-pc-windows-gnu && strip target/x86_64-pc-windows-gnu/release/neos_peeps.exe
+cargo build --release --target x86_64-pc-windows-gnu && strip target/x86_64-pc-windows-gnu/release/neos_peeps.exe
 # Set the icon
 
 # Create sha256 integrity hash
