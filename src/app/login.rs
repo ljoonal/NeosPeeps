@@ -7,7 +7,9 @@ use eframe::{
 };
 use neos::{
 	api_client::{
-		AnyNeos, NeosRequestUserSession, NeosRequestUserSessionIdentifier,
+		AnyNeos,
+		NeosRequestUserSession,
+		NeosRequestUserSessionIdentifier,
 		NeosUnauthenticated,
 	},
 	NeosUserSession,

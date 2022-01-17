@@ -11,6 +11,8 @@ use eframe::{
 use image::{DynamicImage, GenericImageView};
 use neos::AssetUrl;
 
+use crate::{app::NeosPeepsApp, data::RuntimeOnly};
+
 pub struct TextureDetails {
 	pub id: TextureId,
 	pub size: Vec2,
@@ -51,41 +53,8 @@ impl Drop for TextureDetails {
 	}
 }
 
-pub fn load_asset_pic(
-	asset_url: &neos::AssetUrl,
-	pics: Arc<RwLock<HashMap<String, Option<TextureDetails>>>>,
-	frame: &epi::Frame,
-) {
-	{
-		let mut pics = pics.write().unwrap();
-		if pics.contains_key(asset_url.id()) {
-			return;
-		}
-		pics.insert(asset_url.id().to_owned(), None);
-	}
-
-	let asset_url = asset_url.clone();
-	let frame = frame.clone();
-	rayon::spawn(move || match crate::image::get(&asset_url) {
-		Ok(image) => {
-			let (size, image) = crate::image::to_epi_format(&image);
-			pics.write().unwrap().insert(
-				asset_url.id().to_owned(),
-				Some(TextureDetails::new(frame.clone(), size, image)),
-			);
-			frame.request_repaint();
-		}
-		Err(err) => {
-			println!(
-				"Failed to fetch the profile picture `{}`: {}",
-				&asset_url.to_string(),
-				err
-			);
-		}
-	});
-}
-
-pub fn get(url: &AssetUrl) -> Result<DynamicImage, String> {
+/// This can block the whole thread for an API request, use with caution.
+pub fn retrieve_image(url: &AssetUrl) -> Result<DynamicImage, String> {
 	let path = get_path(url);
 
 	if url.ext() == &Some("webp".to_owned()) {

@@ -1,15 +1,16 @@
-use eframe::{
-	egui::{self, Button},
-	epi,
+use crate::{
+	data::{Page, Stored},
+	image::TextureDetails,
 };
-use std::time::Instant;
-
-use crate::data::Stored;
+use eframe::{egui, epi};
+use std::{sync::Arc, time::Instant};
 
 mod about;
+mod bar;
 mod friends;
 mod login;
 mod sessions;
+mod settings;
 
 #[allow(clippy::module_name_repetitions)]
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -62,73 +63,61 @@ impl epi::App for NeosPeepsApp {
 	/// second. Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`,
 	/// `Window` or `Area`.
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-		if !self.runtime.loading.read().unwrap().is_loading()
-			&& self.runtime.neos_api.read().unwrap().is_authenticated()
-			&& *self.runtime.last_friends_refresh.read().unwrap()
+		let is_authenticated =
+			self.runtime.neos_api.read().unwrap().is_authenticated();
+		let is_loading = self.runtime.loading.read().unwrap().is_loading();
+
+		if self.runtime.default_profile_picture.is_none() {
+			let user_img = image::load_from_memory(include_bytes!(
+				"../../static/user.png"
+			))
+			.expect("Failed to load image");
+			self.runtime.default_profile_picture = Some(Arc::new(
+				TextureDetails::from_image(frame.clone(), &user_img),
+			));
+		}
+
+		if !is_loading
+			&& is_authenticated
+			&& *self.runtime.last_background_refresh.read().unwrap()
 				+ self.stored.refresh_frequency
 				< Instant::now()
 		{
+			self.runtime.cull_textures();
+			*self.runtime.last_background_refresh.clone().write().unwrap() =
+				Instant::now();
 			self.refresh_friends(frame.clone());
+			self.refresh_sessions(frame.clone());
 		}
 
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-			egui::menu::bar(ui, |ui| {
-				if ui.button("About").clicked() {
-					self.runtime.about_popup_showing =
-						!self.runtime.about_popup_showing;
-				}
-
-				ui.separator();
-
-				if !self.runtime.loading.read().unwrap().login_op()
-					&& self.runtime.neos_api.read().unwrap().is_authenticated()
-				{
-					ui.menu_button("Account", |ui| {
-						if ui
-							.add_enabled(
-								!self
-									.runtime
-									.loading
-									.read()
-									.unwrap()
-									.is_loading(),
-								Button::new("Refresh"),
-							)
-							.clicked()
-						{
-							self.refresh_friends(frame.clone());
-						}
-						ui.separator();
-						if ui.add(Button::new("Log out")).clicked() {
-							self.logout(frame.clone());
-						}
-					});
-					ui.separator();
-				}
-
-				if ui.button("Quit").clicked() {
-					frame.quit();
-				}
-			});
+			self.top_bar(ui, frame);
 		});
 
 		egui::CentralPanel::default().show(ctx, |ui| {
+			if is_loading {
+				ui.vertical_centered_justified(|ui| {
+					ui.label("Loading...");
+				});
+			}
+
 			egui::ScrollArea::vertical().show(ui, |ui| {
 				ui.with_layout(
 					egui::Layout::top_down(egui::Align::Center),
 					|ui| {
-						if self.runtime.about_popup_showing {
-							self.about_page(ui);
-						} else if self
-							.runtime
-							.neos_api
-							.read()
-							.unwrap()
-							.is_authenticated()
-						{
-							self.friends_page(ui, frame);
+						if is_authenticated {
+							match self.stored.page {
+								Page::About => self.about_page(ui),
+								Page::Friends => self.friends_page(ui, frame),
+								Page::Sessions => self.sessions_page(ui, frame),
+								Page::Settings => self.settings_page(ui, frame),
+							}
 						} else {
-							self.login_page(ui, frame.clone());
+							match self.stored.page {
+								Page::About => self.about_page(ui),
+								Page::Settings => self.settings_page(ui, frame),
+								_ => self.login_page(ui, frame.clone()),
+							}
 						}
 					},
 				);

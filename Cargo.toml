@@ -5,10 +5,11 @@ edition = "2021"
 authors = ["ljoonal"]
 description = "An application to view your neos friends."
 repository = "https://git.ljoonal.xyz/ljoonal/NeosPeeps"
-license-file = "LICENSE.md"
+license = "AGPL-3.0"
 keywords = ["neos"]
 categories = ["games"]
 publish = false
+build = "build.rs"
 
 # https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -57,6 +58,9 @@ opt-level = "s"
 codegen-units = 1
 lto = "fat"
 panic = "abort"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
 
 # For now run `strip target/release/neos_peeps`
 #cargo-features = ["strip"]

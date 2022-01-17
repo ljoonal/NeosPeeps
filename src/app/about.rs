@@ -1,6 +1,7 @@
 //! The about page of the app
 
 use super::NeosPeepsApp;
+use crate::data::Page;
 use eframe::egui::{warn_if_debug_build, Ui};
 
 impl NeosPeepsApp {
@@ -25,14 +26,13 @@ impl NeosPeepsApp {
 			" is an unofficial tool, and is not affiliated with the developers of NeosVR."
 		));
 		ui.hyperlink_to(
-			"Did you know that NeosPeeps' source code is available?",
+			"This application is licensed under AGPL. Get the source code here.",
 			env!("CARGO_PKG_REPOSITORY"),
 		);
 		ui.spacing();
 
 		if ui.button("Back").clicked() {
-			self.runtime.about_popup_showing =
-				!self.runtime.about_popup_showing;
+			self.stored.page = Page::Friends;
 		}
 	}
 }
