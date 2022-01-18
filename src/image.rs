@@ -49,29 +49,33 @@ impl Drop for TextureDetails {
 
 /// This can block the whole thread for an API request, use with caution.
 pub fn retrieve(url: &AssetUrl) -> Result<DynamicImage, String> {
+	use image::ImageFormat;
+
 	let path = get_path(url);
 
-	if url.ext() == &Some("webp".to_owned()) {
-		let bytes = match std::fs::read(path) {
-			Ok(bytes) => bytes,
-			Err(_) => fetch_asset(url)?,
-		};
+	let bytes = match std::fs::read(path) {
+		Ok(bytes) => bytes,
+		Err(_) => fetch_asset(url)?,
+	};
 
-		let decoder = webp::Decoder::new(&bytes);
+	let format = image::guess_format(&bytes).map_err(|err| {
+		format!("Failed to guess format of fetched image {:?} - {}", url, err)
+	})?;
 
-		let img = decoder
-			.decode()
-			.ok_or_else(|| "Failed to decode webp image".to_string())?;
-
-		return Ok(img.to_image());
+	if format != ImageFormat::WebP {
+		return image::load_from_memory_with_format(&bytes, format).map_err(
+			|err| format!("Failed to decode fetched image {:?} - {}", url, err),
+		);
 	}
 
-	match image::io::Reader::open(&path) {
-		Ok(file) => Ok(file.decode().map_err(|err| {
-			"Failed to decode cached image: ".to_owned() + &err.to_string()
-		})?),
-		Err(_) => fetch_image(url),
-	}
+	let decoder = webp::Decoder::new(&bytes);
+
+	Ok(decoder
+		.decode()
+		.ok_or_else(|| {
+			format!("Failed to decode fetched webp image {:?}", url)
+		})?
+		.to_image())
 }
 
 fn get_path(url: &AssetUrl) -> PathBuf {
@@ -84,36 +88,22 @@ fn fetch_asset(url: &AssetUrl) -> Result<Vec<u8>, String> {
 	let res = minreq::get(url.to_string())
 		.with_header("User-Agent", crate::USER_AGENT)
 		.send()
-		.map_err(|_| "Failed to send image request".to_owned())?;
+		.map_err(|err| {
+			format!("Failed to send image request {:?} - {}", url, err)
+		})?;
 
 	if res.status_code < 200 || res.status_code >= 300 {
-		return Err("Image request status indicated failure".to_owned()
-			+ &res.status_code.to_string());
+		return Err(format!(
+			"Image request status indicated failure {:?} - {}",
+			url, res.status_code,
+		));
 	}
 
 	let data = res.into_bytes();
 
 	if let Err(err) = std::fs::write(path, &data) {
-		println!("Failed to save asset {}: {}", url.filename(), err);
+		println!("Failed to save asset {:?} - {}", url, err);
 	}
 
 	Ok(data)
-}
-
-fn fetch_image(url: &AssetUrl) -> Result<DynamicImage, String> {
-	use std::io::Cursor;
-
-	let data = fetch_asset(url)?;
-
-	let img = image::io::Reader::new(Cursor::new(data))
-		.with_guessed_format()
-		.map_err(|err| {
-			"Failed to parse fetched image data: ".to_owned() + &err.to_string()
-		})?
-		.decode()
-		.map_err(|err| {
-			"Failed to decode fetched image: ".to_owned() + &err.to_string()
-		})?;
-
-	Ok(img)
 }
