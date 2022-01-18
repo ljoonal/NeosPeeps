@@ -11,8 +11,6 @@ categories = ["games"]
 publish = false
 build = "build.rs"
 
-# https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 neos = { version = "0.2.0-alpha.2", features = ["api_client"] }
 
@@ -62,16 +60,5 @@ panic = "abort"
 [build-dependencies]
 winres = "0.1"
 
-# For now run `strip target/release/neos_peeps`
-#cargo-features = ["strip"]
-#strip = true               # Automatically strip symbols from the binary.
-
 [patch.crates-io]
-
 #neos = { path = "../neos_rs/" }
-
-# If you want to use the bleeding edge version of `egui`:
-# eframe = { git = "https://github.com/emilk/egui", branch = "master" }
-
-# If you fork https://github.com/emilk/egui you can test with:
-# eframe = { path = "../egui/eframe" }
