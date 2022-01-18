@@ -48,7 +48,13 @@ fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 }
 
 impl NeosPeepsApp {
-	fn friend_row(&self, ui: &mut Ui, frame: &epi::Frame, friend: &NeosFriend) {
+	fn friend_row(
+		&self,
+		ui: &mut Ui,
+		width: f32,
+		frame: &epi::Frame,
+		friend: &NeosFriend,
+	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			let pfp_url: &Option<AssetUrl> = get_pfp_url(friend);
 
@@ -68,9 +74,10 @@ impl NeosPeepsApp {
 		});
 
 		ui.with_layout(Layout::left_to_right(), |ui| {
+			ui.set_max_width((width - self.stored.row_height) / 2_f32);
+
 			ui.separator();
 			ui.vertical(|ui| {
-				ui.set_max_width(self.stored.row_height * 2_f32);
 				let (r, g, b) = friend.user_status.online_status.color();
 				ui.heading(&friend.friend_username);
 				ui.label(
@@ -84,6 +91,7 @@ impl NeosPeepsApp {
 		});
 
 		ui.with_layout(Layout::left_to_right(), |ui| {
+			ui.set_min_width(ui.available_width());
 			ui.separator();
 
 			let session = find_focused_session(&friend.id, &friend.user_status);
@@ -183,17 +191,15 @@ impl NeosPeepsApp {
 			self.stored.row_height,
 			friends_count,
 			|ui, row_range| {
-				ui.set_width(ui.available_width());
+				let width = ui.available_width();
 				Grid::new("friends_list")
 					.start_row(row_range.start)
-					.min_col_width(self.stored.row_height)
+					.min_row_height(self.stored.row_height)
 					.num_columns(3)
 					.show(ui, |ui| {
-						ui.set_height(self.stored.row_height);
-						ui.set_width(ui.available_width());
 						for row in row_range {
 							let friend = &friends[row];
-							self.friend_row(ui, frame, friend);
+							self.friend_row(ui, width, frame, friend);
 						}
 					});
 			},

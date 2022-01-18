@@ -1,12 +1,11 @@
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Grid, Label, Layout, RichText, ScrollArea, Ui, Vec2},
+	egui::{self, Grid, Label, Layout, RichText, ScrollArea, Ui, Vec2},
 	epi,
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	NeosSession,
-	NeosUserStatus,
+	NeosSession, NeosUserStatus,
 };
 
 impl NeosPeepsApp {
@@ -46,32 +45,32 @@ impl NeosPeepsApp {
 	fn session_row(
 		&self,
 		ui: &mut Ui,
+		width: f32,
 		frame: &epi::Frame,
 		session: &NeosSession,
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
+			egui::trace!(ui);
+			ui.set_max_width(width - (self.stored.row_height * 2.1));
 			ui.vertical(|ui| {
-				ui.set_max_width(self.stored.row_height * 2_f32);
+				egui::trace!(ui);
 				ui.heading(session.stripped_name());
 				ui.label("Host: ".to_owned() + &session.host_username);
-				ui.label(session.access_level.as_ref());
-			});
-		});
 
-		ui.with_layout(Layout::left_to_right(), |ui| {
-			ui.separator();
+				ui.horizontal(|ui| {
+					ui.label(session.access_level.as_ref());
+					ui.label(&format!(
+						"{}/{}",
+						&session.joined_users, &session.max_users
+					));
+				});
 
-			ui.vertical(|ui| {
-				ui.label(&format!(
-					"{}/{}",
-					&session.joined_users, &session.max_users
-				));
 				ui.label(RichText::new(session.tags.join(", ")).small());
 			});
 		});
 
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			ui.separator();
+			ui.set_min_width(ui.available_width());
 			if let Some(asset_url) = &session.thumbnail {
 				if let Some(thumbnail) =
 					self.runtime.load_texture(asset_url, frame)
@@ -96,18 +95,16 @@ impl NeosPeepsApp {
 			self.stored.row_height,
 			sessions_count,
 			|ui, row_range| {
-				ui.set_width(ui.available_width());
+				let width = ui.available_width();
 				Grid::new("sessions_list")
+					.striped(true)
 					.start_row(row_range.start)
 					.min_row_height(self.stored.row_height)
-					.min_col_width(self.stored.row_height)
-					.num_columns(3)
+					.num_columns(2)
 					.show(ui, |ui| {
-						ui.set_height(self.stored.row_height);
-						ui.set_width(ui.available_width());
 						for row in row_range {
 							let session = &sessions[row];
-							self.session_row(ui, frame, session);
+							self.session_row(ui, width, frame, session);
 						}
 					});
 			},
