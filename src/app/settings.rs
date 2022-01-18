@@ -4,12 +4,12 @@ use crate::data::Page;
 
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Slider, TextEdit, Ui},
+	egui::{Slider, Ui},
 	epi,
 };
 
 impl NeosPeepsApp {
-	pub fn settings_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+	pub fn settings_page(&mut self, ui: &mut Ui, _frame: &epi::Frame) {
 		ui.heading("Settings");
 
 		{

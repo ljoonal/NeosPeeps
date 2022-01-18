@@ -5,8 +5,7 @@ use eframe::{
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	NeosSession,
-	NeosUserStatus,
+	NeosSession, NeosUserStatus,
 };
 
 impl NeosPeepsApp {
@@ -43,8 +42,8 @@ impl NeosPeepsApp {
 		});
 	}
 
-	pub fn sessions_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		ui.heading("Coming soon!");
+	pub fn sessions_page(&mut self, ui: &mut Ui, _frame: &epi::Frame) {
+		ui.heading("Sessions");
 
 		let sessions = self.runtime.sessions.read().unwrap();
 
@@ -105,17 +104,4 @@ pub fn find_focused_session<'a>(
 			})
 			.is_some()
 	})
-}
-
-fn has_session_thumbnail(user_status: &NeosUserStatus, asset_id: &str) -> bool {
-	use rayon::prelude::*;
-
-	user_status
-		.active_sessions
-		.par_iter()
-		.find_any(|session| match &session.thumbnail {
-			Some(thumbnail) => thumbnail.id() == asset_id,
-			None => false,
-		})
-		.is_some()
 }

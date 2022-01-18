@@ -1,7 +1,6 @@
 //! The friends page of the app
 
 use super::{sessions::find_focused_session, NeosPeepsApp};
-use crate::image::TextureDetails;
 use eframe::{
 	egui::{Color32, Grid, Label, Layout, RichText, ScrollArea, Ui, Vec2},
 	epi,

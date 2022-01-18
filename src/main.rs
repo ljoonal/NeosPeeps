@@ -2,8 +2,10 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 #![warn(clippy::cargo)]
+// Not much can be done about it :/
+#![allow(clippy::multiple_crate_versions)]
 
-use std::path::{PathBuf, MAIN_SEPARATOR};
+use std::path::PathBuf;
 
 const USER_AGENT: &str = concat!(
 	env!("CARGO_PKG_NAME"),

@@ -1,21 +1,17 @@
+use crate::image::TextureDetails;
 use eframe::epi;
 use neos::{
 	api_client::{
-		AnyNeos,
-		NeosRequestUserSessionIdentifier,
-		NeosUnauthenticated,
+		AnyNeos, NeosRequestUserSessionIdentifier, NeosUnauthenticated,
 	},
-	AssetUrl,
-	NeosUserSession,
+	AssetUrl, NeosUserSession,
 };
 use serde::{Deserialize, Serialize};
 use std::{
 	collections::{HashMap, HashSet},
-	sync::{Arc, Mutex, RwLock},
-	time::{Duration, Instant, SystemTime},
+	sync::{Arc, RwLock},
+	time::{Duration, SystemTime},
 };
-
-use crate::image::TextureDetails;
 
 #[derive(Serialize, Deserialize)]
 pub struct Stored {
@@ -89,7 +85,7 @@ impl RuntimeOnly {
 				return Some(texture.clone());
 			}
 		} else {
-			self.start_retrieving_image(asset_url.to_owned(), frame.clone());
+			self.start_retrieving_image(asset_url.clone(), frame.clone());
 		}
 
 		None
@@ -100,7 +96,7 @@ impl RuntimeOnly {
 		let textures = self.textures.clone();
 		rayon::spawn(move || {
 			textures.write().unwrap().insert(asset_url.id().to_owned(), None);
-			match crate::image::retrieve_image(&asset_url) {
+			match crate::image::retrieve(&asset_url) {
 				Ok(image) => {
 					let (size, image) = crate::image::to_epi_format(&image);
 					textures.write().unwrap().insert(

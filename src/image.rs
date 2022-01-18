@@ -1,8 +1,4 @@
-use std::{
-	collections::HashMap,
-	path::PathBuf,
-	sync::{Arc, RwLock},
-};
+use std::path::PathBuf;
 
 use eframe::{
 	egui::{TextureId, Vec2},
@@ -10,8 +6,6 @@ use eframe::{
 };
 use image::{DynamicImage, GenericImageView};
 use neos::AssetUrl;
-
-use crate::{app::NeosPeepsApp, data::RuntimeOnly};
 
 pub struct TextureDetails {
 	pub id: TextureId,
@@ -54,7 +48,7 @@ impl Drop for TextureDetails {
 }
 
 /// This can block the whole thread for an API request, use with caution.
-pub fn retrieve_image(url: &AssetUrl) -> Result<DynamicImage, String> {
+pub fn retrieve(url: &AssetUrl) -> Result<DynamicImage, String> {
 	let path = get_path(url);
 
 	if url.ext() == &Some("webp".to_owned()) {

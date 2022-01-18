@@ -3,10 +3,7 @@ use crate::{
 	image::TextureDetails,
 };
 use eframe::{egui, epi};
-use std::{
-	sync::Arc,
-	time::{Instant, SystemTime},
-};
+use std::{sync::Arc, time::SystemTime};
 
 mod about;
 mod bar;
