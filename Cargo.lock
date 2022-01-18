@@ -969,8 +969,6 @@ checksum = "e1bcdd74c20ad5d95aacd60ef9ba40fdf77f767051040541df557b7a9b2a2121"
 [[package]]
 name = "neos"
 version = "0.2.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e85ea9ce9f306ef7320119050e14598e31a2dff09426d4bb58d33dbf3dd40e94"
 dependencies = [
  "chrono",
  "minreq",
@@ -983,6 +981,7 @@ dependencies = [
 name = "neos_peeps"
 version = "0.0.0-alpha.3"
 dependencies = [
+ "ahash",
  "chrono",
  "eframe",
  "image",

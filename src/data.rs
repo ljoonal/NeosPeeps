@@ -1,4 +1,5 @@
 use crate::image::TextureDetails;
+use ahash::RandomState;
 use eframe::epi;
 use neos::{
 	api_client::{
@@ -51,7 +52,8 @@ impl Default for Stored {
 }
 
 /// [`neos::AssetUrl`] ID's as keys.
-pub type TexturesMap = HashMap<String, Option<Arc<TextureDetails>>>;
+pub type TexturesMap =
+	HashMap<String, Option<Arc<TextureDetails>>, RandomState>;
 
 pub struct RuntimeOnly {
 	pub password: String,
@@ -63,16 +65,19 @@ pub struct RuntimeOnly {
 	pub sessions: Arc<RwLock<Vec<neos::NeosSession>>>,
 	pub last_background_refresh: Arc<RwLock<SystemTime>>,
 	textures: Arc<RwLock<TexturesMap>>,
-	used_textures: RwLock<HashSet<String>>,
+	used_textures: RwLock<HashSet<String, RandomState>>,
 }
 
 impl RuntimeOnly {
 	pub fn cull_textures(&self) {
-		let mut textures = self.textures.write().unwrap();
 		let used_textures =
 			std::mem::take(&mut *self.used_textures.write().unwrap());
-
-		textures.retain(|id, _| used_textures.contains(id));
+		// Not having the same write locks at the same time is not ideal but
+		// better for performance most likely.
+		self.textures
+			.write()
+			.unwrap()
+			.retain(|id, _| used_textures.contains(id));
 	}
 	pub fn load_texture(
 		&self,
@@ -94,50 +99,58 @@ impl RuntimeOnly {
 	/// Starts a thread to start retrieving the image.
 	fn start_retrieving_image(&self, asset_url: AssetUrl, frame: epi::Frame) {
 		let textures = self.textures.clone();
-		rayon::spawn(move || {
+		rayon::spawn_fifo(move || {
 			textures.write().unwrap().insert(asset_url.id().to_owned(), None);
 			match crate::image::retrieve(&asset_url) {
 				Ok(image) => {
 					let (size, image) = crate::image::to_epi_format(&image);
-					textures.write().unwrap().insert(
-						asset_url.id().to_owned(),
-						Some(Arc::new(TextureDetails::new(
-							frame.clone(),
-							size,
-							image,
-						))),
-					);
+					let val = Some(Arc::new(TextureDetails::new(
+						frame.clone(),
+						size,
+						image,
+					)));
+					textures
+						.write()
+						.unwrap()
+						.insert(asset_url.id().to_owned(), val);
 					frame.request_repaint();
 				}
 				Err(err) => {
 					textures.write().unwrap().remove(asset_url.id());
-					println!(
-						"Failed to fetch the profile picture `{}`: {}",
-						&asset_url.to_string(),
-						err
-					);
+					println!("Failed to fetch image: {}", err);
 				}
 			}
 		});
 	}
 }
 
-pub enum LoadingState {
+#[derive(Debug)]
+pub enum LoginOperationState {
 	None,
-	FetchingFriends,
-	FetchingSessions,
 	LoggingIn,
 	LoggingOut,
 }
 
+impl Default for LoginOperationState {
+	fn default() -> Self {
+		Self::None
+	}
+}
+
+#[derive(Default, Debug)]
+pub struct LoadingState {
+	pub fetching_friends: bool,
+	pub fetching_sessions: bool,
+	pub login: LoginOperationState,
+}
+
 impl LoadingState {
 	pub const fn is_loading(&self) -> bool {
-		!matches!(self, LoadingState::None)
+		self.fetching_friends || self.fetching_sessions || self.login_op()
 	}
 
 	pub const fn login_op(&self) -> bool {
-		matches!(self, LoadingState::LoggingIn)
-			|| matches!(self, LoadingState::LoggingOut)
+		!matches!(self.login, LoginOperationState::None)
 	}
 }
 
@@ -148,7 +161,7 @@ impl Default for RuntimeOnly {
 		Self {
 			totp: String::default(),
 			password: String::default(),
-			loading: Arc::new(RwLock::new(LoadingState::None)),
+			loading: Arc::default(),
 			default_profile_picture: Option::default(),
 			neos_api: Arc::new(RwLock::new(AnyNeos::Unauthenticated(api))),
 			friends: Arc::default(),

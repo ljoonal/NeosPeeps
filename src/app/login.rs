@@ -30,7 +30,7 @@ impl NeosPeepsApp {
 			if loading.login_op() {
 				return; // Only allow one login op at once
 			}
-			*loading = crate::data::LoadingState::LoggingIn;
+			loading.login = crate::data::LoginOperationState::LoggingIn;
 		}
 		frame.request_repaint();
 
@@ -59,7 +59,8 @@ impl NeosPeepsApp {
 				}
 			}
 
-			*loading.write().unwrap() = crate::data::LoadingState::None;
+			loading.write().unwrap().login =
+				crate::data::LoginOperationState::None;
 			frame.request_repaint();
 		});
 	}
@@ -74,7 +75,7 @@ impl NeosPeepsApp {
 			if loading.login_op() {
 				return;
 			}
-			*loading = crate::data::LoadingState::LoggingIn;
+			loading.login = crate::data::LoginOperationState::LoggingIn;
 		}
 		frame.request_repaint();
 
@@ -98,7 +99,8 @@ impl NeosPeepsApp {
 				}
 			}
 
-			*loading.write().unwrap() = crate::data::LoadingState::None;
+			loading.write().unwrap().login =
+				crate::data::LoginOperationState::None;
 			frame.request_repaint();
 		});
 	}
@@ -109,7 +111,7 @@ impl NeosPeepsApp {
 			if loading.login_op() {
 				return;
 			}
-			*loading = crate::data::LoadingState::LoggingOut;
+			loading.login = crate::data::LoginOperationState::LoggingOut;
 		}
 		frame.request_repaint();
 
@@ -126,7 +128,8 @@ impl NeosPeepsApp {
 
 			*neos_api_arc.write().unwrap() = new_api.into();
 
-			*loading.write().unwrap() = crate::data::LoadingState::None;
+			loading.write().unwrap().login =
+				crate::data::LoginOperationState::None;
 			frame.request_repaint();
 		});
 	}

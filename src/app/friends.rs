@@ -142,10 +142,10 @@ impl NeosPeepsApp {
 	pub fn refresh_friends(&mut self, frame: epi::Frame) {
 		{
 			let mut loading = self.runtime.loading.write().unwrap();
-			if loading.is_loading() {
+			if loading.fetching_friends || loading.login_op() {
 				return;
 			}
-			*loading = crate::data::LoadingState::FetchingFriends;
+			loading.fetching_friends = true;
 		}
 		frame.request_repaint();
 
@@ -167,20 +167,21 @@ impl NeosPeepsApp {
 				}
 			}
 
-			*loading.write().unwrap() = crate::data::LoadingState::None;
+			loading.write().unwrap().fetching_friends = false;
 			frame.request_repaint();
 		});
 	}
 
 	pub fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		ui.heading(&("Peeps of ".to_owned() + self.stored.identifier.inner()));
-
 		let friends = self.runtime.friends.read().unwrap();
+		let friends_count = friends.len();
+
+		ui.heading(friends_count.to_string() + " Peeps");
 
 		ScrollArea::both().show_rows(
 			ui,
 			self.stored.row_height,
-			friends.len(),
+			friends_count,
 			|ui, row_range| {
 				ui.set_width(ui.available_width());
 				Grid::new("friends_list")
