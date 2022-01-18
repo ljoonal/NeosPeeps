@@ -20,6 +20,7 @@ This is mainly meant to prevent anyone from commercializing this application.
 In a short and non-legally binding way:
 AGPL means that if you make changes and distribute the software, you will also have to provide the source code if asked for it.
 In addition you'll need to provide the source code for any remote clients of the application if they ask for it.
+You could technically sell it, but you'd still need to give out the source code if asked for it as well as build instructions, at which point, why would anyone pay you for it if they can just build it for free?
 
 ## Building
 
