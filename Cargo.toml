@@ -53,6 +53,10 @@ features = [
 	"gif",
 ]
 
+[profile.dev.package."*"]
+# Framerate tanks when loading images without this
+opt-level = 2
+
 [profile.release]
 # Optimizing mostly for size.
 opt-level = "s"
