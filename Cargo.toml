@@ -1,6 +1,6 @@
 [package]
 name = "neos_peeps"
-version = "0.0.0-alpha.3"
+version = "0.0.1"
 edition = "2021"
 authors = ["ljoonal"]
 description = "An application to view your neos friends."
@@ -12,7 +12,7 @@ publish = false
 build = "build.rs"
 
 [dependencies]
-neos = { version = "0.2.0-alpha.2", features = ["api_client"] }
+neos = { version = "0.2.0-alpha.3", features = ["api_client"] }
 
 eframe = { version = "0.16", default-features = false, features = [
 	"egui_glow",
@@ -68,4 +68,4 @@ panic = "abort"
 winres = "0.1"
 
 [patch.crates-io]
-neos = { path = "../neos_rs/" }
+#neos = { path = "../neos_rs/" }

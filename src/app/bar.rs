@@ -39,7 +39,6 @@ impl NeosPeepsApp {
 						ui.close_menu();
 					}
 
-					#[cfg(debug_assertions)]
 					if ui
 						.add_enabled(
 							!matches!(self.stored.page, Page::Sessions),

@@ -968,7 +968,9 @@ checksum = "e1bcdd74c20ad5d95aacd60ef9ba40fdf77f767051040541df557b7a9b2a2121"
 
 [[package]]
 name = "neos"
-version = "0.2.0-alpha.2"
+version = "0.2.0-alpha.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41156f44a46f33716a97eff00f097ee10d469db735496500b995093b8253e429"
 dependencies = [
  "chrono",
  "minreq",
@@ -979,7 +981,7 @@ dependencies = [
 
 [[package]]
 name = "neos_peeps"
-version = "0.0.0-alpha.3"
+version = "0.0.1"
 dependencies = [
  "ahash",
  "chrono",
@@ -1688,9 +1690,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "wasi"
-version = "0.10.2+wasi-snapshot-preview1"
+version = "0.10.3+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd6fbd9a79829dd1ad0cc20627bf1ed606756a7f77edff7b66b7064f9cb327c6"
+checksum = "46a2e384a3f170b0c7543787a91411175b71afd56ba4d3a0ae5678d4e2243c0e"
 
 [[package]]
 name = "wasm-bindgen"
