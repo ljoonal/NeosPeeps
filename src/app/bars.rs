@@ -2,7 +2,7 @@ use crate::data::Page;
 
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Button, TextEdit, Ui},
+	egui::{Button, Response, TextEdit, Ui},
 	epi,
 };
 
@@ -89,15 +89,19 @@ impl NeosPeepsApp {
 		});
 	}
 
-	pub fn search_bar(&mut self, ui: &mut Ui) {
+	pub fn search_bar(&mut self, ui: &mut Ui) -> Response {
 		let is_loading = self.runtime.loading.is_loading();
+		let mut resp = None;
 		ui.horizontal(|ui| {
-			ui.add_enabled(
-				!is_loading,
-				TextEdit::singleline(&mut self.stored.filter_search)
-					.hint_text("Filter"),
+			resp = Some(
+				ui.add_enabled(
+					!is_loading,
+					TextEdit::singleline(&mut self.stored.filter_search)
+						.hint_text("Filter"),
+				),
 			);
 			ui.checkbox(&mut self.stored.filter_friends_only, "Friends only?");
 		});
+		resp.unwrap()
 	}
 }

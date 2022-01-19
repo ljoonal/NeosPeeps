@@ -2,7 +2,9 @@ use std::{rc::Rc, sync::Arc};
 
 use crossbeam::channel::{bounded, unbounded, Receiver, Sender, TryIter};
 use eframe::epi;
-use neos::{api_client::AnyNeos, NeosFriend, NeosSession, NeosUserSession};
+use neos::{
+	api_client::AnyNeos, NeosFriend, NeosSession, NeosUser, NeosUserSession,
+};
 
 use crate::{
 	app::NeosPeepsApp, data::LoginOperationState, image::TextureDetails,
@@ -12,6 +14,7 @@ type ImageMsg = (String, Option<TextureDetails>);
 
 pub struct Channels {
 	friends: (Sender<Vec<NeosFriend>>, Receiver<Vec<NeosFriend>>),
+	users: (Sender<Vec<NeosUser>>, Receiver<Vec<NeosUser>>),
 	sessions: (Sender<Vec<NeosSession>>, Receiver<Vec<NeosSession>>),
 	auth: (Sender<Arc<AnyNeos>>, Receiver<Arc<AnyNeos>>),
 	user_session:
@@ -23,6 +26,7 @@ impl Default for Channels {
 	fn default() -> Self {
 		Self {
 			friends: bounded(1),
+			users: unbounded(),
 			auth: bounded(1),
 			sessions: bounded(1),
 			user_session: bounded(1),
@@ -35,6 +39,9 @@ impl Default for Channels {
 impl Channels {
 	pub fn friends_sender(&self) -> Sender<Vec<NeosFriend>> {
 		self.friends.0.clone()
+	}
+	pub fn users_sender(&self) -> Sender<Vec<NeosUser>> {
+		self.users.0.clone()
 	}
 	pub fn sessions_sender(&self) -> Sender<Vec<NeosSession>> {
 		self.sessions.0.clone()
@@ -51,6 +58,10 @@ impl Channels {
 
 	pub fn try_recv_friends(&self) -> Option<Vec<NeosFriend>> {
 		self.friends.1.try_recv().ok()
+	}
+
+	pub fn try_recv_users(&self) -> Option<Vec<NeosUser>> {
+		self.users.1.try_recv().ok()
 	}
 
 	pub fn try_recv_sessions(&self) -> Option<Vec<NeosSession>> {
@@ -75,9 +86,16 @@ impl NeosPeepsApp {
 	/// Tries to receive messages from other threads
 	pub fn try_recv(&mut self, frame: &epi::Frame) {
 		let mut repaint = false;
+
 		if let Some(friends) = self.channels.try_recv_friends() {
 			self.runtime.friends = friends;
 			self.runtime.loading.fetching_friends = false;
+			repaint = true;
+		}
+
+		if let Some(users) = self.channels.try_recv_users() {
+			self.runtime.users = users;
+			self.runtime.loading.fetching_users = false;
 			repaint = true;
 		}
 

@@ -67,6 +67,8 @@ pub struct RuntimeOnly {
 	pub default_profile_picture: Option<Rc<TextureDetails>>,
 	pub neos_api: Arc<AnyNeos>,
 	pub friends: Vec<neos::NeosFriend>,
+	/// Searched users.
+	pub users: Vec<neos::NeosUser>,
 	pub sessions: Vec<neos::NeosSession>,
 	pub last_background_refresh: SystemTime,
 	pub textures: TexturesMap,
@@ -147,13 +149,17 @@ impl Default for LoginOperationState {
 #[derive(Default, Debug)]
 pub struct LoadingState {
 	pub fetching_friends: bool,
+	pub fetching_users: bool,
 	pub fetching_sessions: bool,
 	pub login: LoginOperationState,
 }
 
 impl LoadingState {
 	pub const fn is_loading(&self) -> bool {
-		self.fetching_friends || self.fetching_sessions || self.login_op()
+		self.fetching_friends
+			|| self.fetching_users
+			|| self.fetching_sessions
+			|| self.login_op()
 	}
 
 	pub const fn login_op(&self) -> bool {
@@ -172,6 +178,7 @@ impl Default for RuntimeOnly {
 			default_profile_picture: Option::default(),
 			neos_api: Arc::new(AnyNeos::Unauthenticated(api)),
 			friends: Vec::default(),
+			users: Vec::default(),
 			sessions: Vec::default(),
 			last_background_refresh: SystemTime::UNIX_EPOCH,
 			textures: HashMap::default(),
