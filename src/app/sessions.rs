@@ -1,6 +1,6 @@
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{self, Grid, Layout, RichText, ScrollArea, Ui},
+	egui::{Grid, Layout, RichText, ScrollArea, Ui},
 	epi,
 };
 use neos::{
@@ -50,7 +50,6 @@ impl NeosPeepsApp {
 		session: &NeosSession,
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			egui::trace!(ui);
 			let spacing_width = ui.style().spacing.item_spacing.x;
 			ui.set_width(
 				self.stored.row_height.max(
@@ -58,7 +57,6 @@ impl NeosPeepsApp {
 				),
 			);
 			ui.vertical(|ui| {
-				egui::trace!(ui);
 				ui.heading(session.stripped_name());
 				ui.label("Host: ".to_owned() + &session.host_username);
 
