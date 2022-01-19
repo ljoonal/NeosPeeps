@@ -176,8 +176,37 @@ impl NeosPeepsApp {
 		ui.end_row();
 	}
 
-	pub fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		let friends_count = self.runtime.friends.len();
+	pub fn peeps_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+		if self.stored.filter_friends_only {
+			self.friends_page(ui, frame);
+		} else {
+			self.users_page(ui, frame);
+		}
+	}
+
+	fn users_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+		ui.heading("TODO");
+	}
+
+	fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+		use rayon::prelude::*;
+
+		self.search_bar(ui);
+
+		let friends: Vec<&NeosFriend> = self
+			.runtime
+			.friends
+			.par_iter()
+			.filter(|friend| {
+				self.stored.filter_search.is_empty()
+					|| friend
+						.friend_username
+						.to_lowercase()
+						.contains(&self.stored.filter_search)
+			})
+			.collect();
+
+		let friends_count = friends.len();
 
 		ui.heading(friends_count.to_string() + " Peeps");
 
@@ -193,7 +222,7 @@ impl NeosPeepsApp {
 					.num_columns(3)
 					.show(ui, |ui| {
 						for row in row_range {
-							let friend = &self.runtime.friends[row];
+							let friend = friends[row];
 							self.friend_row(ui, width, frame, friend);
 						}
 					});

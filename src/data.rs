@@ -23,19 +23,21 @@ pub struct Stored {
 	pub refresh_frequency: Duration,
 	pub page: Page,
 	pub row_height: f32,
+	pub filter_friends_only: bool,
+	pub filter_search: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum Page {
 	About,
-	Friends,
+	Peeps,
 	Sessions,
 	Settings,
 }
 
 impl Default for Page {
 	fn default() -> Self {
-		Self::Friends
+		Self::Peeps
 	}
 }
 
@@ -49,6 +51,8 @@ impl Default for Stored {
 			refresh_frequency: Duration::from_secs(120),
 			page: Page::default(),
 			row_height: 150_f32,
+			filter_friends_only: true,
+			filter_search: String::new(),
 		}
 	}
 }

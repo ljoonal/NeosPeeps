@@ -2,7 +2,7 @@ use crate::data::Page;
 
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Button, Ui},
+	egui::{Button, TextEdit, Ui},
 	epi,
 };
 
@@ -29,12 +29,12 @@ impl NeosPeepsApp {
 				if !is_logging_in && is_authenticated {
 					if ui
 						.add_enabled(
-							!matches!(self.stored.page, Page::Friends),
-							Button::new("Friends"),
+							!matches!(self.stored.page, Page::Peeps),
+							Button::new("Peeps"),
 						)
 						.clicked()
 					{
-						self.stored.page = Page::Friends;
+						self.stored.page = Page::Peeps;
 						ui.close_menu();
 					}
 
@@ -86,6 +86,18 @@ impl NeosPeepsApp {
 			if ui.button("Quit").clicked() {
 				frame.quit();
 			}
+		});
+	}
+
+	pub fn search_bar(&mut self, ui: &mut Ui) {
+		let is_loading = self.runtime.loading.is_loading();
+		ui.horizontal(|ui| {
+			ui.add_enabled(
+				!is_loading,
+				TextEdit::singleline(&mut self.stored.filter_search)
+					.hint_text("Filter"),
+			);
+			ui.checkbox(&mut self.stored.filter_friends_only, "Friends only?");
 		});
 	}
 }

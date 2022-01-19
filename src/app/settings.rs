@@ -34,7 +34,7 @@ impl NeosPeepsApp {
 		);
 
 		if ui.button("Back").clicked() {
-			self.stored.page = Page::Friends;
+			self.stored.page = Page::Peeps;
 		}
 	}
 }

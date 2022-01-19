@@ -53,7 +53,9 @@ impl NeosPeepsApp {
 			egui::trace!(ui);
 			let spacing_width = ui.style().spacing.item_spacing.x;
 			ui.set_width(
-				width - (self.stored.row_height * 2_f32) - spacing_width,
+				self.stored.row_height.max(
+					width - (self.stored.row_height * 2_f32) - spacing_width,
+				),
 			);
 			ui.vertical(|ui| {
 				egui::trace!(ui);
@@ -86,7 +88,28 @@ impl NeosPeepsApp {
 	}
 
 	pub fn sessions_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		let sessions_count = self.runtime.sessions.len();
+		use rayon::prelude::*;
+
+		self.search_bar(ui);
+
+		let sessions: Vec<&NeosSession> = self
+			.runtime
+			.sessions
+			.par_iter()
+			.filter(|session| {
+				self.stored.filter_search.is_empty()
+					|| session
+						.host_username
+						.to_lowercase()
+						.contains(&self.stored.filter_search)
+					|| session
+						.stripped_name()
+						.to_lowercase()
+						.contains(&self.stored.filter_search)
+			})
+			.collect();
+
+		let sessions_count = sessions.len();
 
 		ui.heading(sessions_count.to_string() + " Sessions");
 
@@ -103,7 +126,7 @@ impl NeosPeepsApp {
 					.num_columns(2)
 					.show(ui, |ui| {
 						for row in row_range {
-							let session = &self.runtime.sessions[row];
+							let session = sessions[row];
 							self.session_row(ui, width, frame, session);
 						}
 					});

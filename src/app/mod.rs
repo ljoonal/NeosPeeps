@@ -7,9 +7,9 @@ use eframe::{egui, epi};
 use std::{rc::Rc, time::SystemTime};
 
 mod about;
-mod bar;
-mod friends;
+mod bars;
 mod login;
+mod peeps;
 mod sessions;
 mod settings;
 
@@ -114,7 +114,7 @@ impl epi::App for NeosPeepsApp {
 						if is_authenticated {
 							match self.stored.page {
 								Page::About => self.about_page(ui),
-								Page::Friends => self.friends_page(ui, frame),
+								Page::Peeps => self.peeps_page(ui, frame),
 								Page::Sessions => self.sessions_page(ui, frame),
 								Page::Settings => self.settings_page(ui, frame),
 							}
