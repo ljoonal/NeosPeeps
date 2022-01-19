@@ -5,7 +5,10 @@ use eframe::{
 	egui::{Color32, Grid, Label, Layout, RichText, ScrollArea, Ui, Vec2},
 	epi,
 };
-use neos::{api_client::AnyNeos, AssetUrl, NeosFriend, NeosUserOnlineStatus};
+use neos::{
+	api_client::AnyNeos, AssetUrl, NeosFriend, NeosSession,
+	NeosUserOnlineStatus,
+};
 use std::cmp::Ordering;
 
 fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
@@ -79,6 +82,12 @@ impl NeosPeepsApp {
 		});
 	}
 
+	fn if_four_col(&self, width: f32) -> bool {
+		const COL_MIN_WIDTH: f32 = 300.;
+
+		(width - self.stored.row_height * 2_f32) / 2_f32 > COL_MIN_WIDTH
+	}
+
 	fn friend_row(
 		&self,
 		ui: &mut Ui,
@@ -104,8 +113,28 @@ impl NeosPeepsApp {
 			);
 		});
 
+		let style = ui.style();
+
+		let width_for_cols = self.stored.row_height.max(
+			if self.if_four_col(width) {
+				// Spacing + separators (6.0 by default)
+				let spacing_width =
+					style.spacing.item_spacing.x.mul_add(3_f32, 6.0 * 2_f32);
+				width
+					- self.stored.row_height
+					- (self.stored.row_height * 2_f32)
+					- (spacing_width * 3_f32)
+			} else {
+				width - self.stored.row_height
+			} / 2_f32,
+		);
+
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			ui.set_max_width((width - self.stored.row_height) / 2_f32);
+			if self.if_four_col(width) {
+				ui.set_width(self.stored.row_height.max(width_for_cols));
+			} else {
+				ui.set_max_width(width_for_cols);
+			}
 
 			ui.separator();
 			ui.vertical(|ui| {
@@ -121,11 +150,15 @@ impl NeosPeepsApp {
 			});
 		});
 
-		ui.with_layout(Layout::left_to_right(), |ui| {
-			ui.set_min_width(ui.available_width());
-			ui.separator();
+		let session = find_focused_session(&friend.id, &friend.user_status);
 
-			let session = find_focused_session(&friend.id, &friend.user_status);
+		ui.with_layout(Layout::left_to_right(), |ui| {
+			ui.set_width(if self.if_four_col(width) {
+				self.stored.row_height.max(width_for_cols)
+			} else {
+				ui.available_width()
+			});
+			ui.separator();
 
 			ui.vertical(|ui| {
 				if let Some(session) = session {
@@ -154,24 +187,11 @@ impl NeosPeepsApp {
 					);
 				}
 			});
-
-			ui.vertical(|ui| {
-				if let Some(session) = session {
-					if let Some(thumbnail) = &session.thumbnail {
-						let session_pics = self.load_texture(thumbnail, frame);
-
-						if let Some(session_pic) = session_pics {
-							let scaling =
-								ui.available_height() / session_pic.size.y;
-							ui.image(
-								session_pic.id,
-								session_pic.size * scaling,
-							);
-						}
-					}
-				}
-			});
 		});
+
+		if self.if_four_col(width) {
+			self.friend_session_thumbnail(ui, frame, session);
+		}
 
 		ui.end_row();
 	}
@@ -203,6 +223,11 @@ impl NeosPeepsApp {
 						.friend_username
 						.to_lowercase()
 						.contains(&self.stored.filter_search)
+					|| friend
+						.id
+						.as_ref()
+						.to_lowercase()
+						.contains(&self.stored.filter_search)
 			})
 			.collect();
 
@@ -219,7 +244,7 @@ impl NeosPeepsApp {
 				Grid::new("friends_list")
 					.start_row(row_range.start)
 					.min_row_height(self.stored.row_height)
-					.num_columns(3)
+					.num_columns(if self.if_four_col(width) { 4 } else { 3 })
 					.show(ui, |ui| {
 						for row in row_range {
 							let friend = friends[row];
@@ -229,7 +254,35 @@ impl NeosPeepsApp {
 			},
 		);
 	}
+
+	fn friend_session_thumbnail(
+		&self,
+		ui: &mut Ui,
+		frame: &epi::Frame,
+		session: Option<&NeosSession>,
+	) {
+		ui.with_layout(Layout::left_to_right(), |ui| {
+			ui.set_min_width(ui.available_width());
+			ui.vertical(|ui| {
+				if let Some(session) = session {
+					if let Some(thumbnail) = &session.thumbnail {
+						let session_pics = self.load_texture(thumbnail, frame);
+
+						if let Some(session_pic) = session_pics {
+							let scaling =
+								ui.available_height() / session_pic.size.y;
+							ui.image(
+								session_pic.id,
+								session_pic.size * scaling,
+							);
+						}
+					}
+				}
+			});
+		});
+	}
 }
+
 pub const fn get_pfp_url(friend: &NeosFriend) -> &Option<AssetUrl> {
 	match &friend.profile {
 		Some(profile) => &profile.icon_url,
