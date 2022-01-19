@@ -271,9 +271,15 @@ impl NeosPeepsApp {
 						ui.label(RichText::new("B").color(Color32::KHAKI))
 							.on_hover_text("Ban evasion disabled");
 					}
-					ui.heading(&user.username);
+					ui.add(
+						Label::new(RichText::new(&user.username).heading())
+							.wrap(true),
+					);
 				});
-				ui.label(RichText::new(user.id.as_ref()).monospace());
+				ui.add(
+					Label::new(RichText::new(user.id.as_ref()).monospace())
+						.wrap(true),
+				);
 				ui.label(
 					RichText::new(
 						&user
@@ -296,47 +302,7 @@ impl NeosPeepsApp {
 			ui.separator();
 
 			ui.vertical(|ui| {
-				ui.label("Ban status");
-				let mut any_bans = false;
-
-				if let Some(ban) = &user.public_ban_type {
-					any_bans = true;
-					ui.label("Ban type: ".to_owned() + ban.as_ref());
-				}
-				if let Some(acc_ban) = &user.account_ban_expiration {
-					any_bans = true;
-					ui.label(
-						"Account banned until: ".to_owned()
-							+ &acc_ban.to_string(),
-					);
-				}
-				if let Some(acc_ban) = &user.mute_ban_expiration {
-					any_bans = true;
-					ui.label("Muted until: ".to_owned() + &acc_ban.to_string());
-				}
-				if let Some(acc_ban) = &user.public_ban_expiration {
-					any_bans = true;
-					ui.label(
-						"Public ban until: ".to_owned() + &acc_ban.to_string(),
-					);
-				}
-				if let Some(acc_ban) = &user.listing_ban_expiration {
-					any_bans = true;
-					ui.label(
-						"Listing ban until: ".to_owned() + &acc_ban.to_string(),
-					);
-				}
-				if let Some(acc_ban) = &user.spectator_ban_expiration {
-					any_bans = true;
-					ui.label(
-						"Spectator ban until: ".to_owned()
-							+ &acc_ban.to_string(),
-					);
-				}
-
-				if !any_bans {
-					ui.label("No bans :)");
-				}
+				user_bans(ui, user);
 			});
 		});
 
@@ -463,8 +429,9 @@ impl NeosPeepsApp {
 						let session_pics = self.load_texture(thumbnail, frame);
 
 						if let Some(session_pic) = session_pics {
-							let scaling =
-								ui.available_height() / session_pic.size.y;
+							let scaling = (ui.available_height()
+								/ session_pic.size.y)
+								.min(ui.available_width() / session_pic.size.x);
 							ui.image(
 								session_pic.id,
 								session_pic.size * scaling,
@@ -474,6 +441,40 @@ impl NeosPeepsApp {
 				}
 			});
 		});
+	}
+}
+
+fn user_bans(ui: &mut Ui, user: &NeosUser) {
+	ui.label("Ban status");
+	let mut any_bans = false;
+
+	if let Some(ban) = &user.public_ban_type {
+		any_bans = true;
+		ui.label("Ban type: ".to_owned() + ban.as_ref());
+	}
+	if let Some(acc_ban) = &user.account_ban_expiration {
+		any_bans = true;
+		ui.label("Account banned until: ".to_owned() + &acc_ban.to_string());
+	}
+	if let Some(acc_ban) = &user.mute_ban_expiration {
+		any_bans = true;
+		ui.label("Muted until: ".to_owned() + &acc_ban.to_string());
+	}
+	if let Some(acc_ban) = &user.public_ban_expiration {
+		any_bans = true;
+		ui.label("Public ban until: ".to_owned() + &acc_ban.to_string());
+	}
+	if let Some(acc_ban) = &user.listing_ban_expiration {
+		any_bans = true;
+		ui.label("Listing ban until: ".to_owned() + &acc_ban.to_string());
+	}
+	if let Some(acc_ban) = &user.spectator_ban_expiration {
+		any_bans = true;
+		ui.label("Spectator ban until: ".to_owned() + &acc_ban.to_string());
+	}
+
+	if !any_bans {
+		ui.label("No bans :)");
 	}
 }
 

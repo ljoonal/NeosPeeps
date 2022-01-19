@@ -1,24 +1,29 @@
+use std::cmp::Ordering;
+
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Grid, Layout, RichText, ScrollArea, Ui},
+	egui::{
+		text::LayoutJob, Align, Color32, Grid, Label, Layout, RichText,
+		ScrollArea, TextFormat, Ui,
+	},
 	epi,
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	NeosSession, NeosUserStatus,
+	NeosSession, NeosSessionUser, NeosUserStatus,
 };
 
 impl NeosPeepsApp {
 	/// Refreshes sessions in a background thread
 	pub fn refresh_sessions(&mut self, frame: &epi::Frame) {
+		use rayon::prelude::*;
+
+		if self.runtime.loading.fetching_sessions
+			|| self.runtime.loading.login_op()
 		{
-			if self.runtime.loading.fetching_sessions
-				|| self.runtime.loading.login_op()
-			{
-				return;
-			}
-			self.runtime.loading.fetching_sessions = true;
+			return;
 		}
+		self.runtime.loading.fetching_sessions = true;
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
@@ -26,7 +31,10 @@ impl NeosPeepsApp {
 		rayon::spawn(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_sessions() {
-					Ok(sessions) => {
+					Ok(mut sessions) => {
+						sessions.par_sort_by(|s1, s2| {
+							s1.active_users.cmp(&s2.active_users).reverse()
+						});
 						if let Err(err) = sessions_sender.send(sessions) {
 							println!(
 								"Failed to send sessions to main thread! {}",
@@ -49,40 +57,56 @@ impl NeosPeepsApp {
 		frame: &epi::Frame,
 		session: &NeosSession,
 	) {
-		ui.with_layout(Layout::left_to_right(), |ui| {
+		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			let spacing_width = ui.style().spacing.item_spacing.x;
 			ui.set_width(
 				self.stored.row_height.max(
 					width - (self.stored.row_height * 2_f32) - spacing_width,
 				),
 			);
-			ui.vertical(|ui| {
-				ui.horizontal(|ui| {
-					ui.heading(session.stripped_name());
-					ui.label(
-						RichText::new(&format!(
-							"{}/{}",
-							&session.joined_users, &session.max_users
-						))
-						.strong(),
+
+			ui.horizontal(|ui| {
+				ui.add(
+					Label::new(
+						RichText::new(session.stripped_name()).heading(),
 					)
-				});
+					.wrap(true),
+				);
+				ui.label(
+					RichText::new(&format!(
+						"{}/{}/{}",
+						&session.active_users,
+						&session.joined_users,
+						&session.max_users
+					))
+					.strong(),
+				);
+			});
 
-				ui.horizontal(|ui| {
-					ui.label(session.access_level.as_ref());
-					ui.label("|");
-					ui.label("Host: ".to_owned() + &session.host_username);
-				});
+			ui.horizontal(|ui| {
+				ui.label(session.access_level.as_ref());
+				ui.label("|");
+				ui.add(
+					Label::new("Host: ".to_owned() + &session.host_username)
+						.wrap(true),
+				);
+			});
 
+			ui.horizontal_wrapped(|ui| {
+				self.session_users(ui, &session.session_users);
+			});
+			ui.horizontal_wrapped(|ui| {
+				ui.label("Tags:");
 				ui.label(RichText::new(session.tags.join(", ")).small());
 			});
 		});
 
-		ui.with_layout(Layout::left_to_right(), |ui| {
+		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			ui.set_min_width(ui.available_width());
 			if let Some(asset_url) = &session.thumbnail {
 				if let Some(thumbnail) = self.load_texture(asset_url, frame) {
-					let scaling = ui.available_height() / thumbnail.size.y;
+					let scaling = (ui.available_height() / thumbnail.size.y)
+						.min(ui.available_width() / thumbnail.size.x);
 					ui.image(thumbnail.id, thumbnail.size * scaling);
 				}
 			}
@@ -144,23 +168,47 @@ impl NeosPeepsApp {
 			},
 		);
 	}
-}
 
-/*
-pub fn load_all_user_session_thumbnails(
-	sessions: &[NeosSession],
-	pics: &Arc<RwLock<TexturesMap>>,
-	frame: &epi::Frame,
-) {
-	use rayon::prelude::*;
+	fn session_users(&self, ui: &mut Ui, users: &[NeosSessionUser]) {
+		use rayon::prelude::*;
 
-	sessions.par_iter().for_each(|session| {
-		if let Some(url) = &session.thumbnail {
-			self.load_texture(url, pics.clone(), frame);
+		ui.label("Users:");
+
+		// TODO: Probably possible to do with .par_iter
+		for user in users {
+			let is_friend = self
+				.runtime
+				.friends
+				.par_iter()
+				.find_any(|fren| fren.friend_username == user.username)
+				.is_some();
+
+			let text = RichText::new(&user.username).color(
+				match (is_friend, user.is_present) {
+					(true, true) => Color32::LIGHT_GREEN,
+					(true, false) => Color32::GREEN,
+					(false, true) => {
+						ui.style()
+							.visuals
+							.widgets
+							.noninteractive
+							.fg_stroke
+							.color
+					}
+					(false, false) => Color32::GRAY,
+				},
+			);
+
+			ui.label(text).on_hover_text(
+				match &user.user_id {
+					Some(id) => id.as_ref().to_owned() + " is in ",
+					None => "User is in ".to_owned(),
+				} + user.output_device.as_ref()
+					+ " mode",
+			);
 		}
-	});
+	}
 }
-*/
 
 pub fn find_focused_session<'a>(
 	id: &neos::id::User,

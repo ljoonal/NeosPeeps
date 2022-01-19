@@ -4,7 +4,7 @@ use crate::data::Page;
 
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Slider, Ui},
+	egui::{global_dark_light_mode_switch, Slider, Ui},
 	epi,
 };
 
