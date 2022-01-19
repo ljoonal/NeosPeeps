@@ -3,9 +3,12 @@ use ahash::RandomState;
 use eframe::epi;
 use neos::{
 	api_client::{
-		AnyNeos, NeosRequestUserSessionIdentifier, NeosUnauthenticated,
+		AnyNeos,
+		NeosRequestUserSessionIdentifier,
+		NeosUnauthenticated,
 	},
-	AssetUrl, NeosUserSession,
+	AssetUrl,
+	NeosUserSession,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -16,7 +19,7 @@ use std::{
 
 #[derive(Serialize, Deserialize)]
 pub struct Stored {
-	pub user_session: Arc<RwLock<Option<NeosUserSession>>>,
+	pub user_session: Option<NeosUserSession>,
 	pub identifier: NeosRequestUserSessionIdentifier,
 	pub refresh_frequency: Duration,
 	pub page: Page,
@@ -40,7 +43,7 @@ impl Default for Page {
 impl Default for Stored {
 	fn default() -> Self {
 		Self {
-			user_session: Arc::default(),
+			user_session: None,
 			identifier: NeosRequestUserSessionIdentifier::Username(
 				String::default(),
 			),
@@ -58,12 +61,12 @@ pub type TexturesMap =
 pub struct RuntimeOnly {
 	pub password: String,
 	pub totp: String,
-	pub loading: Arc<RwLock<LoadingState>>,
+	pub loading: LoadingState,
 	pub default_profile_picture: Option<Arc<TextureDetails>>,
 	pub neos_api: Arc<AnyNeos>,
-	pub friends: Arc<RwLock<Vec<neos::NeosFriend>>>,
-	pub sessions: Arc<RwLock<Vec<neos::NeosSession>>>,
-	pub last_background_refresh: Arc<RwLock<SystemTime>>,
+	pub friends: Vec<neos::NeosFriend>,
+	pub sessions: Vec<neos::NeosSession>,
+	pub last_background_refresh: SystemTime,
 	textures: Arc<RwLock<TexturesMap>>,
 	used_textures: RwLock<HashSet<String, RandomState>>,
 }
@@ -161,14 +164,12 @@ impl Default for RuntimeOnly {
 		Self {
 			totp: String::default(),
 			password: String::default(),
-			loading: Arc::default(),
+			loading: LoadingState::default(),
 			default_profile_picture: Option::default(),
 			neos_api: Arc::new(AnyNeos::Unauthenticated(api)),
-			friends: Arc::default(),
-			sessions: Arc::default(),
-			last_background_refresh: Arc::new(RwLock::new(
-				SystemTime::UNIX_EPOCH,
-			)),
+			friends: Vec::default(),
+			sessions: Vec::default(),
+			last_background_refresh: SystemTime::UNIX_EPOCH,
 			textures: Arc::default(),
 			used_textures: RwLock::default(),
 		}

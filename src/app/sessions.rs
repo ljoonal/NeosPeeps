@@ -1,42 +1,45 @@
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{self, Grid, Label, Layout, RichText, ScrollArea, Ui, Vec2},
+	egui::{self, Grid, Layout, RichText, ScrollArea, Ui},
 	epi,
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	NeosSession, NeosUserStatus,
+	NeosSession,
+	NeosUserStatus,
 };
 
 impl NeosPeepsApp {
 	/// Refreshes sessions in a background thread
-	pub fn refresh_sessions(&mut self, frame: epi::Frame) {
+	pub fn refresh_sessions(&mut self, frame: &epi::Frame) {
 		{
-			let mut loading = self.runtime.loading.write().unwrap();
-			if loading.fetching_sessions || loading.login_op() {
+			if self.runtime.loading.fetching_sessions
+				|| self.runtime.loading.login_op()
+			{
 				return;
 			}
-			loading.fetching_sessions = true;
+			self.runtime.loading.fetching_sessions = true;
 		}
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
-		let sessions_arc = self.runtime.sessions.clone();
-		let loading = self.runtime.loading.clone();
+		let sessions_sender = self.channels.sessions_sender();
 		rayon::spawn(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_sessions() {
 					Ok(sessions) => {
-						*sessions_arc.write().unwrap() = sessions;
+						if let Err(err) = sessions_sender.send(sessions) {
+							println!(
+								"Failed to send sessions to main thread! {}",
+								err
+							);
+						}
 					}
 					Err(e) => {
 						println!("Error with Neos API: {}", e);
 					}
 				}
 			}
-
-			loading.write().unwrap().fetching_sessions = false;
-			frame.request_repaint();
 		});
 	}
 
@@ -83,8 +86,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn sessions_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		let sessions = self.runtime.sessions.read().unwrap();
-		let sessions_count = sessions.len();
+		let sessions_count = self.runtime.sessions.len();
 
 		ui.heading(sessions_count.to_string() + " Sessions");
 
@@ -101,7 +103,7 @@ impl NeosPeepsApp {
 					.num_columns(2)
 					.show(ui, |ui| {
 						for row in row_range {
-							let session = &sessions[row];
+							let session = &self.runtime.sessions[row];
 							self.session_row(ui, width, frame, session);
 						}
 					});

@@ -1,5 +1,7 @@
 //! The login page of the app
 
+use std::sync::Arc;
+
 use super::NeosPeepsApp;
 use eframe::{
 	egui::{Button, ComboBox, SelectableLabel, TextEdit, Ui},
@@ -7,7 +9,9 @@ use eframe::{
 };
 use neos::{
 	api_client::{
-		AnyNeos, NeosRequestUserSession, NeosRequestUserSessionIdentifier,
+		AnyNeos,
+		NeosRequestUserSession,
+		NeosRequestUserSessionIdentifier,
 		NeosUnauthenticated,
 	},
 	NeosUserSession,
@@ -21,118 +25,115 @@ impl NeosPeepsApp {
 	pub fn try_use_session(
 		&mut self,
 		user_session: NeosUserSession,
-		frame: epi::Frame,
+		frame: &epi::Frame,
 	) {
-		{
-			let mut loading = self.runtime.loading.write().unwrap();
-			if loading.login_op() {
-				return; // Only allow one login op at once
-			}
-			loading.login = crate::data::LoginOperationState::LoggingIn;
+		if self.runtime.loading.login_op() {
+			return; // Only allow one login op at once
 		}
+		self.runtime.loading.login =
+			crate::data::LoginOperationState::LoggingIn;
+
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
 		let auth_sender = self.channels.auth_sender();
-		let loading = self.runtime.loading.clone();
+		let user_session_sender = self.channels.user_session_sender();
 		std::thread::spawn(move || {
-			{
-				let neos_api =
-					NeosUnauthenticated::from((*neos_api_arc).clone())
-						.upgrade(user_session);
+			let neos_api = NeosUnauthenticated::from((*neos_api_arc).clone())
+				.upgrade(user_session);
 
-				match neos_api.extend_session() {
-					Ok(_) => {
-						match auth_sender.send(neos_api.into()) {
-							Ok(_) => println!("Logged into Neos' API"),
-							Err(err) => println!(
-								"Failed to send auth accross threads! {}",
-								err
-							),
-						};
-					}
-					Err(err) => {
-						match auth_sender.send(neos_api.downgrade().into()) {
-							Ok(_) => println!(
+			match neos_api.extend_session() {
+				Ok(_) => {
+					match auth_sender.send(Arc::new(neos_api.into())) {
+						Ok(_) => println!("Logged into Neos' API"),
+						Err(err) => println!(
+							"Failed to send auth to main thread! {}",
+							err
+						),
+					};
+				}
+				Err(err) => {
+					match auth_sender
+						.send(Arc::new(neos_api.downgrade().into()))
+					{
+						Ok(_) => println!(
 							"Error with Neos API user session extension: {}",
 							err
 						),
-							Err(send_err) => println!(
-								"Error with Neos API user session extension, and also thread msg failed! {} - {}",
-								err,
-								send_err
-							),
-						};
+						Err(send_err) => println!(
+							"Error with Neos API user session extension, and also to main thread failed! {} - {}",
+							err, send_err
+						),
+					};
+
+					if let Err(err) = user_session_sender.send(None) {
+						println!(
+							"Failed to send user_session to main thread! {}",
+							err
+						);
 					}
 				}
 			}
-
-			loading.write().unwrap().login =
-				crate::data::LoginOperationState::None;
-			frame.request_repaint();
 		});
 	}
 
 	pub fn login_new(
 		&mut self,
 		session_request: NeosRequestUserSession,
-		frame: epi::Frame,
+		frame: &epi::Frame,
 	) {
-		{
-			let mut loading = self.runtime.loading.write().unwrap();
-			if loading.login_op() {
-				return;
-			}
-			loading.login = crate::data::LoginOperationState::LoggingIn;
+		if self.runtime.loading.login_op() {
+			return; // Only allow one login op at once
 		}
+		self.runtime.loading.login =
+			crate::data::LoginOperationState::LoggingIn;
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
-		let user_session_arc = self.stored.user_session.clone();
+		let user_session_sender = self.channels.user_session_sender();
 		let auth_sender = self.channels.auth_sender();
-		let loading = self.runtime.loading.clone();
 		std::thread::spawn(move || {
 			let neos_api: NeosUnauthenticated =
 				((*neos_api_arc).clone()).into();
 
 			match neos_api.login(&session_request) {
 				Ok(neos_user_session) => {
-					match auth_sender.send(
+					match auth_sender.send(Arc::new(
 						neos_api.upgrade(neos_user_session.clone()).into(),
-					) {
+					)) {
 						Ok(_) => println!("Logged into Neos' API"),
 						Err(err) => println!(
-							"Failed to send auth accross threads! {}",
+							"Failed to send auth to main thread! {}",
 							err
 						),
 					};
 
-					*user_session_arc.write().unwrap() =
-						Some(neos_user_session);
+					if let Err(err) =
+						user_session_sender.send(Some(neos_user_session))
+					{
+						println!(
+							"Failed to send user_session to main thread! {}",
+							err
+						);
+					}
 				}
 				Err(err) => {
 					println!("Error with Neos API login request: {}", err);
 				}
 			}
-
-			loading.write().unwrap().login =
-				crate::data::LoginOperationState::None;
-			frame.request_repaint();
 		});
 	}
 
-	pub fn logout(&mut self, frame: epi::Frame) {
-		{
-			let mut loading = self.runtime.loading.write().unwrap();
-			if loading.login_op() {
-				return;
-			}
-			loading.login = crate::data::LoginOperationState::LoggingOut;
+	pub fn logout(&mut self, frame: &epi::Frame) {
+		if self.runtime.loading.login_op() {
+			return; // Only allow one login op at once
 		}
+		self.runtime.loading.login =
+			crate::data::LoginOperationState::LoggingOut;
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
-		let loading = self.runtime.loading.clone();
+		let user_session_sender = self.channels.user_session_sender();
 		let auth_sender = self.channels.auth_sender();
 		std::thread::spawn(move || {
 			let new_api = match (*neos_api_arc).clone() {
@@ -143,13 +144,13 @@ impl NeosPeepsApp {
 				AnyNeos::Unauthenticated(neos_api) => neos_api,
 			};
 
-			if let Err(err) = auth_sender.send(new_api.into()) {
-				println!("Failed to send auth accross threads! {}", err);
+			if let Err(err) = auth_sender.send(Arc::new(new_api.into())) {
+				println!("Failed to send auth to main thread! {}", err);
 			}
 
-			loading.write().unwrap().login =
-				crate::data::LoginOperationState::None;
-			frame.request_repaint();
+			if let Err(err) = user_session_sender.send(None) {
+				println!("Failed to send user_session to main thread! {}", err);
+			}
 		});
 	}
 
@@ -215,8 +216,8 @@ impl NeosPeepsApp {
 		);
 	}
 
-	pub fn login_page(&mut self, ui: &mut Ui, frame: epi::Frame) {
-		let is_loading = self.runtime.loading.read().unwrap().is_loading();
+	pub fn login_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+		let is_loading = self.runtime.loading.is_loading();
 
 		ui.heading("Log in");
 		ui.label("Currently Neos' Oauth doesn't implement the required details for this application, thus logging in is the only way to actually use it.");

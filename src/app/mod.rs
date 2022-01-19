@@ -55,9 +55,8 @@ impl epi::App for NeosPeepsApp {
 		if let Some(storage) = storage {
 			*self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default();
 
-			let user_session = self.stored.user_session.read().unwrap().clone();
-			if let Some(user_session) = user_session {
-				self.try_use_session(user_session, frame.clone());
+			if let Some(user_session) = self.stored.user_session.clone() {
+				self.try_use_session(user_session, frame);
 			}
 		}
 	}
@@ -71,7 +70,7 @@ impl epi::App for NeosPeepsApp {
 	/// `Window` or `Area`.
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
 		let is_authenticated = self.runtime.neos_api.is_authenticated();
-		let is_loading = self.runtime.loading.read().unwrap().is_loading();
+		let is_loading = self.runtime.loading.is_loading();
 
 		if self.runtime.default_profile_picture.is_none() {
 			let user_img = image::load_from_memory(include_bytes!(
@@ -85,15 +84,14 @@ impl epi::App for NeosPeepsApp {
 
 		if !is_loading
 			&& is_authenticated
-			&& *self.runtime.last_background_refresh.read().unwrap()
+			&& self.runtime.last_background_refresh
 				+ self.stored.refresh_frequency
 				< SystemTime::now()
 		{
 			self.runtime.cull_textures();
-			*self.runtime.last_background_refresh.clone().write().unwrap() =
-				SystemTime::now();
-			self.refresh_friends(frame.clone());
-			self.refresh_sessions(frame.clone());
+			self.runtime.last_background_refresh = SystemTime::now();
+			self.refresh_friends(frame);
+			self.refresh_sessions(frame);
 		}
 
 		self.try_recv(frame);
@@ -124,7 +122,7 @@ impl epi::App for NeosPeepsApp {
 							match self.stored.page {
 								Page::About => self.about_page(ui),
 								Page::Settings => self.settings_page(ui, frame),
-								_ => self.login_page(ui, frame.clone()),
+								_ => self.login_page(ui, frame),
 							}
 						}
 					},

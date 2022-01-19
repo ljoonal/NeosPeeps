@@ -9,8 +9,8 @@ use eframe::{
 impl NeosPeepsApp {
 	pub fn top_bar(&mut self, ui: &mut Ui, frame: &epi::Frame) {
 		let is_authenticated = self.runtime.neos_api.is_authenticated();
-		let is_loading = self.runtime.loading.read().unwrap().is_loading();
-		let is_logging_in = self.runtime.loading.read().unwrap().login_op();
+		let is_loading = self.runtime.loading.is_loading();
+		let is_logging_in = self.runtime.loading.login_op();
 
 		eframe::egui::menu::bar(ui, |ui| {
 			// View menu
@@ -72,12 +72,12 @@ impl NeosPeepsApp {
 						.clicked()
 					{
 						ui.close_menu();
-						self.refresh_friends(frame.clone());
+						self.refresh_friends(frame);
 					}
 					ui.separator();
 					if ui.add(Button::new("Log out")).clicked() {
 						ui.close_menu();
-						self.logout(frame.clone());
+						self.logout(frame);
 					}
 				});
 				ui.separator();

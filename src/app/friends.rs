@@ -49,46 +49,33 @@ fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 
 impl NeosPeepsApp {
 	/// Refreshes friends in a background thread
-	pub fn refresh_friends(&mut self, frame: epi::Frame) {
-		{
-			let mut loading = self.runtime.loading.write().unwrap();
-			if loading.fetching_friends || loading.login_op() {
-				return;
-			}
-			loading.fetching_friends = true;
+	pub fn refresh_friends(&mut self, frame: &epi::Frame) {
+		if self.runtime.loading.login_op() {
+			return;
 		}
+		self.runtime.loading.fetching_friends = true;
+
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
-		let friends_arc = self.runtime.friends.clone();
-		let loading = self.runtime.loading.clone();
+		let friends_sender = self.channels.friends_sender();
 		rayon::spawn(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_friends() {
 					Ok(mut friends) => {
 						friends.sort_by(order_friends);
-						*friends_arc.write().unwrap() = friends;
+						if let Err(err) = friends_sender.send(friends) {
+							println!(
+								"Failed to send friends to main thread! {}",
+								err
+							);
+						}
 					}
 					Err(e) => {
 						println!("Error with Neos API: {}", e);
 					}
 				}
 			}
-
-			loading.write().unwrap().fetching_friends = false;
-			frame.request_repaint();
-		});
-	}
-
-	pub fn filter_friends(&mut self, frame: epi::Frame) {
-		let friends = self.runtime.friends.clone();
-		let filtered_friends = self.runtime.friends.clone();
-
-		rayon::spawn(move || {
-			let friends = (*friends.read().unwrap()).clone();
-			*filtered_friends.write().unwrap() = friends;
-
-			frame.request_repaint();
 		});
 	}
 
@@ -191,8 +178,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		let friends = self.runtime.friends.read().unwrap();
-		let friends_count = friends.len();
+		let friends_count = self.runtime.friends.len();
 
 		ui.heading(friends_count.to_string() + " Peeps");
 
@@ -208,7 +194,7 @@ impl NeosPeepsApp {
 					.num_columns(3)
 					.show(ui, |ui| {
 						for row in row_range {
-							let friend = &friends[row];
+							let friend = &self.runtime.friends[row];
 							self.friend_row(ui, width, frame, friend);
 						}
 					});
