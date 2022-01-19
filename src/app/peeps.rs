@@ -177,6 +177,8 @@ impl NeosPeepsApp {
 	}
 
 	pub fn peeps_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+		self.search_bar(ui);
+
 		if self.stored.filter_friends_only {
 			self.friends_page(ui, frame);
 		} else {
@@ -190,8 +192,6 @@ impl NeosPeepsApp {
 
 	fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
 		use rayon::prelude::*;
-
-		self.search_bar(ui);
 
 		let friends: Vec<&NeosFriend> = self
 			.runtime
