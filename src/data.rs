@@ -3,12 +3,9 @@ use ahash::RandomState;
 use eframe::epi;
 use neos::{
 	api_client::{
-		AnyNeos,
-		NeosRequestUserSessionIdentifier,
-		NeosUnauthenticated,
+		AnyNeos, NeosRequestUserSessionIdentifier, NeosUnauthenticated,
 	},
-	AssetUrl,
-	NeosUserSession,
+	AssetUrl, NeosSession, NeosUser, NeosUserSession, NeosUserStatus,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -77,6 +74,9 @@ pub struct RuntimeOnly {
 	pub textures: TexturesMap,
 	used_textures: RefCell<HashSet<String, RandomState>>,
 	pub loading_textures: RefCell<HashSet<String, RandomState>>,
+	pub user_window:
+		Option<(neos::id::User, Option<NeosUser>, Option<NeosUserStatus>)>,
+	pub session_window: Option<(neos::id::Session, Option<NeosSession>)>,
 }
 
 impl NeosPeepsApp {
@@ -187,6 +187,8 @@ impl Default for RuntimeOnly {
 			textures: HashMap::default(),
 			used_textures: RefCell::default(),
 			loading_textures: RefCell::default(),
+			user_window: None,
+			session_window: None,
 		}
 	}
 }

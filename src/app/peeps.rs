@@ -2,16 +2,15 @@
 
 use super::{sessions::find_focused_session, NeosPeepsApp};
 use eframe::{
-	egui::{Color32, Grid, Key, Label, Layout, RichText, ScrollArea, Ui, Vec2},
+	egui::{
+		Color32, CtxRef, Grid, Key, Label, Layout, RichText, ScrollArea, Ui,
+		Vec2, Window,
+	},
 	epi,
 };
 use neos::{
-	api_client::{AnyNeos, Neos},
-	AssetUrl,
-	NeosFriend,
-	NeosSession,
-	NeosUser,
-	NeosUserOnlineStatus,
+	api_client::{AnyNeos, Neos, UserIdOrUsername},
+	AssetUrl, NeosFriend, NeosSession, NeosUser, NeosUserOnlineStatus,
 	NeosUserStatus,
 };
 use std::cmp::Ordering;
@@ -91,7 +90,6 @@ impl NeosPeepsApp {
 		{
 			return;
 		}
-		self.runtime.loading.fetching_users = true;
 
 		frame.request_repaint();
 
@@ -106,6 +104,80 @@ impl NeosPeepsApp {
 			}
 			Err(e) => {
 				println!("Error with Neos API: {}", e);
+			}
+		});
+	}
+
+	/// Gets the user for the user window
+	pub fn get_user(&mut self, frame: &epi::Frame, id: neos::id::User) {
+		if self.stored.filter_search.is_empty()
+			|| self.runtime.loading.login_op()
+		{
+			return;
+		}
+		if let Some((w_id, _, _)) = &self.runtime.user_window {
+			if w_id != &id {
+				return;
+			}
+		} else {
+			self.runtime.user_window = Some((id.clone(), None, None));
+		}
+
+		frame.request_repaint();
+
+		let neos_api = self.runtime.neos_api.clone();
+		let user_sender = self.channels.user_sender();
+		rayon::spawn(move || match neos_api.get_user(id) {
+			Ok(user) => {
+				if let Err(err) = user_sender.send(user) {
+					println!("Failed to send user to main thread! {}", err);
+				}
+			}
+			Err(e) => {
+				println!("Error with Neos API: {}", e);
+			}
+		});
+	}
+
+	/// Gets the user status for the user window
+	pub fn get_user_status(&mut self, frame: &epi::Frame, id: neos::id::User) {
+		if self.stored.filter_search.is_empty()
+			|| self.runtime.loading.login_op()
+		{
+			return;
+		}
+		if let Some((w_id, _, _)) = &self.runtime.user_window {
+			if w_id != &id {
+				return;
+			}
+		} else {
+			self.runtime.user_window = Some((id.clone(), None, None));
+		}
+
+		frame.request_repaint();
+
+		let neos_api = self.runtime.neos_api.clone();
+		let user_status_sender = self.channels.user_status_sender();
+		rayon::spawn(move || match neos_api.get_user_status(id.clone()) {
+			Ok(user_status) => {
+				if let Err(err) = user_status_sender.send((id, user_status)) {
+					println!(
+						"Failed to send user status to main thread! {}",
+						err
+					);
+				}
+			}
+			Err(e) => {
+				println!("Error with Neos API: {}", e);
+			}
+		});
+	}
+
+	pub fn user_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
+		Window::new("User").show(ctx, |ui| {
+			if ui.button("Close").clicked() {
+				self.runtime.user_window = None;
+				//...
 			}
 		});
 	}

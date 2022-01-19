@@ -3,29 +3,37 @@ use std::{rc::Rc, sync::Arc};
 use crossbeam::channel::{bounded, unbounded, Receiver, Sender, TryIter};
 use eframe::epi;
 use neos::{
-	api_client::AnyNeos,
-	NeosFriend,
-	NeosSession,
-	NeosUser,
-	NeosUserSession,
+	api_client::AnyNeos, NeosFriend, NeosSession, NeosUser, NeosUserSession,
+	NeosUserStatus,
 };
 
 use crate::{
-	app::NeosPeepsApp,
-	data::LoginOperationState,
-	image::TextureDetails,
+	app::NeosPeepsApp, data::LoginOperationState, image::TextureDetails,
 };
 
 type ImageMsg = (String, Option<TextureDetails>);
+type UserStatusMsg = (neos::id::User, NeosUserStatus);
 
 pub struct Channels {
+	/// Friends bg refresh
 	friends: (Sender<Vec<NeosFriend>>, Receiver<Vec<NeosFriend>>),
+	/// Users search
 	users: (Sender<Vec<NeosUser>>, Receiver<Vec<NeosUser>>),
+	/// Sessions bg refresh
 	sessions: (Sender<Vec<NeosSession>>, Receiver<Vec<NeosSession>>),
+	/// Login/Logout
 	auth: (Sender<Arc<AnyNeos>>, Receiver<Arc<AnyNeos>>),
+	/// New login was successful
 	user_session:
 		(Sender<Option<NeosUserSession>>, Receiver<Option<NeosUserSession>>),
+	/// Image assets being loaded
 	image: (Sender<ImageMsg>, Receiver<ImageMsg>),
+	/// Lookups for the user window
+	user: (Sender<NeosUser>, Receiver<NeosUser>),
+	/// Lookups for the user window
+	user_status: (Sender<UserStatusMsg>, Receiver<UserStatusMsg>),
+	/// Lookups for the session window
+	session: (Sender<NeosSession>, Receiver<NeosSession>),
 }
 
 impl Default for Channels {
@@ -37,6 +45,9 @@ impl Default for Channels {
 			sessions: bounded(1),
 			user_session: bounded(1),
 			image: unbounded(),
+			user: bounded(1),
+			user_status: bounded(1),
+			session: bounded(1),
 		}
 	}
 }
@@ -60,6 +71,15 @@ impl Channels {
 	}
 	pub fn image_sender(&self) -> Sender<ImageMsg> {
 		self.image.0.clone()
+	}
+	pub fn user_sender(&self) -> Sender<NeosUser> {
+		self.user.0.clone()
+	}
+	pub fn user_status_sender(&self) -> Sender<UserStatusMsg> {
+		self.user_status.0.clone()
+	}
+	pub fn session_sender(&self) -> Sender<NeosSession> {
+		self.session.0.clone()
 	}
 
 	pub fn try_recv_friends(&self) -> Option<Vec<NeosFriend>> {
@@ -85,6 +105,16 @@ impl Channels {
 
 	pub fn try_recv_images(&self) -> TryIter<ImageMsg> {
 		self.image.1.try_iter()
+	}
+
+	pub fn try_recv_user(&self) -> Option<NeosUser> {
+		self.user.1.try_recv().ok()
+	}
+	pub fn try_recv_user_status(&self) -> Option<UserStatusMsg> {
+		self.user_status.1.try_recv().ok()
+	}
+	pub fn try_recv_session(&self) -> Option<NeosSession> {
+		self.session.1.try_recv().ok()
 	}
 }
 
@@ -113,6 +143,8 @@ impl NeosPeepsApp {
 
 		if let Some(user_session) = self.channels.try_recv_user_session() {
 			self.stored.user_session = user_session;
+			self.runtime.session_window = None;
+			self.runtime.user_window = None;
 		}
 
 		if let Some(client) = self.channels.try_recv_auth() {
@@ -126,6 +158,40 @@ impl NeosPeepsApp {
 			if let Some(image) = image {
 				self.runtime.textures.insert(id, Rc::new(image));
 			}
+			repaint = true;
+		}
+
+		if let Some(user) = self.channels.try_recv_user() {
+			if let Some((user_id, w_user, _)) = &mut self.runtime.user_window {
+				if user.id == *user_id {
+					*w_user = Some(user);
+				}
+			}
+			repaint = true;
+		}
+
+		if let Some((user_id, user_status)) =
+			self.channels.try_recv_user_status()
+		{
+			if let Some((w_user_id, _, w_user_status)) =
+				&mut self.runtime.user_window
+			{
+				if user_id == *w_user_id {
+					*w_user_status = Some(user_status);
+				}
+			}
+			repaint = true;
+		}
+
+		if let Some(session) = self.channels.try_recv_session() {
+			if let Some((session_id, w_session)) =
+				&mut self.runtime.session_window
+			{
+				if session.session_id == *session_id {
+					*w_session = Some(session);
+				}
+			}
+			repaint = true;
 		}
 
 		if repaint {

@@ -1,13 +1,14 @@
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{Align, Color32, Grid, Label, Layout, RichText, ScrollArea, Ui},
+	egui::{
+		Align, Color32, CtxRef, Grid, Label, Layout, RichText, ScrollArea, Ui,
+		Window,
+	},
 	epi,
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	NeosSession,
-	NeosSessionUser,
-	NeosUserStatus,
+	NeosSession, NeosSessionUser, NeosUserStatus,
 };
 
 impl NeosPeepsApp {
@@ -43,6 +44,46 @@ impl NeosPeepsApp {
 						println!("Error with Neos API: {}", e);
 					}
 				}
+			}
+		});
+	}
+
+	/// Gets the session status for the session window
+	pub fn get_session(&mut self, frame: &epi::Frame, id: neos::id::Session) {
+		if self.stored.filter_search.is_empty()
+			|| self.runtime.loading.login_op()
+		{
+			return;
+		}
+		if let Some((w_id, _)) = &self.runtime.session_window {
+			if w_id != &id {
+				return;
+			}
+		} else {
+			self.runtime.session_window = Some((id.clone(), None));
+		}
+
+		frame.request_repaint();
+
+		let neos_api = self.runtime.neos_api.clone();
+		let session_sender = self.channels.session_sender();
+		rayon::spawn(move || match neos_api.get_session(id) {
+			Ok(session) => {
+				if let Err(err) = session_sender.send(session) {
+					println!("Failed to send session to main thread! {}", err);
+				}
+			}
+			Err(e) => {
+				println!("Error with Neos API: {}", e);
+			}
+		});
+	}
+
+	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
+		Window::new("Session").show(ctx, |ui| {
+			if ui.button("Close").clicked() {
+				self.runtime.session_window = None;
+				//...
 			}
 		});
 	}

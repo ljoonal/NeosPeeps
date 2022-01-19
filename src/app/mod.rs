@@ -112,6 +112,13 @@ impl epi::App for NeosPeepsApp {
 					egui::Layout::top_down(egui::Align::Center),
 					|ui| {
 						if is_authenticated {
+							if self.runtime.user_window.is_some() {
+								self.user_window(ctx, frame);
+							}
+							if self.runtime.session_window.is_some() {
+								self.user_window(ctx, frame);
+							}
+
 							match self.stored.page {
 								Page::About => self.about_page(ui),
 								Page::Peeps => self.peeps_page(ui, frame),
