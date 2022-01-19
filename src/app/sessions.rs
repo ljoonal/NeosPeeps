@@ -57,15 +57,21 @@ impl NeosPeepsApp {
 				),
 			);
 			ui.vertical(|ui| {
-				ui.heading(session.stripped_name());
-				ui.label("Host: ".to_owned() + &session.host_username);
+				ui.horizontal(|ui| {
+					ui.heading(session.stripped_name());
+					ui.label(
+						RichText::new(&format!(
+							"{}/{}",
+							&session.joined_users, &session.max_users
+						))
+						.strong(),
+					)
+				});
 
 				ui.horizontal(|ui| {
 					ui.label(session.access_level.as_ref());
-					ui.label(&format!(
-						"{}/{}",
-						&session.joined_users, &session.max_users
-					));
+					ui.label("|");
+					ui.label("Host: ".to_owned() + &session.host_username);
 				});
 
 				ui.label(RichText::new(session.tags.join(", ")).small());
@@ -90,22 +96,29 @@ impl NeosPeepsApp {
 
 		self.search_bar(ui);
 
-		let sessions: Vec<&NeosSession> = self
-			.runtime
-			.sessions
-			.par_iter()
-			.filter(|session| {
-				self.stored.filter_search.is_empty()
-					|| session
-						.host_username
-						.to_lowercase()
-						.contains(&self.stored.filter_search)
-					|| session
-						.stripped_name()
-						.to_lowercase()
-						.contains(&self.stored.filter_search)
-			})
-			.collect();
+		let sessions: Vec<&NeosSession> = if self.stored.filter_friends_only {
+			self.runtime
+				.friends
+				.par_iter()
+				.flat_map(|friend| &friend.user_status.active_sessions)
+				.collect()
+		} else {
+			self.runtime
+				.sessions
+				.par_iter()
+				.filter(|session| {
+					self.stored.filter_search.is_empty()
+						|| session
+							.host_username
+							.to_lowercase()
+							.contains(&self.stored.filter_search)
+						|| session
+							.stripped_name()
+							.to_lowercase()
+							.contains(&self.stored.filter_search)
+				})
+				.collect()
+		};
 
 		let sessions_count = sessions.len();
 
