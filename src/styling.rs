@@ -1,7 +1,13 @@
 //! Styles for the application
 
 use eframe::egui::{
-	self, Color32, FontData, FontDefinitions, FontFamily, Stroke, TextStyle,
+	self,
+	Color32,
+	FontData,
+	FontDefinitions,
+	FontFamily,
+	Stroke,
+	TextStyle,
 };
 
 pub fn setup_styles(ctx: &egui::CtxRef) {

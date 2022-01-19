@@ -1,16 +1,13 @@
-use std::cmp::Ordering;
-
 use super::NeosPeepsApp;
 use eframe::{
-	egui::{
-		text::LayoutJob, Align, Color32, Grid, Label, Layout, RichText,
-		ScrollArea, TextFormat, Ui,
-	},
+	egui::{Align, Color32, Grid, Label, Layout, RichText, ScrollArea, Ui},
 	epi,
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	NeosSession, NeosSessionUser, NeosUserStatus,
+	NeosSession,
+	NeosSessionUser,
+	NeosUserStatus,
 };
 
 impl NeosPeepsApp {

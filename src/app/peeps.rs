@@ -7,7 +7,11 @@ use eframe::{
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	AssetUrl, NeosFriend, NeosSession, NeosUser, NeosUserOnlineStatus,
+	AssetUrl,
+	NeosFriend,
+	NeosSession,
+	NeosUser,
+	NeosUserOnlineStatus,
 	NeosUserStatus,
 };
 use std::cmp::Ordering;
@@ -244,8 +248,6 @@ impl NeosPeepsApp {
 				Vec2::new(self.stored.row_height, self.stored.row_height),
 			);
 		});
-
-		let style = ui.style();
 
 		let width_for_cols = self
 			.stored

@@ -3,11 +3,17 @@ use std::{rc::Rc, sync::Arc};
 use crossbeam::channel::{bounded, unbounded, Receiver, Sender, TryIter};
 use eframe::epi;
 use neos::{
-	api_client::AnyNeos, NeosFriend, NeosSession, NeosUser, NeosUserSession,
+	api_client::AnyNeos,
+	NeosFriend,
+	NeosSession,
+	NeosUser,
+	NeosUserSession,
 };
 
 use crate::{
-	app::NeosPeepsApp, data::LoginOperationState, image::TextureDetails,
+	app::NeosPeepsApp,
+	data::LoginOperationState,
+	image::TextureDetails,
 };
 
 type ImageMsg = (String, Option<TextureDetails>);

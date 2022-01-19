@@ -3,9 +3,12 @@ use ahash::RandomState;
 use eframe::epi;
 use neos::{
 	api_client::{
-		AnyNeos, NeosRequestUserSessionIdentifier, NeosUnauthenticated,
+		AnyNeos,
+		NeosRequestUserSessionIdentifier,
+		NeosUnauthenticated,
 	},
-	AssetUrl, NeosUserSession,
+	AssetUrl,
+	NeosUserSession,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -121,12 +124,12 @@ impl NeosPeepsApp {
 				}
 			}
 			Err(err) => {
-				match image_sender.send((
-					asset_url.id().to_owned(),
-					None,
-				)) {
+				match image_sender.send((asset_url.id().to_owned(), None)) {
 					Ok(_) => println!("Failed to fetch image! {}", err),
-					Err(thread_err) =>  println!("Failed to fetch image & to send to main thread: {} - {}", err, thread_err)
+					Err(thread_err) => println!(
+						"Failed to fetch image & to send to main thread: {} - {}",
+						err, thread_err
+					),
 				};
 			}
 		});
