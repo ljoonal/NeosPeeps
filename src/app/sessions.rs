@@ -5,8 +5,7 @@ use eframe::{
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	NeosSession,
-	NeosUserStatus,
+	NeosSession, NeosUserStatus,
 };
 
 impl NeosPeepsApp {
@@ -73,9 +72,7 @@ impl NeosPeepsApp {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			ui.set_min_width(ui.available_width());
 			if let Some(asset_url) = &session.thumbnail {
-				if let Some(thumbnail) =
-					self.runtime.load_texture(asset_url, frame)
-				{
+				if let Some(thumbnail) = self.load_texture(asset_url, frame) {
 					let scaling = ui.available_height() / thumbnail.size.y;
 					ui.image(thumbnail.id, thumbnail.size * scaling);
 				}

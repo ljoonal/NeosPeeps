@@ -90,7 +90,7 @@ impl NeosPeepsApp {
 			let pfp_url: &Option<AssetUrl> = get_pfp_url(friend);
 
 			let pfp = match pfp_url {
-				Some(pfp_url) => self.runtime.load_texture(pfp_url, frame),
+				Some(pfp_url) => self.load_texture(pfp_url, frame),
 				None => None,
 			};
 
@@ -158,8 +158,7 @@ impl NeosPeepsApp {
 			ui.vertical(|ui| {
 				if let Some(session) = session {
 					if let Some(thumbnail) = &session.thumbnail {
-						let session_pics =
-							self.runtime.load_texture(thumbnail, frame);
+						let session_pics = self.load_texture(thumbnail, frame);
 
 						if let Some(session_pic) = session_pics {
 							let scaling =

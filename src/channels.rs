@@ -1,10 +1,14 @@
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 
-use crossbeam::channel::{bounded, Receiver, Sender};
+use crossbeam::channel::{bounded, unbounded, Receiver, Sender, TryIter};
 use eframe::epi;
 use neos::{api_client::AnyNeos, NeosFriend, NeosSession, NeosUserSession};
 
-use crate::{app::NeosPeepsApp, data::LoginOperationState};
+use crate::{
+	app::NeosPeepsApp, data::LoginOperationState, image::TextureDetails,
+};
+
+type ImageMsg = (String, Option<TextureDetails>);
 
 pub struct Channels {
 	friends: (Sender<Vec<NeosFriend>>, Receiver<Vec<NeosFriend>>),
@@ -12,6 +16,7 @@ pub struct Channels {
 	auth: (Sender<Arc<AnyNeos>>, Receiver<Arc<AnyNeos>>),
 	user_session:
 		(Sender<Option<NeosUserSession>>, Receiver<Option<NeosUserSession>>),
+	image: (Sender<ImageMsg>, Receiver<ImageMsg>),
 }
 
 impl Default for Channels {
@@ -21,6 +26,7 @@ impl Default for Channels {
 			auth: bounded(1),
 			sessions: bounded(1),
 			user_session: bounded(1),
+			image: unbounded(),
 		}
 	}
 }
@@ -39,6 +45,9 @@ impl Channels {
 	pub fn user_session_sender(&self) -> Sender<Option<NeosUserSession>> {
 		self.user_session.0.clone()
 	}
+	pub fn image_sender(&self) -> Sender<ImageMsg> {
+		self.image.0.clone()
+	}
 
 	pub fn try_recv_friends(&self) -> Option<Vec<NeosFriend>> {
 		self.friends.1.try_recv().ok()
@@ -55,6 +64,10 @@ impl Channels {
 	#[allow(clippy::option_option)]
 	pub fn try_recv_user_session(&self) -> Option<Option<NeosUserSession>> {
 		self.user_session.1.try_recv().ok()
+	}
+
+	pub fn try_recv_images(&self) -> TryIter<ImageMsg> {
+		self.image.1.try_iter()
 	}
 }
 
@@ -82,6 +95,13 @@ impl NeosPeepsApp {
 			self.runtime.neos_api = client;
 			self.runtime.loading.login = LoginOperationState::None;
 			repaint = true;
+		}
+
+		for (id, image) in self.channels.try_recv_images() {
+			self.runtime.loading_textures.get_mut().remove(&id);
+			if let Some(image) = image {
+				self.runtime.textures.insert(id, Rc::new(image));
+			}
 		}
 
 		if repaint {

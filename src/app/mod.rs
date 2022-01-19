@@ -4,7 +4,7 @@ use crate::{
 	image::TextureDetails,
 };
 use eframe::{egui, epi};
-use std::{sync::Arc, time::SystemTime};
+use std::{rc::Rc, time::SystemTime};
 
 mod about;
 mod bar;
@@ -77,7 +77,7 @@ impl epi::App for NeosPeepsApp {
 				"../../static/user.png"
 			))
 			.expect("Failed to load image");
-			self.runtime.default_profile_picture = Some(Arc::new(
+			self.runtime.default_profile_picture = Some(Rc::new(
 				TextureDetails::from_image(frame.clone(), &user_img),
 			));
 		}
@@ -88,7 +88,7 @@ impl epi::App for NeosPeepsApp {
 				+ self.stored.refresh_frequency
 				< SystemTime::now()
 		{
-			self.runtime.cull_textures();
+			self.cull_textures();
 			self.runtime.last_background_refresh = SystemTime::now();
 			self.refresh_friends(frame);
 			self.refresh_sessions(frame);

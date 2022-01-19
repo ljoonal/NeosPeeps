@@ -1,19 +1,18 @@
-use crate::image::TextureDetails;
+use crate::{app::NeosPeepsApp, image::TextureDetails};
 use ahash::RandomState;
 use eframe::epi;
 use neos::{
 	api_client::{
-		AnyNeos,
-		NeosRequestUserSessionIdentifier,
-		NeosUnauthenticated,
+		AnyNeos, NeosRequestUserSessionIdentifier, NeosUnauthenticated,
 	},
-	AssetUrl,
-	NeosUserSession,
+	AssetUrl, NeosUserSession,
 };
 use serde::{Deserialize, Serialize};
 use std::{
+	cell::RefCell,
 	collections::{HashMap, HashSet},
-	sync::{Arc, RwLock},
+	rc::Rc,
+	sync::Arc,
 	time::{Duration, SystemTime},
 };
 
@@ -55,73 +54,74 @@ impl Default for Stored {
 }
 
 /// [`neos::AssetUrl`] ID's as keys.
-pub type TexturesMap =
-	HashMap<String, Option<Arc<TextureDetails>>, RandomState>;
+pub type TexturesMap = HashMap<String, Rc<TextureDetails>, RandomState>;
 
 pub struct RuntimeOnly {
 	pub password: String,
 	pub totp: String,
 	pub loading: LoadingState,
-	pub default_profile_picture: Option<Arc<TextureDetails>>,
+	pub default_profile_picture: Option<Rc<TextureDetails>>,
 	pub neos_api: Arc<AnyNeos>,
 	pub friends: Vec<neos::NeosFriend>,
 	pub sessions: Vec<neos::NeosSession>,
 	pub last_background_refresh: SystemTime,
-	textures: Arc<RwLock<TexturesMap>>,
-	used_textures: RwLock<HashSet<String, RandomState>>,
+	pub textures: TexturesMap,
+	used_textures: RefCell<HashSet<String, RandomState>>,
+	pub loading_textures: RefCell<HashSet<String, RandomState>>,
 }
 
-impl RuntimeOnly {
-	pub fn cull_textures(&self) {
+impl NeosPeepsApp {
+	pub fn cull_textures(&mut self) {
 		let used_textures =
-			std::mem::take(&mut *self.used_textures.write().unwrap());
-		// Not having the same write locks at the same time is not ideal but
-		// better for performance most likely.
-		self.textures
-			.write()
-			.unwrap()
-			.retain(|id, _| used_textures.contains(id));
+			std::mem::take(&mut self.runtime.used_textures).into_inner();
+		self.runtime.textures.retain(|id, _| used_textures.contains(id));
 	}
 	pub fn load_texture(
 		&self,
 		asset_url: &AssetUrl,
 		frame: &epi::Frame,
-	) -> Option<Arc<TextureDetails>> {
-		self.used_textures.write().unwrap().insert(asset_url.id().to_owned());
-		if let Some(texture) = self.textures.read().ok()?.get(asset_url.id()) {
-			if let Some(texture) = texture {
-				return Some(texture.clone());
-			}
-		} else {
-			self.start_retrieving_image(asset_url.clone(), frame.clone());
+	) -> Option<Rc<TextureDetails>> {
+		self.runtime
+			.used_textures
+			.borrow_mut()
+			.insert(asset_url.id().to_owned());
+		if let Some(texture) = self.runtime.textures.get(asset_url.id()) {
+			return Some(texture.clone());
 		}
+		self.start_retrieving_image(asset_url.clone(), frame.clone());
 
 		None
 	}
 
-	/// Starts a thread to start retrieving the image.
+	/// Starts a thread to start retrieving the image if wasn't already.
 	fn start_retrieving_image(&self, asset_url: AssetUrl, frame: epi::Frame) {
-		let textures = self.textures.clone();
-		rayon::spawn_fifo(move || {
-			textures.write().unwrap().insert(asset_url.id().to_owned(), None);
-			match crate::image::retrieve(&asset_url) {
-				Ok(image) => {
-					let (size, image) = crate::image::to_epi_format(&image);
-					let val = Some(Arc::new(TextureDetails::new(
-						frame.clone(),
-						size,
-						image,
-					)));
-					textures
-						.write()
-						.unwrap()
-						.insert(asset_url.id().to_owned(), val);
-					frame.request_repaint();
+		if !self
+			.runtime
+			.loading_textures
+			.borrow_mut()
+			.insert(asset_url.id().to_string())
+		{
+			return;
+		}
+		let image_sender = self.channels.image_sender();
+		rayon::spawn_fifo(move || match crate::image::retrieve(&asset_url) {
+			Ok(image) => {
+				let (size, image) = crate::image::to_epi_format(&image);
+				let image = Some(TextureDetails::new(frame, size, image));
+				if let Err(err) =
+					image_sender.send((asset_url.id().to_owned(), image))
+				{
+					println!("Couldn't send image to main thread! {}", err);
 				}
-				Err(err) => {
-					textures.write().unwrap().remove(asset_url.id());
-					println!("Failed to fetch image: {}", err);
-				}
+			}
+			Err(err) => {
+				match image_sender.send((
+					asset_url.id().to_owned(),
+					None,
+				)) {
+					Ok(_) => println!("Failed to fetch image! {}", err),
+					Err(thread_err) =>  println!("Failed to fetch image & to send to main thread: {} - {}", err, thread_err)
+				};
 			}
 		});
 	}
@@ -170,8 +170,9 @@ impl Default for RuntimeOnly {
 			friends: Vec::default(),
 			sessions: Vec::default(),
 			last_background_refresh: SystemTime::UNIX_EPOCH,
-			textures: Arc::default(),
-			used_textures: RwLock::default(),
+			textures: HashMap::default(),
+			used_textures: RefCell::default(),
+			loading_textures: RefCell::default(),
 		}
 	}
 }
