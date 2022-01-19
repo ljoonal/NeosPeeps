@@ -60,7 +60,7 @@ pub struct RuntimeOnly {
 	pub totp: String,
 	pub loading: Arc<RwLock<LoadingState>>,
 	pub default_profile_picture: Option<Arc<TextureDetails>>,
-	pub neos_api: Arc<RwLock<AnyNeos>>,
+	pub neos_api: Arc<AnyNeos>,
 	pub friends: Arc<RwLock<Vec<neos::NeosFriend>>>,
 	pub sessions: Arc<RwLock<Vec<neos::NeosSession>>>,
 	pub last_background_refresh: Arc<RwLock<SystemTime>>,
@@ -163,7 +163,7 @@ impl Default for RuntimeOnly {
 			password: String::default(),
 			loading: Arc::default(),
 			default_profile_picture: Option::default(),
-			neos_api: Arc::new(RwLock::new(AnyNeos::Unauthenticated(api))),
+			neos_api: Arc::new(AnyNeos::Unauthenticated(api)),
 			friends: Arc::default(),
 			sessions: Arc::default(),
 			last_background_refresh: Arc::new(RwLock::new(

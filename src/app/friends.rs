@@ -63,9 +63,7 @@ impl NeosPeepsApp {
 		let friends_arc = self.runtime.friends.clone();
 		let loading = self.runtime.loading.clone();
 		rayon::spawn(move || {
-			if let AnyNeos::Authenticated(neos_api) =
-				&*neos_api_arc.read().unwrap()
-			{
+			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_friends() {
 					Ok(mut friends) => {
 						friends.sort_by(order_friends);
@@ -78,6 +76,18 @@ impl NeosPeepsApp {
 			}
 
 			loading.write().unwrap().fetching_friends = false;
+			frame.request_repaint();
+		});
+	}
+
+	pub fn filter_friends(&mut self, frame: epi::Frame) {
+		let friends = self.runtime.friends.clone();
+		let filtered_friends = self.runtime.friends.clone();
+
+		rayon::spawn(move || {
+			let friends = (*friends.read().unwrap()).clone();
+			*filtered_friends.write().unwrap() = friends;
+
 			frame.request_repaint();
 		});
 	}

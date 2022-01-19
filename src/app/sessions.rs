@@ -24,9 +24,7 @@ impl NeosPeepsApp {
 		let sessions_arc = self.runtime.sessions.clone();
 		let loading = self.runtime.loading.clone();
 		rayon::spawn(move || {
-			if let AnyNeos::Authenticated(neos_api) =
-				&*neos_api_arc.read().unwrap()
-			{
+			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_sessions() {
 					Ok(sessions) => {
 						*sessions_arc.write().unwrap() = sessions;

@@ -1,4 +1,5 @@
 use crate::{
+	channels::Channels,
 	data::{Page, Stored},
 	image::TextureDetails,
 };
@@ -17,9 +18,11 @@ mod settings;
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct NeosPeepsApp {
-	stored: Stored,
+	pub stored: Stored,
 	#[serde(skip)]
-	runtime: crate::data::RuntimeOnly,
+	pub runtime: crate::data::RuntimeOnly,
+	#[serde(skip)]
+	pub channels: Channels,
 }
 
 impl Default for NeosPeepsApp {
@@ -27,7 +30,11 @@ impl Default for NeosPeepsApp {
 		use crate::data::RuntimeOnly;
 		let runtime = RuntimeOnly::default();
 
-		Self { stored: Stored::default(), runtime }
+		Self {
+			stored: Stored::default(),
+			runtime,
+			channels: Channels::default(),
+		}
 	}
 }
 
@@ -63,8 +70,7 @@ impl epi::App for NeosPeepsApp {
 	/// second. Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`,
 	/// `Window` or `Area`.
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-		let is_authenticated =
-			self.runtime.neos_api.read().unwrap().is_authenticated();
+		let is_authenticated = self.runtime.neos_api.is_authenticated();
 		let is_loading = self.runtime.loading.read().unwrap().is_loading();
 
 		if self.runtime.default_profile_picture.is_none() {
@@ -89,6 +95,8 @@ impl epi::App for NeosPeepsApp {
 			self.refresh_friends(frame.clone());
 			self.refresh_sessions(frame.clone());
 		}
+
+		self.try_recv(frame);
 
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			self.top_bar(ui, frame);

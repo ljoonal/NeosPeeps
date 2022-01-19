@@ -8,8 +8,7 @@ use eframe::{
 
 impl NeosPeepsApp {
 	pub fn top_bar(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		let is_authenticated =
-			self.runtime.neos_api.read().unwrap().is_authenticated();
+		let is_authenticated = self.runtime.neos_api.is_authenticated();
 		let is_loading = self.runtime.loading.read().unwrap().is_loading();
 		let is_logging_in = self.runtime.loading.read().unwrap().login_op();
 

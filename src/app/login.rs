@@ -7,9 +7,7 @@ use eframe::{
 };
 use neos::{
 	api_client::{
-		AnyNeos,
-		NeosRequestUserSession,
-		NeosRequestUserSessionIdentifier,
+		AnyNeos, NeosRequestUserSession, NeosRequestUserSessionIdentifier,
 		NeosUnauthenticated,
 	},
 	NeosUserSession,
@@ -35,26 +33,36 @@ impl NeosPeepsApp {
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
+		let auth_sender = self.channels.auth_sender();
 		let loading = self.runtime.loading.clone();
 		std::thread::spawn(move || {
 			{
-				let neos_api = NeosUnauthenticated::from(
-					neos_api_arc.read().unwrap().clone(),
-				)
-				.upgrade(user_session);
+				let neos_api =
+					NeosUnauthenticated::from((*neos_api_arc).clone())
+						.upgrade(user_session);
 
 				match neos_api.extend_session() {
 					Ok(_) => {
-						println!("Logged into Neos' API");
-						*neos_api_arc.write().unwrap() = neos_api.into();
+						match auth_sender.send(neos_api.into()) {
+							Ok(_) => println!("Logged into Neos' API"),
+							Err(err) => println!(
+								"Failed to send auth accross threads! {}",
+								err
+							),
+						};
 					}
 					Err(err) => {
-						*neos_api_arc.write().unwrap() =
-							neos_api.downgrade().into();
-						println!(
+						match auth_sender.send(neos_api.downgrade().into()) {
+							Ok(_) => println!(
 							"Error with Neos API user session extension: {}",
 							err
-						);
+						),
+							Err(send_err) => println!(
+								"Error with Neos API user session extension, and also thread msg failed! {} - {}",
+								err,
+								send_err
+							),
+						};
 					}
 				}
 			}
@@ -81,16 +89,24 @@ impl NeosPeepsApp {
 
 		let neos_api_arc = self.runtime.neos_api.clone();
 		let user_session_arc = self.stored.user_session.clone();
+		let auth_sender = self.channels.auth_sender();
 		let loading = self.runtime.loading.clone();
 		std::thread::spawn(move || {
 			let neos_api: NeosUnauthenticated =
-				neos_api_arc.read().unwrap().clone().into();
+				((*neos_api_arc).clone()).into();
 
 			match neos_api.login(&session_request) {
 				Ok(neos_user_session) => {
-					println!("Logged in to Neos' API");
-					*neos_api_arc.write().unwrap() =
-						neos_api.upgrade(neos_user_session.clone()).into();
+					match auth_sender.send(
+						neos_api.upgrade(neos_user_session.clone()).into(),
+					) {
+						Ok(_) => println!("Logged into Neos' API"),
+						Err(err) => println!(
+							"Failed to send auth accross threads! {}",
+							err
+						),
+					};
+
 					*user_session_arc.write().unwrap() =
 						Some(neos_user_session);
 				}
@@ -117,8 +133,9 @@ impl NeosPeepsApp {
 
 		let neos_api_arc = self.runtime.neos_api.clone();
 		let loading = self.runtime.loading.clone();
+		let auth_sender = self.channels.auth_sender();
 		std::thread::spawn(move || {
-			let new_api = match neos_api_arc.read().unwrap().clone() {
+			let new_api = match (*neos_api_arc).clone() {
 				AnyNeos::Authenticated(neos_api) => {
 					neos_api.logout().ok();
 					neos_api.downgrade()
@@ -126,7 +143,9 @@ impl NeosPeepsApp {
 				AnyNeos::Unauthenticated(neos_api) => neos_api,
 			};
 
-			*neos_api_arc.write().unwrap() = new_api.into();
+			if let Err(err) = auth_sender.send(new_api.into()) {
+				println!("Failed to send auth accross threads! {}", err);
+			}
 
 			loading.write().unwrap().login =
 				crate::data::LoginOperationState::None;

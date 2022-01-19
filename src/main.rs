@@ -25,6 +25,7 @@ lazy_static::lazy_static! {
 }
 
 mod app;
+mod channels;
 mod data;
 mod image;
 mod styling;
