@@ -48,6 +48,40 @@ fn order_friends(fren1: &NeosFriend, fren2: &NeosFriend) -> Ordering {
 }
 
 impl NeosPeepsApp {
+	/// Refreshes friends in a background thread
+	pub fn refresh_friends(&mut self, frame: epi::Frame) {
+		{
+			let mut loading = self.runtime.loading.write().unwrap();
+			if loading.fetching_friends || loading.login_op() {
+				return;
+			}
+			loading.fetching_friends = true;
+		}
+		frame.request_repaint();
+
+		let neos_api_arc = self.runtime.neos_api.clone();
+		let friends_arc = self.runtime.friends.clone();
+		let loading = self.runtime.loading.clone();
+		rayon::spawn(move || {
+			if let AnyNeos::Authenticated(neos_api) =
+				&*neos_api_arc.read().unwrap()
+			{
+				match neos_api.get_friends() {
+					Ok(mut friends) => {
+						friends.sort_by(order_friends);
+						*friends_arc.write().unwrap() = friends;
+					}
+					Err(e) => {
+						println!("Error with Neos API: {}", e);
+					}
+				}
+			}
+
+			loading.write().unwrap().fetching_friends = false;
+			frame.request_repaint();
+		});
+	}
+
 	fn friend_row(
 		&self,
 		ui: &mut Ui,
@@ -144,40 +178,6 @@ impl NeosPeepsApp {
 		});
 
 		ui.end_row();
-	}
-
-	/// Refreshes friends in a background thread
-	pub fn refresh_friends(&mut self, frame: epi::Frame) {
-		{
-			let mut loading = self.runtime.loading.write().unwrap();
-			if loading.fetching_friends || loading.login_op() {
-				return;
-			}
-			loading.fetching_friends = true;
-		}
-		frame.request_repaint();
-
-		let neos_api_arc = self.runtime.neos_api.clone();
-		let friends_arc = self.runtime.friends.clone();
-		let loading = self.runtime.loading.clone();
-		rayon::spawn(move || {
-			if let AnyNeos::Authenticated(neos_api) =
-				&*neos_api_arc.read().unwrap()
-			{
-				match neos_api.get_friends() {
-					Ok(mut friends) => {
-						friends.sort_by(order_friends);
-						*friends_arc.write().unwrap() = friends;
-					}
-					Err(e) => {
-						println!("Error with Neos API: {}", e);
-					}
-				}
-			}
-
-			loading.write().unwrap().fetching_friends = false;
-			frame.request_repaint();
-		});
 	}
 
 	pub fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
