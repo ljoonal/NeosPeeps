@@ -51,7 +51,10 @@ impl NeosPeepsApp {
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			egui::trace!(ui);
-			ui.set_max_width(width - (self.stored.row_height * 2.1));
+			let spacing_width = ui.style().spacing.item_spacing.x;
+			ui.set_width(
+				width - (self.stored.row_height * 2_f32) - spacing_width,
+			);
 			ui.vertical(|ui| {
 				egui::trace!(ui);
 				ui.heading(session.stripped_name());
