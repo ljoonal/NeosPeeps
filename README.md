@@ -51,7 +51,11 @@ You could technically sell it, but you'd still need to give out the source code 
 
 This isn't legal advice of course, just my interpretation of the license.
 
-## Building
+## Development
+
+If you encounter bugs or have any other feedback, you can find me `ljoonal#2847` in the NeosVR discord as well as the Neos Modding discord servers.
+
+### Building
 
 Make sure you have the [Rust programming language](https://www.rust-lang.org/) installed.
 
@@ -60,4 +64,11 @@ Then in the project directory just run the `cargo run` command.
 For building the releases on a standard linux distro, see [build-release.sh](./build-release.sh).
 For publishing to gitea, see [gitea-publish.sh](./gitea-publish.sh)
 
-If you encounter bugs or have any other feedback, you can find me `ljoonal#2847` in the NeosVR discord as well as the Neos Modding discord servers.
+### Contributing
+
+In case you didn't know, git originally was used via email, and it still works just fine!
+Check out [git-send-email.io](https://git-send-email.io) for a short tutoria.!
+You can send patches to neos.git at ljoonal.xyz.
+
+Although it might be easier for you to just message me.
+I'm sure we can figure something out :)
