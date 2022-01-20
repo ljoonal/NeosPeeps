@@ -1,6 +1,11 @@
 //! The friends page of the app
 
-use super::{sessions::find_focused_session, NeosPeepsApp};
+use crate::image::TextureDetails;
+
+use super::{
+	sessions::{find_focused_session, session_users_count},
+	NeosPeepsApp,
+};
 use eframe::{
 	egui::{
 		Color32, CtxRef, Grid, Key, Label, Layout, RichText, ScrollArea, Sense,
@@ -9,11 +14,11 @@ use eframe::{
 	epi,
 };
 use neos::{
-	api_client::{AnyNeos, Neos, UserIdOrUsername},
+	api_client::{AnyNeos, Neos},
 	AssetUrl, NeosFriend, NeosSession, NeosUser, NeosUserOnlineStatus,
-	NeosUserStatus,
+	NeosUserProfile, NeosUserStatus,
 };
-use std::cmp::Ordering;
+use std::{cmp::Ordering, rc::Rc};
 
 fn order_users(s1: &NeosUserStatus, s2: &NeosUserStatus) -> Ordering {
 	// if their current session is joinable
@@ -178,16 +183,7 @@ impl NeosPeepsApp {
 		if let Some((id, user, status)) = &*self.runtime.user_window.borrow() {
 			Window::new("User ".to_owned() + id.as_ref()).show(ctx, |ui| {
 				if let Some(user) = user {
-					let pfp_url: &Option<AssetUrl> = get_user_pfp(user);
-
-					let pfp = match pfp_url {
-						Some(pfp_url) => self.load_texture(pfp_url, frame),
-						None => None,
-					};
-
-					let pfp = pfp.unwrap_or_else(|| {
-						self.runtime.default_profile_picture.clone().unwrap()
-					});
+					let pfp = self.get_pfp(frame, &user.profile);
 
 					let scaling = (ui.available_height() / pfp.size.y)
 						.min(ui.available_width() / pfp.size.x);
@@ -210,12 +206,6 @@ impl NeosPeepsApp {
 		}
 	}
 
-	fn if_four_col(&self, width: f32) -> bool {
-		const COL_MIN_WIDTH: f32 = 300.;
-
-		(width - self.stored.row_height * 2_f32) / 2_f32 > COL_MIN_WIDTH
-	}
-
 	fn friend_row(
 		&self,
 		ui: &mut Ui,
@@ -223,17 +213,9 @@ impl NeosPeepsApp {
 		frame: &epi::Frame,
 		friend: &NeosFriend,
 	) {
+		let mut open_window = false;
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			let pfp_url: &Option<AssetUrl> = get_friend_pfp(friend);
-
-			let pfp = match pfp_url {
-				Some(pfp_url) => self.load_texture(pfp_url, frame),
-				None => None,
-			};
-
-			let pfp = pfp.unwrap_or_else(|| {
-				self.runtime.default_profile_picture.clone().unwrap()
-			});
+			let pfp = self.get_pfp(frame, &friend.profile);
 
 			let response = ui.image(
 				pfp.id,
@@ -241,38 +223,35 @@ impl NeosPeepsApp {
 			);
 
 			if response.interact(Sense::click()).clicked() {
-				*self.runtime.user_window.borrow_mut() =
-					Some((friend.id.clone(), None, None));
-				self.get_user(frame, &friend.id);
-				self.get_user_status(frame, &friend.id);
+				open_window = true;
 			}
 		});
-
-		let style = ui.style();
-
+		// The width for 2 each of the "columns" (last one not really) before the thumbnail.
 		let width_for_cols = self.stored.row_height.max(
-			if self.if_four_col(width) {
-				let spacing_width = style.spacing.item_spacing.x * 3_f32;
-				width
-					- self.stored.row_height
-					- (self.stored.row_height * 2_f32)
-					- spacing_width
-			} else {
-				width - self.stored.row_height
-			} / 2_f32,
+			(width
+				- self.stored.row_height
+				- (self.stored.row_height * 2_f32)
+				- (ui.style().spacing.item_spacing.x * 3_f32))
+				/ 2_f32,
 		);
 
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			if self.if_four_col(width) {
-				ui.set_width(self.stored.row_height.max(width_for_cols));
-			} else {
-				ui.set_max_width(width_for_cols);
-			}
+			ui.set_width(width_for_cols);
 
 			ui.separator();
 			ui.vertical(|ui| {
 				let (r, g, b) = friend.user_status.online_status.color();
-				ui.heading(&friend.friend_username);
+				if ui
+					.add(
+						Label::new(
+							RichText::new(&friend.friend_username).heading(),
+						)
+						.sense(Sense::click()),
+					)
+					.clicked()
+				{
+					open_window = true;
+				}
 				ui.label(
 					RichText::new(
 						&friend.user_status.online_status.to_string(),
@@ -283,50 +262,72 @@ impl NeosPeepsApp {
 			});
 		});
 
-		let session = find_focused_session(&friend.id, &friend.user_status);
-
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			ui.set_width(if self.if_four_col(width) {
-				self.stored.row_height.max(width_for_cols)
-			} else {
-				ui.available_width()
-			});
+			ui.set_width(ui.available_width());
+
 			ui.separator();
 
-			ui.vertical(|ui| {
-				if let Some(session) = session {
-					ui.add(Label::new(&session.name).wrap(true));
-					ui.label(
-						friend
-							.user_status
-							.current_session_access_level
-							.as_ref(),
-					);
-					ui.label(&format!(
-						"{}/{}",
-						&session.joined_users, &session.max_users
-					));
-				} else if friend.user_status.online_status
-					== NeosUserOnlineStatus::Offline
-				{
-					ui.label(friend.user_status.online_status.as_ref());
-				} else {
-					ui.label("Couldn't find focused session");
-					ui.label(
-						friend
-							.user_status
-							.current_session_access_level
-							.as_ref(),
-					);
-				}
-			});
+			self.friend_row_session_col(ui, width_for_cols, frame, friend);
 		});
 
-		if self.if_four_col(width) {
-			self.friend_session_thumbnail(ui, frame, session);
-		}
-
 		ui.end_row();
+
+		if open_window {
+			*self.runtime.user_window.borrow_mut() =
+				Some((friend.id.clone(), None, None));
+			self.get_user(frame, &friend.id);
+			self.get_user_status(frame, &friend.id);
+		}
+	}
+
+	fn friend_row_session_col(
+		&self,
+		ui: &mut Ui,
+		width: f32,
+		frame: &epi::Frame,
+		friend: &NeosFriend,
+	) {
+		if let Some(session) =
+			find_focused_session(&friend.id, &friend.user_status)
+		{
+			let show_thumbnail = width > self.stored.row_height;
+			ui.vertical(|ui| {
+				if show_thumbnail {
+					ui.set_width(width);
+				}
+				if ui
+					.add(
+						Label::new(&session.name)
+							.wrap(true)
+							.sense(Sense::click()),
+					)
+					.clicked()
+				{
+					*self.runtime.session_window.borrow_mut() = Some((
+						session.session_id.clone(),
+						Some(session.clone()),
+					));
+				}
+				ui.label(
+					friend.user_status.current_session_access_level.as_ref(),
+				);
+				session_users_count(ui, session);
+			});
+			if show_thumbnail {
+				self.friend_session_thumbnail(ui, frame, session);
+			}
+		} else if friend.user_status.online_status
+			== NeosUserOnlineStatus::Offline
+		{
+			ui.label(friend.user_status.online_status.as_ref());
+		} else {
+			ui.vertical(|ui| {
+				ui.label("Couldn't find focused session");
+				ui.label(
+					friend.user_status.current_session_access_level.as_ref(),
+				);
+			});
+		}
 	}
 
 	fn user_row(
@@ -337,16 +338,7 @@ impl NeosPeepsApp {
 		user: &NeosUser,
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			let pfp_url: &Option<AssetUrl> = get_user_pfp(user);
-
-			let pfp = match pfp_url {
-				Some(pfp_url) => self.load_texture(pfp_url, frame),
-				None => None,
-			};
-
-			let pfp = pfp.unwrap_or_else(|| {
-				self.runtime.default_profile_picture.clone().unwrap()
-			});
+			let pfp = self.get_pfp(frame, &user.profile);
 
 			let response = ui.image(
 				pfp.id,
@@ -517,7 +509,7 @@ impl NeosPeepsApp {
 				Grid::new("friends_list")
 					.start_row(row_range.start)
 					.min_row_height(self.stored.row_height)
-					.num_columns(if self.if_four_col(width) { 4 } else { 3 })
+					.num_columns(3)
 					.show(ui, |ui| {
 						for row in row_range {
 							let friend = friends[row];
@@ -532,28 +524,46 @@ impl NeosPeepsApp {
 		&self,
 		ui: &mut Ui,
 		frame: &epi::Frame,
-		session: Option<&NeosSession>,
+		session: &NeosSession,
 	) {
-		ui.with_layout(Layout::left_to_right(), |ui| {
-			ui.set_min_width(ui.available_width());
-			ui.vertical(|ui| {
-				if let Some(session) = session {
-					if let Some(thumbnail) = &session.thumbnail {
-						let session_pics = self.load_texture(thumbnail, frame);
+		if let Some(thumbnail) = &session.thumbnail {
+			ui.with_layout(Layout::right_to_left(), |ui| {
+				ui.set_width(ui.available_width());
+				let session_pics = self.load_texture(thumbnail, frame);
+				if let Some(session_pic) = session_pics {
+					let scaling = (ui.available_height() / session_pic.size.y)
+						.min(ui.available_width() / session_pic.size.x);
+					let response =
+						ui.image(session_pic.id, session_pic.size * scaling);
 
-						if let Some(session_pic) = session_pics {
-							let scaling = (ui.available_height()
-								/ session_pic.size.y)
-								.min(ui.available_width() / session_pic.size.x);
-							ui.image(
-								session_pic.id,
-								session_pic.size * scaling,
-							);
-						}
+					if response.interact(Sense::click()).clicked() {
+						*self.runtime.session_window.borrow_mut() = Some((
+							session.session_id.clone(),
+							Some(session.clone()),
+						));
 					}
 				}
 			});
-		});
+		}
+	}
+
+	fn get_pfp(
+		&self,
+		frame: &epi::Frame,
+		profile: &Option<NeosUserProfile>,
+	) -> Rc<TextureDetails> {
+		let pfp_url = match profile {
+			Some(profile) => &profile.icon_url,
+			None => &None,
+		};
+		let pfp = match pfp_url {
+			Some(pfp_url) => self.load_texture(pfp_url, frame),
+			None => None,
+		};
+
+		pfp.unwrap_or_else(|| {
+			self.runtime.default_profile_picture.clone().unwrap()
+		})
 	}
 }
 
@@ -588,18 +598,5 @@ fn user_bans(ui: &mut Ui, user: &NeosUser) {
 
 	if !any_bans {
 		ui.label("No bans :)");
-	}
-}
-
-pub const fn get_friend_pfp(friend: &NeosFriend) -> &Option<AssetUrl> {
-	match &friend.profile {
-		Some(profile) => &profile.icon_url,
-		None => &None,
-	}
-}
-pub const fn get_user_pfp(user: &NeosUser) -> &Option<AssetUrl> {
-	match &user.profile {
-		Some(profile) => &profile.icon_url,
-		None => &None,
 	}
 }
