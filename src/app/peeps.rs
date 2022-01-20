@@ -233,35 +233,38 @@ impl NeosPeepsApp {
 
 		let friend = self.user_to_friend(user);
 
-		ui.horizontal(|ui| {
+		ui.horizontal_wrapped(|ui| {
 			username_decorations(ui, user, friend);
 			ui.heading(&user.username);
 		});
 
 		if let Some(friend) = friend {
 			if let Some(msg_time) = &friend.latest_message_time {
-				ui.horizontal(|ui| {
+				ui.horizontal_wrapped(|ui| {
 					ui.label("Last message time: ");
 					ui.label(msg_time.format(&self.stored.datetime_format).to_string());
 				});
 			}
 		}
 
+		#[allow(clippy::cast_precision_loss)]
 		if user.used_bytes.is_some() || user.quota_bytes.is_some() {
-			ui.horizontal(|ui| {
-				ui.label("Bytes used: ");
-				ui.label(
-					user.used_bytes.map_or_else(|| "?".to_string(), |v| v.to_string()),
-				);
+			ui.horizontal_wrapped(|ui| {
+				ui.label("GB used: ");
+				ui.label(user.used_bytes.map_or_else(
+					|| "?".to_string(),
+					|v| format!("{:.3}", v as f64 / 1_000_000_000_f64),
+				));
 				ui.label("/");
-				ui.label(
-					user.quota_bytes.map_or_else(|| "?".to_string(), |v| v.to_string()),
-				);
+				ui.label(user.quota_bytes.map_or_else(
+					|| "?".to_string(),
+					|v| format!("{:.3}", v as f64 / 1_000_000_000_f64),
+				));
 			});
 		}
 
 		if let Some(email) = &user.email {
-			ui.horizontal(|ui| {
+			ui.horizontal_wrapped(|ui| {
 				ui.label("Email: ");
 				ui.label(email);
 			});
@@ -279,7 +282,7 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(referral_id) = &user.referral_id {
-			ui.horizontal(|ui| {
+			ui.horizontal_wrapped(|ui| {
 				ui.label("Referral ID: ");
 				ui.label(referral_id);
 			});
@@ -287,13 +290,13 @@ impl NeosPeepsApp {
 
 		if let Some(credits) = &user.credits {
 			if let Some(ncr) = credits.ncr {
-				ui.horizontal(|ui| {
+				ui.horizontal_wrapped(|ui| {
 					ui.label("NCR: ");
 					ui.label(ncr.to_string());
 				});
 			}
 			if let Some(kfc) = credits.kfc {
-				ui.horizontal(|ui| {
+				ui.horizontal_wrapped(|ui| {
 					ui.label("KFC: ");
 					ui.label(kfc.to_string());
 				});
@@ -301,13 +304,13 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(addr) = &user.ncr_deposit_address {
-			ui.horizontal(|ui| {
+			ui.horizontal_wrapped(|ui| {
 				ui.label("NCR deposit addr: ");
 				ui.label(addr);
 			});
 		}
 
-		ui.horizontal(|ui| {
+		ui.horizontal_wrapped(|ui| {
 			ui.label("Ban status: ");
 			ui.vertical(|ui| {
 				user_bans(ui, user);
