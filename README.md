@@ -7,19 +7,32 @@ NeosPeeps is tool that allows for listing your [NeosVR](https://steamcommunity.c
 All the following functionality, in under 5MB:
 
 - Listing your friends
+
 ![Screenshot of friends list](static/friends-list.png)
+
 - Listing all the sessions, or only the ones that your friends are in
+
 ![Screenshot of sessions list](static/sessions-list.png)
+
 - Logging in, even with email or with 2fa enabled
+
 ![Screenshot of login page](static/login-page.png)
+
 - Searching the lists
+
 ![Screenshot of user search](static/user-search.png)
+
 - Showing details of a particular peep
+
 ![Screenshot of user window](static/user-window.png)
+
 - Refreshing the data in the background every so often
 - Resizable grid
+
 ![Screenshot of settings](static/settings-page.png)
+
 - CJK font support for all of you JP peeps
+
 ![Screenshot of settings](static/jp-session-search.png)
 
 ## License
