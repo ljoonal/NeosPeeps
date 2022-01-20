@@ -45,8 +45,7 @@ impl NeosPeepsApp {
 	pub fn refresh_sessions(&mut self, frame: &epi::Frame) {
 		use rayon::prelude::*;
 
-		if self.runtime.loading.fetching_sessions || self.runtime.loading.login_op()
-		{
+		if self.runtime.loading.login_op() {
 			return;
 		}
 		self.runtime.loading.fetching_sessions = true;
