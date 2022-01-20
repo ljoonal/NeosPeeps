@@ -2,7 +2,7 @@ use super::NeosPeepsApp;
 use eframe::{
 	egui::{
 		Align, Color32, CtxRef, Grid, Id, Label, Layout, RichText, ScrollArea,
-		Sense, Ui, Window,
+		Sense, Ui, Vec2, Window,
 	},
 	epi,
 };
@@ -112,7 +112,8 @@ impl NeosPeepsApp {
 		frame: &epi::Frame,
 		session: &NeosSession,
 	) {
-		let col1 = ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
+		let mut open_window = false;
+		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			let spacing_width = ui.style().spacing.item_spacing.x;
 			ui.set_width(
 				self.stored.row_height.max(
@@ -120,26 +121,39 @@ impl NeosPeepsApp {
 				),
 			);
 
-			ui.horizontal(|ui| {
-				ui.add(
-					Label::new(
-						RichText::new(session.stripped_name()).heading(),
+			ui.horizontal_wrapped(|ui| {
+				if ui
+					.add(
+						Label::new(
+							RichText::new(session.stripped_name())
+								.heading()
+								.color(Color32::WHITE),
+						)
+						.wrap(true)
+						.sense(Sense::click()),
 					)
-					.wrap(true),
-				);
+					.clicked()
+				{
+					open_window = true;
+				}
 
-				ui.label(
-					RichText::new(&format!(
-						"{}/{}/{}",
-						&session.active_users,
-						&session.joined_users,
-						&session.max_users
-					))
-					.strong(),
-				);
+				ui.horizontal(|ui| {
+					ui.style_mut().spacing.item_spacing = Vec2::ZERO;
+					ui.label(RichText::new(&session.active_users.to_string()))
+						.on_hover_text("Active users");
+					ui.label("/");
+					ui.label(
+						RichText::new(&session.joined_users.to_string())
+							.color(Color32::GRAY),
+					)
+					.on_hover_text("Joined users");
+					ui.label("/");
+					ui.label(RichText::new(&session.max_users.to_string()))
+						.on_hover_text("Max users");
+				});
 			});
 
-			ui.horizontal(|ui| {
+			ui.horizontal_wrapped(|ui| {
 				ui.label(session.access_level.as_ref());
 				ui.label("|");
 				ui.add(
@@ -157,29 +171,24 @@ impl NeosPeepsApp {
 			});
 		});
 
-		let col2 = ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
+		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			ui.set_min_width(ui.available_width());
 			if let Some(asset_url) = &session.thumbnail {
 				if let Some(thumbnail) = self.load_texture(asset_url, frame) {
 					let scaling = (ui.available_height() / thumbnail.size.y)
 						.min(ui.available_width() / thumbnail.size.x);
-					ui.image(thumbnail.id, thumbnail.size * scaling);
+					let response =
+						ui.image(thumbnail.id, thumbnail.size * scaling);
+					if response.interact(Sense::click()).clicked() {
+						open_window = true;
+					}
 				}
 			}
 		});
 
 		ui.end_row();
 
-		let rect = col1.response.rect.union(col2.response.rect);
-
-		if ui
-			.interact(
-				rect,
-				Id::new(session.session_id.as_ref()),
-				Sense::click(),
-			)
-			.clicked()
-		{
+		if open_window {
 			println!("{}", session.session_id.as_ref());
 			*self.runtime.session_window.borrow_mut() =
 				Some((session.session_id.clone(), Some(session.clone())));
