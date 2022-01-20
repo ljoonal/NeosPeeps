@@ -60,6 +60,10 @@ impl Default for Stored {
 /// [`neos::AssetUrl`] ID's as keys.
 pub type TexturesMap = HashMap<String, Rc<TextureDetails>, RandomState>;
 
+pub type UserWindow =
+	(neos::id::User, Option<NeosUser>, Option<NeosUserStatus>);
+pub type SessionWindow = (neos::id::Session, Option<NeosSession>);
+
 pub struct RuntimeOnly {
 	pub password: String,
 	pub totp: String,
@@ -74,9 +78,8 @@ pub struct RuntimeOnly {
 	pub textures: TexturesMap,
 	used_textures: RefCell<HashSet<String, RandomState>>,
 	pub loading_textures: RefCell<HashSet<String, RandomState>>,
-	pub user_window:
-		Option<(neos::id::User, Option<NeosUser>, Option<NeosUserStatus>)>,
-	pub session_window: Option<(neos::id::Session, Option<NeosSession>)>,
+	pub user_window: RefCell<Option<UserWindow>>,
+	pub session_window: RefCell<Option<SessionWindow>>,
 }
 
 impl NeosPeepsApp {
@@ -187,8 +190,8 @@ impl Default for RuntimeOnly {
 			textures: HashMap::default(),
 			used_textures: RefCell::default(),
 			loading_textures: RefCell::default(),
-			user_window: None,
-			session_window: None,
+			user_window: RefCell::default(),
+			session_window: RefCell::default(),
 		}
 	}
 }

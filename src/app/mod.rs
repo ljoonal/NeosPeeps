@@ -112,11 +112,11 @@ impl epi::App for NeosPeepsApp {
 					egui::Layout::top_down(egui::Align::Center),
 					|ui| {
 						if is_authenticated {
-							if self.runtime.user_window.is_some() {
+							if self.runtime.user_window.borrow().is_some() {
 								self.user_window(ctx, frame);
 							}
-							if self.runtime.session_window.is_some() {
-								self.user_window(ctx, frame);
+							if self.runtime.session_window.borrow().is_some() {
+								self.session_window(ctx, frame);
 							}
 
 							match self.stored.page {

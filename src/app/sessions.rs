@@ -1,8 +1,8 @@
 use super::NeosPeepsApp;
 use eframe::{
 	egui::{
-		Align, Color32, CtxRef, Grid, Label, Layout, RichText, ScrollArea, Ui,
-		Window,
+		Align, Color32, CtxRef, Grid, Id, Label, Layout, RichText, ScrollArea,
+		Sense, Ui, Window,
 	},
 	epi,
 };
@@ -49,18 +49,17 @@ impl NeosPeepsApp {
 	}
 
 	/// Gets the session status for the session window
-	pub fn get_session(&mut self, frame: &epi::Frame, id: neos::id::Session) {
-		if self.stored.filter_search.is_empty()
-			|| self.runtime.loading.login_op()
-		{
+	pub fn get_session(&self, frame: &epi::Frame, id: neos::id::Session) {
+		if self.runtime.loading.login_op() {
 			return;
 		}
-		if let Some((w_id, _)) = &self.runtime.session_window {
+		if let Some((w_id, _)) = &*self.runtime.session_window.borrow() {
 			if w_id != &id {
 				return;
 			}
 		} else {
-			self.runtime.session_window = Some((id.clone(), None));
+			*self.runtime.session_window.borrow_mut() =
+				Some((id.clone(), None));
 		}
 
 		frame.request_repaint();
@@ -80,12 +79,30 @@ impl NeosPeepsApp {
 	}
 
 	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
-		Window::new("Session").show(ctx, |ui| {
-			if ui.button("Close").clicked() {
-				self.runtime.session_window = None;
-				//...
-			}
-		});
+		let mut should_close = false;
+		if let Some((id, session)) = &*self.runtime.session_window.borrow() {
+			Window::new("Session ".to_owned() + id.as_ref()).show(ctx, |ui| {
+				if let Some(session) = session {
+					if let Some(asset_url) = &session.thumbnail {
+						if let Some(thumbnail) =
+							self.load_texture(asset_url, frame)
+						{
+							let scaling = (ui.available_height()
+								/ thumbnail.size.y)
+								.min(ui.available_width() / thumbnail.size.x);
+							ui.image(thumbnail.id, thumbnail.size * scaling);
+						}
+					}
+				}
+
+				if ui.button("Close").clicked() {
+					should_close = true;
+				}
+			});
+		}
+		if should_close {
+			*self.runtime.session_window.borrow_mut() = None;
+		}
 	}
 
 	fn session_row(
@@ -95,7 +112,7 @@ impl NeosPeepsApp {
 		frame: &epi::Frame,
 		session: &NeosSession,
 	) {
-		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
+		let col1 = ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			let spacing_width = ui.style().spacing.item_spacing.x;
 			ui.set_width(
 				self.stored.row_height.max(
@@ -110,6 +127,7 @@ impl NeosPeepsApp {
 					)
 					.wrap(true),
 				);
+
 				ui.label(
 					RichText::new(&format!(
 						"{}/{}/{}",
@@ -139,7 +157,7 @@ impl NeosPeepsApp {
 			});
 		});
 
-		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
+		let col2 = ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			ui.set_min_width(ui.available_width());
 			if let Some(asset_url) = &session.thumbnail {
 				if let Some(thumbnail) = self.load_texture(asset_url, frame) {
@@ -151,6 +169,21 @@ impl NeosPeepsApp {
 		});
 
 		ui.end_row();
+
+		let rect = col1.response.rect.union(col2.response.rect);
+
+		if ui
+			.interact(
+				rect,
+				Id::new(session.session_id.as_ref()),
+				Sense::click(),
+			)
+			.clicked()
+		{
+			println!("{}", session.session_id.as_ref());
+			*self.runtime.session_window.borrow_mut() =
+				Some((session.session_id.clone(), Some(session.clone())));
+		}
 	}
 
 	pub fn sessions_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {

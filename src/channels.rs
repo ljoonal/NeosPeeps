@@ -143,8 +143,8 @@ impl NeosPeepsApp {
 
 		if let Some(user_session) = self.channels.try_recv_user_session() {
 			self.stored.user_session = user_session;
-			self.runtime.session_window = None;
-			self.runtime.user_window = None;
+			*self.runtime.session_window.borrow_mut() = None;
+			*self.runtime.user_window.borrow_mut() = None;
 		}
 
 		if let Some(client) = self.channels.try_recv_auth() {
@@ -162,7 +162,9 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(user) = self.channels.try_recv_user() {
-			if let Some((user_id, w_user, _)) = &mut self.runtime.user_window {
+			if let Some((user_id, w_user, _)) =
+				&mut *self.runtime.user_window.borrow_mut()
+			{
 				if user.id == *user_id {
 					*w_user = Some(user);
 				}
@@ -174,7 +176,7 @@ impl NeosPeepsApp {
 			self.channels.try_recv_user_status()
 		{
 			if let Some((w_user_id, _, w_user_status)) =
-				&mut self.runtime.user_window
+				&mut *self.runtime.user_window.borrow_mut()
 			{
 				if user_id == *w_user_id {
 					*w_user_status = Some(user_status);
@@ -185,7 +187,7 @@ impl NeosPeepsApp {
 
 		if let Some(session) = self.channels.try_recv_session() {
 			if let Some((session_id, w_session)) =
-				&mut self.runtime.session_window
+				&mut *self.runtime.session_window.borrow_mut()
 			{
 				if session.session_id == *session_id {
 					*w_session = Some(session);

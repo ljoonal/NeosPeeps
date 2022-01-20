@@ -3,8 +3,8 @@
 use super::{sessions::find_focused_session, NeosPeepsApp};
 use eframe::{
 	egui::{
-		Color32, CtxRef, Grid, Key, Label, Layout, RichText, ScrollArea, Ui,
-		Vec2, Window,
+		Color32, CtxRef, Grid, Key, Label, Layout, RichText, ScrollArea, Sense,
+		Ui, Vec2, Window,
 	},
 	epi,
 };
@@ -109,22 +109,22 @@ impl NeosPeepsApp {
 	}
 
 	/// Gets the user for the user window
-	pub fn get_user(&mut self, frame: &epi::Frame, id: neos::id::User) {
-		if self.stored.filter_search.is_empty()
-			|| self.runtime.loading.login_op()
-		{
+	pub fn get_user(&self, frame: &epi::Frame, id: &neos::id::User) {
+		if self.runtime.loading.login_op() {
 			return;
 		}
-		if let Some((w_id, _, _)) = &self.runtime.user_window {
-			if w_id != &id {
+		if let Some((w_id, _, _)) = &*self.runtime.user_window.borrow() {
+			if w_id != id {
 				return;
 			}
 		} else {
-			self.runtime.user_window = Some((id.clone(), None, None));
+			*self.runtime.user_window.borrow_mut() =
+				Some((id.clone(), None, None));
 		}
 
 		frame.request_repaint();
 
+		let id = id.clone();
 		let neos_api = self.runtime.neos_api.clone();
 		let user_sender = self.channels.user_sender();
 		rayon::spawn(move || match neos_api.get_user(id) {
@@ -140,22 +140,22 @@ impl NeosPeepsApp {
 	}
 
 	/// Gets the user status for the user window
-	pub fn get_user_status(&mut self, frame: &epi::Frame, id: neos::id::User) {
-		if self.stored.filter_search.is_empty()
-			|| self.runtime.loading.login_op()
-		{
+	pub fn get_user_status(&self, frame: &epi::Frame, id: &neos::id::User) {
+		if self.runtime.loading.login_op() {
 			return;
 		}
-		if let Some((w_id, _, _)) = &self.runtime.user_window {
-			if w_id != &id {
+		if let Some((w_id, _, _)) = &*self.runtime.user_window.borrow() {
+			if w_id != id {
 				return;
 			}
 		} else {
-			self.runtime.user_window = Some((id.clone(), None, None));
+			*self.runtime.user_window.borrow_mut() =
+				Some((id.clone(), None, None));
 		}
 
 		frame.request_repaint();
 
+		let id = id.clone();
 		let neos_api = self.runtime.neos_api.clone();
 		let user_status_sender = self.channels.user_status_sender();
 		rayon::spawn(move || match neos_api.get_user_status(id.clone()) {
@@ -174,12 +174,40 @@ impl NeosPeepsApp {
 	}
 
 	pub fn user_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
-		Window::new("User").show(ctx, |ui| {
-			if ui.button("Close").clicked() {
-				self.runtime.user_window = None;
-				//...
-			}
-		});
+		let mut should_close = false;
+		if let Some((id, user, status)) = &*self.runtime.user_window.borrow() {
+			Window::new("User ".to_owned() + id.as_ref()).show(ctx, |ui| {
+				if let Some(user) = user {
+					let pfp_url: &Option<AssetUrl> = get_user_pfp(user);
+
+					let pfp = match pfp_url {
+						Some(pfp_url) => self.load_texture(pfp_url, frame),
+						None => None,
+					};
+
+					let pfp = pfp.unwrap_or_else(|| {
+						self.runtime.default_profile_picture.clone().unwrap()
+					});
+
+					let scaling = (ui.available_height() / pfp.size.y)
+						.min(ui.available_width() / pfp.size.x);
+
+					ui.image(pfp.id, pfp.size * scaling);
+					ui.label(&user.username);
+				}
+
+				if let Some(status) = status {
+					ui.label(status.online_status.as_ref());
+				}
+
+				if ui.button("Close").clicked() {
+					should_close = true;
+				}
+			});
+		}
+		if should_close {
+			*self.runtime.user_window.borrow_mut() = None;
+		}
 	}
 
 	fn if_four_col(&self, width: f32) -> bool {
@@ -207,10 +235,17 @@ impl NeosPeepsApp {
 				self.runtime.default_profile_picture.clone().unwrap()
 			});
 
-			ui.image(
+			let response = ui.image(
 				pfp.id,
 				Vec2::new(self.stored.row_height, self.stored.row_height),
 			);
+
+			if response.interact(Sense::click()).clicked() {
+				*self.runtime.user_window.borrow_mut() =
+					Some((friend.id.clone(), None, None));
+				self.get_user(frame, &friend.id);
+				self.get_user_status(frame, &friend.id);
+			}
 		});
 
 		let style = ui.style();
@@ -313,10 +348,16 @@ impl NeosPeepsApp {
 				self.runtime.default_profile_picture.clone().unwrap()
 			});
 
-			ui.image(
+			let response = ui.image(
 				pfp.id,
 				Vec2::new(self.stored.row_height, self.stored.row_height),
 			);
+
+			if response.interact(Sense::click()).clicked() {
+				*self.runtime.user_window.borrow_mut() =
+					Some((user.id.clone(), Some(user.clone()), None));
+				self.get_user_status(frame, &user.id);
+			}
 		});
 
 		let width_for_cols = self
