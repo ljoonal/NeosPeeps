@@ -41,9 +41,12 @@ fn setup_style(ctx: &egui::CtxRef) {
 	style.visuals.widgets.hovered.bg_stroke.color = fg;
 	style.visuals.widgets.hovered.fg_stroke.color = fg;
 
-	style.visuals.widgets.inactive.bg_fill = Color32::BLACK;
+	// Because scrollbar also uses this need to have it be a bit different from
+	// extreme_bg_color which is the BG of it.
+	style.visuals.widgets.inactive.bg_fill = Color32::from_rgb(10, 10, 14);
 	style.visuals.widgets.inactive.bg_stroke =
-		Stroke { width: 1., color: Color32::GRAY };
+		Stroke { color: Color32::BLACK, width: 2.0 };
+	style.visuals.widgets.inactive.fg_stroke.color = fg;
 
 	style.visuals.widgets.noninteractive.fg_stroke.color = fg;
 	style.visuals.widgets.noninteractive.bg_fill = bg;

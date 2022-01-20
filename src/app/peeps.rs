@@ -1,6 +1,6 @@
 //! The friends page of the app
 
-use std::{cmp::Ordering, rc::Rc};
+use std::{borrow::Borrow, cmp::Ordering, rc::Rc};
 
 use eframe::{
 	egui::{
@@ -182,49 +182,33 @@ impl NeosPeepsApp {
 	}
 
 	pub fn user_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
-		let mut should_close = false;
+		let mut open = true;
 		let mut refresh_user: Option<neos::id::User> = None;
 		let mut refresh_user_status: Option<neos::id::User> = None;
 		if let Some((id, user, status)) = &*self.runtime.user_window.borrow() {
-			Window::new("User ".to_owned() + id.as_ref()).show(ctx, |ui| {
+			Window::new(id.as_ref()).open(&mut open).vscroll(true).show(ctx, |ui| {
 				if let Some(user) = user {
-					let pfp = self.get_pfp(frame, &user.profile);
-
-					let scaling = (ui.available_height() / pfp.size.y)
-						.min(ui.available_width() / pfp.size.x);
-
-					ui.image(pfp.id, pfp.size * scaling);
-					ui.label(&user.username);
-					if ui.button("Refresh user details").clicked() {
-						refresh_user = Some(id.clone());
-					}
+					ui.vertical_centered(|ui| {
+						if ui.button("Refresh user").clicked() {
+							refresh_user = Some(id.clone());
+						}
+					});
+					self.user_window_section_user(ui, frame, user);
 				}
 
 				if let Some(status) = status {
-					let (r, g, b) = status.online_status.color();
-					ui.label(
-						RichText::new(&status.online_status.to_string())
-							.color(Color32::from_rgb(r, g, b)),
-					);
+					ui.separator();
+					ui.vertical_centered(|ui| {
+						if ui.button("Refresh status").clicked() {
+							refresh_user_status = Some(id.clone());
+						}
+					});
 
-					if let Some(status_change) = status.last_status_change_time {
-						ui.horizontal(|ui| {
-							ui.label("Status last changed on");
-							ui.label(status_change.to_string());
-						});
-					}
-
-					if ui.button("Refresh user status").clicked() {
-						refresh_user_status = Some(id.clone());
-					}
-				}
-
-				if ui.button("Close").clicked() {
-					should_close = true;
+					self.user_window_section_status(ui, frame, id, status);
 				}
 			});
 		}
-		if should_close {
+		if !open {
 			*self.runtime.user_window.borrow_mut() = None;
 		} else if let Some(id) = refresh_user {
 			if let Some(w_user) = &mut *self.runtime.user_window.borrow_mut() {
@@ -236,6 +220,96 @@ impl NeosPeepsApp {
 				w_user.2 = None;
 			}
 			self.get_user_status(frame, &id);
+		}
+	}
+
+	fn user_window_section_user(
+		&self, ui: &mut Ui, frame: &epi::Frame, user: &NeosUser,
+	) {
+		let pfp = self.get_pfp(frame, &user.profile);
+
+		let scaling = (ui.available_height() / pfp.size.y)
+			.min(ui.available_width() / pfp.size.x);
+
+		ui.image(pfp.id, pfp.size * scaling);
+		ui.horizontal(|ui| {
+			self.username_decorations(ui, frame, user);
+			ui.heading(&user.username);
+		});
+
+		ui.horizontal(|ui| {
+			ui.label("Ban status");
+			ui.vertical(|ui| {
+				user_bans(ui, user);
+			});
+		});
+	}
+
+	fn user_window_section_status(
+		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
+		status: &NeosUserStatus,
+	) {
+		let (r, g, b) = status.online_status.color();
+		ui.label(
+			RichText::new(&status.online_status.to_string())
+				.color(Color32::from_rgb(r, g, b)),
+		);
+
+		if let Some(status_change) = status.last_status_change_time {
+			ui.horizontal(|ui| {
+				ui.label("Status last changed on:");
+				ui.label(
+					status_change.format(&self.stored.datetime_format).to_string(),
+				);
+			});
+		}
+
+		if let Some(neos_version) = &status.neos_version {
+			ui.horizontal(|ui| {
+				ui.label("Neos V:");
+				ui.label(neos_version);
+			});
+		}
+
+		if let Some(hash) = &status.compatibility_hash {
+			ui.horizontal(|ui| {
+				ui.label("Compatibility hash:");
+				ui.label(hash);
+			});
+		}
+
+		ui.horizontal(|ui| {
+			ui.label("Output device:");
+			ui.label(status.output_device.as_ref());
+		});
+
+		ui.horizontal(|ui| {
+			ui.label("Mobile:");
+			ui.label(status.is_mobile.to_string());
+		});
+
+		ui.horizontal(|ui| {
+			ui.label("Current session is hidden:");
+			ui.label(status.is_current_session_hidden.to_string());
+		});
+
+		ui.horizontal(|ui| {
+			ui.label("Hosting:");
+			ui.label(status.is_current_hosting.to_string());
+		});
+
+		if !status.active_sessions.is_empty() {
+			ui.group(|ui| {
+				self.sessions_table(
+					ui,
+					frame,
+					status
+						.active_sessions
+						.iter()
+						.collect::<Vec<&NeosSession>>()
+						.as_slice(),
+				);
+			});
 		}
 	}
 
@@ -357,18 +431,7 @@ impl NeosPeepsApp {
 			ui.separator();
 			ui.vertical(|ui| {
 				ui.horizontal(|ui| {
-					if user.is_verified {
-						ui.label(RichText::new("V").color(Color32::GREEN))
-							.on_hover_text("Verified");
-					}
-					if user.is_locked {
-						ui.label(RichText::new("L").color(Color32::RED))
-							.on_hover_text("Locked");
-					}
-					if user.supress_ban_evasion {
-						ui.label(RichText::new("B").color(Color32::KHAKI))
-							.on_hover_text("Ban evasion disabled");
-					}
+					self.username_decorations(ui, frame, user);
 					self.clickable_username(
 						ui,
 						frame,
@@ -378,6 +441,7 @@ impl NeosPeepsApp {
 						None,
 					);
 				});
+
 				self.clickable_user_id(ui, frame, &user.id, Some(user), None);
 				ui.label(
 					RichText::new(
@@ -401,6 +465,7 @@ impl NeosPeepsApp {
 			ui.separator();
 
 			ui.vertical(|ui| {
+				ui.label("Ban status");
 				user_bans(ui, user);
 			});
 		});
@@ -510,6 +575,40 @@ impl NeosPeepsApp {
 		);
 	}
 
+	fn username_decorations(
+		&self, ui: &mut Ui, frame: &epi::Frame, user: &NeosUser,
+	) {
+		use rayon::prelude::*;
+
+		let as_friend = self
+			.runtime
+			.friends
+			.par_iter()
+			.find_any(|f| f.is_accepted && f.id == user.id);
+
+		if let Some(as_friend) = as_friend {
+			if as_friend.is_accepted {
+				ui.label(RichText::new("F").color(Color32::from_rgb(255, 0, 122)))
+					.on_hover_text("Friend");
+			} else {
+				ui.label(RichText::new("R").color(Color32::YELLOW))
+					.on_hover_text("Requested friendship");
+			}
+		}
+
+		if user.is_verified {
+			ui.label(RichText::new("V").color(Color32::GREEN))
+				.on_hover_text("Verified (email)");
+		}
+		if user.is_locked {
+			ui.label(RichText::new("L").color(Color32::RED)).on_hover_text("Locked");
+		}
+		if user.supress_ban_evasion {
+			ui.label(RichText::new("B").color(Color32::KHAKI))
+				.on_hover_text("Ban evasion disabled");
+		}
+	}
+
 	fn clickable_username(
 		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
 		username: &str, user: Option<&NeosUser>,
@@ -607,7 +706,6 @@ impl NeosPeepsApp {
 }
 
 fn user_bans(ui: &mut Ui, user: &NeosUser) {
-	ui.label("Ban status");
 	let mut any_bans = false;
 
 	if let Some(ban) = &user.public_ban_type {

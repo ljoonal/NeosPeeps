@@ -104,11 +104,16 @@ impl NeosPeepsApp {
 	}
 
 	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
-		let mut should_close = false;
+		let mut open = true;
 		let mut refresh_id: Option<neos::id::Session> = None;
 		if let Some((id, session)) = &*self.runtime.session_window.borrow() {
-			Window::new("Session ".to_owned() + id.as_ref()).show(ctx, |ui| {
+			Window::new(id.as_ref()).open(&mut open).vscroll(true).show(ctx, |ui| {
 				if let Some(session) = session {
+					ui.vertical_centered(|ui| {
+						if ui.button("Refresh").clicked() {
+							refresh_id = Some(session.id.clone());
+						}
+					});
 					if let Some(asset_url) = &session.thumbnail {
 						if let Some(thumbnail) = self.load_texture(asset_url, frame) {
 							let scaling = (ui.available_height() / thumbnail.size.y)
@@ -116,18 +121,11 @@ impl NeosPeepsApp {
 							ui.image(thumbnail.id, thumbnail.size * scaling);
 						}
 					}
-					if ui.button("Refresh").clicked() {
-						refresh_id = Some(session.id.clone());
-					}
-				}
-
-				if ui.button("Close").clicked() {
-					should_close = true;
 				}
 			});
 		}
 
-		if should_close {
+		if !open {
 			*self.runtime.session_window.borrow_mut() = None;
 		} else if let Some(id) = refresh_id {
 			if let Some(w_session) = &mut *self.runtime.session_window.borrow_mut() {
@@ -251,9 +249,15 @@ impl NeosPeepsApp {
 				.collect()
 		};
 
-		let sessions_count = sessions.len();
+		ui.heading(sessions.len().to_string() + " Sessions");
 
-		ui.heading(sessions_count.to_string() + " Sessions");
+		self.sessions_table(ui, frame, &sessions);
+	}
+
+	pub fn sessions_table(
+		&self, ui: &mut Ui, frame: &epi::Frame, sessions: &[&NeosSession],
+	) {
+		let sessions_count = sessions.len();
 
 		ScrollArea::both().show_rows(
 			ui,

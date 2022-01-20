@@ -25,6 +25,7 @@ use serde::{Deserialize, Serialize};
 use crate::{app::NeosPeepsApp, image::TextureDetails};
 
 #[derive(Serialize, Deserialize)]
+#[serde(default)]
 pub struct Stored {
 	pub user_session: Option<NeosUserSession>,
 	pub identifier: NeosRequestUserSessionIdentifier,
@@ -34,6 +35,8 @@ pub struct Stored {
 	pub col_min_width: f32,
 	pub filter_friends_only: bool,
 	pub filter_search: String,
+	/// For formats, see https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+	pub datetime_format: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -59,6 +62,7 @@ impl Default for Stored {
 			col_min_width: 200f32,
 			filter_friends_only: true,
 			filter_search: String::new(),
+			datetime_format: String::from("%X %x"),
 		}
 	}
 }
