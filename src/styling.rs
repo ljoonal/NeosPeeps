@@ -58,6 +58,13 @@ fn setup_style(ctx: &egui::CtxRef) {
 }
 
 fn setup_fonts(ctx: &egui::CtxRef) {
+	use font_kit::family_name::FamilyName;
+	use font_kit::properties::{Properties, Style, Weight};
+	use font_kit::source::SystemSource;
+
+	const JP_FONT_ERR: &str = "This might cause some characters, like japanese ones, to not render properly.";
+	const JP_FONT: &str = "Noto Sans CJK JP font";
+
 	let mut fonts = FontDefinitions::default();
 
 	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Heading) {
@@ -84,10 +91,6 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 		"raleway".to_owned(),
 		FontData::from_static(include_bytes!("../static/Raleway.ttf")),
 	);
-	//	fonts.font_data.insert(
-	//		"noto-cjk-jp".to_owned(),
-	//		FontData::from_static(include_bytes!("../static/NotoSansCJKjp-VF.ttf")),
-	//	);
 	fonts
 		.fonts_for_family
 		.get_mut(&FontFamily::Proportional)
@@ -99,16 +102,35 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 		.unwrap()
 		.push("raleway".to_owned());
 
-	//	fonts
-	//		.fonts_for_family
-	//		.get_mut(&FontFamily::Proportional)
-	//		.unwrap()
-	//		.push("noto-cjk-jp".to_owned());
-	//	fonts
-	//		.fonts_for_family
-	//		.get_mut(&FontFamily::Monospace)
-	//		.unwrap()
-	//		.push("noto-cjk-jp".to_owned());
+	if let Ok(font_handle) = SystemSource::new().select_best_match(
+		&[FamilyName::Title("Noto Sans CJK JP".to_string())],
+		Properties::new().style(Style::Normal).weight(Weight::LIGHT),
+	) {
+		if let Ok(font) = font_handle.load() {
+			if let Some(font_data) = font.copy_font_data() {
+				fonts.font_data.insert(
+					"noto-cjk-jp".to_owned(),
+					FontData::from_owned((*font_data).clone()),
+				);
+				fonts
+					.fonts_for_family
+					.get_mut(&FontFamily::Proportional)
+					.unwrap()
+					.push("noto-cjk-jp".to_owned());
+				fonts
+					.fonts_for_family
+					.get_mut(&FontFamily::Monospace)
+					.unwrap()
+					.push("noto-cjk-jp".to_owned());
+			} else {
+				println!("Failed to load the data of {}. {}", JP_FONT, JP_FONT_ERR);
+			}
+		} else {
+			println!("Failed to load {}. {}", JP_FONT, JP_FONT_ERR);
+		}
+	} else {
+		println!("Couldn't find {}. {}", JP_FONT, JP_FONT_ERR);
+	}
 
 	ctx.set_fonts(fonts);
 }
