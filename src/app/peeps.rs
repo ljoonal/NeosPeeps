@@ -536,12 +536,15 @@ impl NeosPeepsApp {
 			.par_iter()
 			.filter(|user| {
 				self.stored.filter_search.is_empty()
-					|| user.username.to_lowercase().contains(&self.stored.filter_search)
+					|| user
+						.username
+						.to_lowercase()
+						.contains(&self.stored.filter_search.to_lowercase())
 					|| user
 						.id
 						.as_ref()
 						.to_lowercase()
-						.contains(&self.stored.filter_search)
+						.contains(&self.stored.filter_search.to_lowercase())
 			})
 			.collect();
 
@@ -581,12 +584,15 @@ impl NeosPeepsApp {
 			.par_iter()
 			.filter(|friend| {
 				self.stored.filter_search.is_empty()
-					|| friend.username.to_lowercase().contains(&self.stored.filter_search)
+					|| friend
+						.username
+						.to_lowercase()
+						.contains(&self.stored.filter_search.to_lowercase())
 					|| friend
 						.id
 						.as_ref()
 						.to_lowercase()
-						.contains(&self.stored.filter_search)
+						.contains(&self.stored.filter_search.to_lowercase())
 			})
 			.collect();
 

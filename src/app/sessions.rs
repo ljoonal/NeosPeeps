@@ -238,11 +238,11 @@ impl NeosPeepsApp {
 						|| session
 							.host_username
 							.to_lowercase()
-							.contains(&self.stored.filter_search)
+							.contains(&self.stored.filter_search.to_lowercase())
 						|| session
 							.stripped_name()
 							.to_lowercase()
-							.contains(&self.stored.filter_search)
+							.contains(&self.stored.filter_search.to_lowercase())
 				})
 				.collect()
 		};
