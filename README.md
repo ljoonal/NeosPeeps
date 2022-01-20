@@ -49,6 +49,8 @@ AGPL means that if you make changes and distribute the software, you will also h
 In addition you'll need to provide the source code for any remote clients of the application if they ask for it.
 You could technically sell it, but you'd still need to give out the source code if asked for it as well as build instructions, at which point, why would anyone pay you for it if they can just build it for free?
 
+This isn't legal advice of course, just my interpretation of the license.
+
 ## Building
 
 Make sure you have the [Rust programming language](https://www.rust-lang.org/) installed.
