@@ -67,7 +67,13 @@ impl NeosPeepsApp {
 			// Account menu.
 			if !is_logging_in && is_authenticated {
 				ui.menu_button("Account", |ui| {
-					if ui.add_enabled(!is_loading, Button::new("Refresh")).clicked() {
+					if ui
+						.add_enabled(
+							!self.runtime.loading.login_op(),
+							Button::new("Refresh"),
+						)
+						.clicked()
+					{
 						ui.close_menu();
 						self.refresh_friends(frame);
 					}
