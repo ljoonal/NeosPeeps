@@ -1,12 +1,12 @@
 use std::time::Duration;
 
-use crate::data::Page;
-
-use super::NeosPeepsApp;
 use eframe::{
 	egui::{Slider, Ui},
 	epi,
 };
+
+use super::NeosPeepsApp;
+use crate::data::Page;
 
 impl NeosPeepsApp {
 	pub fn settings_page(&mut self, ui: &mut Ui, _frame: &epi::Frame) {
@@ -22,8 +22,7 @@ impl NeosPeepsApp {
 				)
 				.changed()
 			{
-				self.stored.refresh_frequency =
-					Duration::from_secs(refresh_freq);
+				self.stored.refresh_frequency = Duration::from_secs(refresh_freq);
 			}
 		}
 

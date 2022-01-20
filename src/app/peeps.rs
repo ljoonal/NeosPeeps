@@ -1,11 +1,7 @@
 //! The friends page of the app
 
-use crate::image::TextureDetails;
+use std::{cmp::Ordering, rc::Rc};
 
-use super::{
-	sessions::{find_focused_session, session_users_count},
-	NeosPeepsApp,
-};
 use eframe::{
 	egui::{
 		Color32,
@@ -32,7 +28,12 @@ use neos::{
 	NeosUserProfile,
 	NeosUserStatus,
 };
-use std::{cmp::Ordering, rc::Rc};
+
+use super::{
+	sessions::{find_focused_session, session_users_count},
+	NeosPeepsApp,
+};
+use crate::image::TextureDetails;
 
 fn order_users(s1: &NeosUserStatus, s2: &NeosUserStatus) -> Ordering {
 	// if their current session is joinable
@@ -85,14 +86,10 @@ impl NeosPeepsApp {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_friends() {
 					Ok(mut friends) => {
-						friends.sort_by(|f1, f2| {
-							order_users(&f1.user_status, &f2.user_status)
-						});
+						friends
+							.sort_by(|f1, f2| order_users(&f1.user_status, &f2.user_status));
 						if let Err(err) = friends_sender.send(friends) {
-							println!(
-								"Failed to send friends to main thread! {}",
-								err
-							);
+							println!("Failed to send friends to main thread! {}", err);
 						}
 					}
 					Err(e) => {
@@ -104,9 +101,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn search_users(&mut self, frame: &epi::Frame) {
-		if self.stored.filter_search.is_empty()
-			|| self.runtime.loading.login_op()
-		{
+		if self.stored.filter_search.is_empty() || self.runtime.loading.login_op() {
 			return;
 		}
 
@@ -137,8 +132,7 @@ impl NeosPeepsApp {
 				return;
 			}
 		} else {
-			*self.runtime.user_window.borrow_mut() =
-				Some((id.clone(), None, None));
+			*self.runtime.user_window.borrow_mut() = Some((id.clone(), None, None));
 		}
 
 		frame.request_repaint();
@@ -168,8 +162,7 @@ impl NeosPeepsApp {
 				return;
 			}
 		} else {
-			*self.runtime.user_window.borrow_mut() =
-				Some((id.clone(), None, None));
+			*self.runtime.user_window.borrow_mut() = Some((id.clone(), None, None));
 		}
 
 		frame.request_repaint();
@@ -180,10 +173,7 @@ impl NeosPeepsApp {
 		rayon::spawn(move || match neos_api.get_user_status(id.clone()) {
 			Ok(user_status) => {
 				if let Err(err) = user_status_sender.send((id, user_status)) {
-					println!(
-						"Failed to send user status to main thread! {}",
-						err
-					);
+					println!("Failed to send user status to main thread! {}", err);
 				}
 			}
 			Err(e) => {
@@ -239,13 +229,8 @@ impl NeosPeepsApp {
 	}
 
 	fn friend_row(
-		&self,
-		ui: &mut Ui,
-		width: f32,
-		frame: &epi::Frame,
-		friend: &NeosFriend,
+		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, friend: &NeosFriend,
 	) {
-		let mut open_window = false;
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			let pfp = self.get_pfp(frame, &friend.profile);
 
@@ -255,7 +240,7 @@ impl NeosPeepsApp {
 			);
 
 			if response.interact(Sense::click()).clicked() {
-				open_window = true;
+				self.open_user(frame, &friend.id, None, None);
 			}
 		});
 		// The width for 2 each of the "columns" (last one not really) before
@@ -274,22 +259,17 @@ impl NeosPeepsApp {
 			ui.separator();
 			ui.vertical(|ui| {
 				let (r, g, b) = friend.user_status.online_status.color();
-				if ui
-					.add(
-						Label::new(
-							RichText::new(&friend.friend_username).heading(),
-						)
-						.sense(Sense::click()),
-					)
-					.clicked()
-				{
-					open_window = true;
-				}
+				self.clickable_username(
+					ui,
+					frame,
+					&friend.id,
+					&friend.friend_username,
+					None,
+					None,
+				);
 				ui.label(
-					RichText::new(
-						&friend.user_status.online_status.to_string(),
-					)
-					.color(Color32::from_rgb(r, g, b)),
+					RichText::new(&friend.user_status.online_status.to_string())
+						.color(Color32::from_rgb(r, g, b)),
 				);
 				ui.label(RichText::new(friend.id.as_ref()).small().monospace());
 			});
@@ -304,24 +284,12 @@ impl NeosPeepsApp {
 		});
 
 		ui.end_row();
-
-		if open_window {
-			*self.runtime.user_window.borrow_mut() =
-				Some((friend.id.clone(), None, None));
-			self.get_user(frame, &friend.id);
-			self.get_user_status(frame, &friend.id);
-		}
 	}
 
 	fn friend_row_session_col(
-		&self,
-		ui: &mut Ui,
-		width: f32,
-		frame: &epi::Frame,
-		friend: &NeosFriend,
+		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, friend: &NeosFriend,
 	) {
-		if let Some(session) =
-			find_focused_session(&friend.id, &friend.user_status)
+		if let Some(session) = find_focused_session(&friend.id, &friend.user_status)
 		{
 			let show_thumbnail = width > self.stored.row_height;
 			ui.vertical(|ui| {
@@ -329,46 +297,31 @@ impl NeosPeepsApp {
 					ui.set_width(width);
 				}
 				if ui
-					.add(
-						Label::new(&session.name)
-							.wrap(true)
-							.sense(Sense::click()),
-					)
+					.add(Label::new(&session.name).wrap(true).sense(Sense::click()))
 					.clicked()
 				{
-					*self.runtime.session_window.borrow_mut() = Some((
-						session.session_id.clone(),
-						Some(session.clone()),
-					));
+					*self.runtime.session_window.borrow_mut() =
+						Some((session.session_id.clone(), Some(session.clone())));
 				}
-				ui.label(
-					friend.user_status.current_session_access_level.as_ref(),
-				);
+				ui.label(friend.user_status.current_session_access_level.as_ref());
 				session_users_count(ui, session);
 			});
 			if show_thumbnail {
 				self.friend_session_thumbnail(ui, frame, session);
 			}
-		} else if friend.user_status.online_status
-			== NeosUserOnlineStatus::Offline
+		} else if friend.user_status.online_status == NeosUserOnlineStatus::Offline
 		{
 			ui.label(friend.user_status.online_status.as_ref());
 		} else {
 			ui.vertical(|ui| {
 				ui.label("Couldn't find focused session");
-				ui.label(
-					friend.user_status.current_session_access_level.as_ref(),
-				);
+				ui.label(friend.user_status.current_session_access_level.as_ref());
 			});
 		}
 	}
 
 	fn user_row(
-		&self,
-		ui: &mut Ui,
-		width: f32,
-		frame: &epi::Frame,
-		user: &NeosUser,
+		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, user: &NeosUser,
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			let pfp = self.get_pfp(frame, &user.profile);
@@ -385,10 +338,8 @@ impl NeosPeepsApp {
 			}
 		});
 
-		let width_for_cols = self
-			.stored
-			.row_height
-			.max((width - self.stored.row_height) / 2_f32);
+		let width_for_cols =
+			self.stored.row_height.max((width - self.stored.row_height) / 2_f32);
 
 		// User details
 		ui.with_layout(Layout::left_to_right(), |ui| {
@@ -409,15 +360,16 @@ impl NeosPeepsApp {
 						ui.label(RichText::new("B").color(Color32::KHAKI))
 							.on_hover_text("Ban evasion disabled");
 					}
-					ui.add(
-						Label::new(RichText::new(&user.username).heading())
-							.wrap(true),
+					self.clickable_username(
+						ui,
+						frame,
+						&user.id,
+						&user.username,
+						Some(user),
+						None,
 					);
 				});
-				ui.add(
-					Label::new(RichText::new(user.id.as_ref()).monospace())
-						.wrap(true),
-				);
+				self.clickable_user_id(ui, frame, &user.id, Some(user), None);
 				ui.label(
 					RichText::new(
 						&user
@@ -470,10 +422,7 @@ impl NeosPeepsApp {
 			.par_iter()
 			.filter(|user| {
 				self.stored.filter_search.is_empty()
-					|| user
-						.username
-						.to_lowercase()
-						.contains(&self.stored.filter_search)
+					|| user.username.to_lowercase().contains(&self.stored.filter_search)
 					|| user
 						.id
 						.as_ref()
@@ -553,11 +502,67 @@ impl NeosPeepsApp {
 		);
 	}
 
+	fn clickable_username(
+		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
+		username: &str, user: Option<&NeosUser>,
+		user_status: Option<&NeosUserStatus>,
+	) {
+		if ui
+			.add(
+				Label::new(RichText::new(username).heading())
+					.wrap(true)
+					.sense(Sense::click()),
+			)
+			.clicked()
+		{
+			self.open_user(
+				frame,
+				id,
+				user.map(Clone::clone),
+				user_status.map(Clone::clone),
+			);
+		}
+	}
+
+	fn clickable_user_id(
+		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
+		user: Option<&NeosUser>, user_status: Option<&NeosUserStatus>,
+	) {
+		if ui
+			.add(
+				Label::new(RichText::new(id.as_ref()).monospace())
+					.wrap(true)
+					.sense(Sense::click()),
+			)
+			.clicked()
+		{
+			self.open_user(
+				frame,
+				id,
+				user.map(Clone::clone),
+				user_status.map(Clone::clone),
+			);
+		}
+	}
+
+	fn open_user(
+		&self, frame: &epi::Frame, id: &neos::id::User, user: Option<NeosUser>,
+		user_status: Option<NeosUserStatus>,
+	) {
+		let (missing_user, missing_status) =
+			(user.is_none(), user_status.is_none());
+		*self.runtime.user_window.borrow_mut() =
+			Some((id.clone(), user, user_status));
+		if missing_user {
+			self.get_user(frame, id);
+		}
+		if missing_status {
+			self.get_user_status(frame, id);
+		}
+	}
+
 	fn friend_session_thumbnail(
-		&self,
-		ui: &mut Ui,
-		frame: &epi::Frame,
-		session: &NeosSession,
+		&self, ui: &mut Ui, frame: &epi::Frame, session: &NeosSession,
 	) {
 		if let Some(thumbnail) = &session.thumbnail {
 			ui.with_layout(Layout::right_to_left(), |ui| {
@@ -566,14 +571,11 @@ impl NeosPeepsApp {
 				if let Some(session_pic) = session_pics {
 					let scaling = (ui.available_height() / session_pic.size.y)
 						.min(ui.available_width() / session_pic.size.x);
-					let response =
-						ui.image(session_pic.id, session_pic.size * scaling);
+					let response = ui.image(session_pic.id, session_pic.size * scaling);
 
 					if response.interact(Sense::click()).clicked() {
-						*self.runtime.session_window.borrow_mut() = Some((
-							session.session_id.clone(),
-							Some(session.clone()),
-						));
+						*self.runtime.session_window.borrow_mut() =
+							Some((session.session_id.clone(), Some(session.clone())));
 					}
 				}
 			});
@@ -581,9 +583,7 @@ impl NeosPeepsApp {
 	}
 
 	fn get_pfp(
-		&self,
-		frame: &epi::Frame,
-		profile: &Option<NeosUserProfile>,
+		&self, frame: &epi::Frame, profile: &Option<NeosUserProfile>,
 	) -> Rc<TextureDetails> {
 		let pfp_url = match profile {
 			Some(profile) => &profile.icon_url,
@@ -594,9 +594,7 @@ impl NeosPeepsApp {
 			None => None,
 		};
 
-		pfp.unwrap_or_else(|| {
-			self.runtime.default_profile_picture.clone().unwrap()
-		})
+		pfp.unwrap_or_else(|| self.runtime.default_profile_picture.clone().unwrap())
 	}
 }
 

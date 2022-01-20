@@ -63,30 +63,28 @@ impl Channels {
 	pub fn friends_sender(&self) -> Sender<Vec<NeosFriend>> {
 		self.friends.0.clone()
 	}
-	pub fn users_sender(&self) -> Sender<Vec<NeosUser>> {
-		self.users.0.clone()
-	}
+
+	pub fn users_sender(&self) -> Sender<Vec<NeosUser>> { self.users.0.clone() }
+
 	pub fn sessions_sender(&self) -> Sender<Vec<NeosSession>> {
 		self.sessions.0.clone()
 	}
-	pub fn auth_sender(&self) -> Sender<Arc<AnyNeos>> {
-		self.auth.0.clone()
-	}
+
+	pub fn auth_sender(&self) -> Sender<Arc<AnyNeos>> { self.auth.0.clone() }
+
 	pub fn user_session_sender(&self) -> Sender<Option<NeosUserSession>> {
 		self.user_session.0.clone()
 	}
-	pub fn image_sender(&self) -> Sender<ImageMsg> {
-		self.image.0.clone()
-	}
-	pub fn user_sender(&self) -> Sender<NeosUser> {
-		self.user.0.clone()
-	}
+
+	pub fn image_sender(&self) -> Sender<ImageMsg> { self.image.0.clone() }
+
+	pub fn user_sender(&self) -> Sender<NeosUser> { self.user.0.clone() }
+
 	pub fn user_status_sender(&self) -> Sender<UserStatusMsg> {
 		self.user_status.0.clone()
 	}
-	pub fn session_sender(&self) -> Sender<NeosSession> {
-		self.session.0.clone()
-	}
+
+	pub fn session_sender(&self) -> Sender<NeosSession> { self.session.0.clone() }
 
 	pub fn try_recv_friends(&self) -> Option<Vec<NeosFriend>> {
 		self.friends.1.try_recv().ok()
@@ -109,16 +107,16 @@ impl Channels {
 		self.user_session.1.try_recv().ok()
 	}
 
-	pub fn try_recv_images(&self) -> TryIter<ImageMsg> {
-		self.image.1.try_iter()
-	}
+	pub fn try_recv_images(&self) -> TryIter<ImageMsg> { self.image.1.try_iter() }
 
 	pub fn try_recv_user(&self) -> Option<NeosUser> {
 		self.user.1.try_recv().ok()
 	}
+
 	pub fn try_recv_user_status(&self) -> Option<UserStatusMsg> {
 		self.user_status.1.try_recv().ok()
 	}
+
 	pub fn try_recv_session(&self) -> Option<NeosSession> {
 		self.session.1.try_recv().ok()
 	}
@@ -178,9 +176,7 @@ impl NeosPeepsApp {
 			repaint = true;
 		}
 
-		if let Some((user_id, user_status)) =
-			self.channels.try_recv_user_status()
-		{
+		if let Some((user_id, user_status)) = self.channels.try_recv_user_status() {
 			if let Some((w_user_id, _, w_user_status)) =
 				&mut *self.runtime.user_window.borrow_mut()
 			{

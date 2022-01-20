@@ -1,16 +1,13 @@
 //! The about page of the app
 
+use eframe::egui::{warn_if_debug_build, Ui};
+
 use super::NeosPeepsApp;
 use crate::data::Page;
-use eframe::egui::{warn_if_debug_build, Ui};
 
 impl NeosPeepsApp {
 	pub fn about_page(&mut self, ui: &mut Ui) {
-		ui.heading(concat!(
-			env!("CARGO_PKG_NAME"),
-			"/",
-			env!("CARGO_PKG_VERSION")
-		));
+		ui.heading(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")));
 		warn_if_debug_build(ui);
 		ui.label(concat!(
 			env!("CARGO_PKG_NAME"),

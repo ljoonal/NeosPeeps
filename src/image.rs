@@ -42,9 +42,7 @@ impl TextureDetails {
 }
 
 impl Drop for TextureDetails {
-	fn drop(&mut self) {
-		self.frame.free_texture(self.id);
-	}
+	fn drop(&mut self) { self.frame.free_texture(self.id); }
 }
 
 /// This can block the whole thread for an API request, use with caution.
@@ -70,17 +68,15 @@ pub fn retrieve(url: &AssetUrl) -> Result<DynamicImage, String> {
 
 	let decoder = webp::Decoder::new(&bytes);
 
-	Ok(decoder
-		.decode()
-		.ok_or_else(|| {
-			format!("Failed to decode fetched webp image {:?}", url)
-		})?
-		.to_image())
+	Ok(
+		decoder
+			.decode()
+			.ok_or_else(|| format!("Failed to decode fetched webp image {:?}", url))?
+			.to_image(),
+	)
 }
 
-fn get_path(url: &AssetUrl) -> PathBuf {
-	crate::TEMP_DIR.join(url.filename())
-}
+fn get_path(url: &AssetUrl) -> PathBuf { crate::TEMP_DIR.join(url.filename()) }
 
 fn fetch_asset(url: &AssetUrl) -> Result<Vec<u8>, String> {
 	let path = get_path(url);

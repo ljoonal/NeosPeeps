@@ -53,8 +53,7 @@ fn setup_style(ctx: &egui::CtxRef) {
 fn setup_fonts(ctx: &egui::CtxRef) {
 	let mut fonts = FontDefinitions::default();
 
-	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Heading)
-	{
+	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Heading) {
 		*size = 34_f32;
 	}
 
@@ -65,8 +64,7 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 		*size = 26_f32;
 	}
 
-	if let Some((_, size)) =
-		fonts.family_and_size.get_mut(&TextStyle::Monospace)
+	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Monospace)
 	{
 		*size = 22_f32;
 	}

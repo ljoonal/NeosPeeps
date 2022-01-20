@@ -1,4 +1,3 @@
-use super::NeosPeepsApp;
 use eframe::{
 	egui::{
 		Align,
@@ -23,6 +22,8 @@ use neos::{
 	NeosUserStatus,
 };
 
+use super::NeosPeepsApp;
+
 pub fn session_users_count(ui: &mut Ui, session: &NeosSession) {
 	ui.horizontal(|ui| {
 		ui.style_mut().spacing.item_spacing = Vec2::ZERO;
@@ -30,8 +31,7 @@ pub fn session_users_count(ui: &mut Ui, session: &NeosSession) {
 			.on_hover_text("Active users");
 		ui.label("/");
 		ui.label(
-			RichText::new(&session.joined_users.to_string())
-				.color(Color32::GRAY),
+			RichText::new(&session.joined_users.to_string()).color(Color32::GRAY),
 		)
 		.on_hover_text("Joined users");
 		ui.label("/");
@@ -45,8 +45,7 @@ impl NeosPeepsApp {
 	pub fn refresh_sessions(&mut self, frame: &epi::Frame) {
 		use rayon::prelude::*;
 
-		if self.runtime.loading.fetching_sessions
-			|| self.runtime.loading.login_op()
+		if self.runtime.loading.fetching_sessions || self.runtime.loading.login_op()
 		{
 			return;
 		}
@@ -63,10 +62,7 @@ impl NeosPeepsApp {
 							s1.active_users.cmp(&s2.active_users).reverse()
 						});
 						if let Err(err) = sessions_sender.send(sessions) {
-							println!(
-								"Failed to send sessions to main thread! {}",
-								err
-							);
+							println!("Failed to send sessions to main thread! {}", err);
 						}
 					}
 					Err(e) => {
@@ -87,8 +83,7 @@ impl NeosPeepsApp {
 				return;
 			}
 		} else {
-			*self.runtime.session_window.borrow_mut() =
-				Some((id.clone(), None));
+			*self.runtime.session_window.borrow_mut() = Some((id.clone(), None));
 		}
 
 		frame.request_repaint();
@@ -115,11 +110,8 @@ impl NeosPeepsApp {
 			Window::new("Session ".to_owned() + id.as_ref()).show(ctx, |ui| {
 				if let Some(session) = session {
 					if let Some(asset_url) = &session.thumbnail {
-						if let Some(thumbnail) =
-							self.load_texture(asset_url, frame)
-						{
-							let scaling = (ui.available_height()
-								/ thumbnail.size.y)
+						if let Some(thumbnail) = self.load_texture(asset_url, frame) {
+							let scaling = (ui.available_height() / thumbnail.size.y)
 								.min(ui.available_width() / thumbnail.size.x);
 							ui.image(thumbnail.id, thumbnail.size * scaling);
 						}
@@ -138,9 +130,7 @@ impl NeosPeepsApp {
 		if should_close {
 			*self.runtime.session_window.borrow_mut() = None;
 		} else if let Some(id) = refresh_id {
-			if let Some(w_session) =
-				&mut *self.runtime.session_window.borrow_mut()
-			{
+			if let Some(w_session) = &mut *self.runtime.session_window.borrow_mut() {
 				w_session.1 = None;
 			}
 			self.get_session(frame, &id);
@@ -148,19 +138,16 @@ impl NeosPeepsApp {
 	}
 
 	fn session_row(
-		&self,
-		ui: &mut Ui,
-		width: f32,
-		frame: &epi::Frame,
-		session: &NeosSession,
+		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, session: &NeosSession,
 	) {
 		let mut open_window = false;
 		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			let spacing_width = ui.style().spacing.item_spacing.x;
 			ui.set_width(
-				self.stored.row_height.max(
-					width - (self.stored.row_height * 2_f32) - spacing_width,
-				),
+				self
+					.stored
+					.row_height
+					.max(width - (self.stored.row_height * 2_f32) - spacing_width),
 			);
 
 			ui.horizontal_wrapped(|ui| {
@@ -187,11 +174,9 @@ impl NeosPeepsApp {
 				ui.label("|");
 				if ui
 					.add(
-						Label::new(
-							"Host: ".to_owned() + &session.host_username,
-						)
-						.wrap(true)
-						.sense(Sense::click()),
+						Label::new("Host: ".to_owned() + &session.host_username)
+							.wrap(true)
+							.sense(Sense::click()),
 					)
 					.clicked()
 				{
@@ -218,8 +203,7 @@ impl NeosPeepsApp {
 				if let Some(thumbnail) = self.load_texture(asset_url, frame) {
 					let scaling = (ui.available_height() / thumbnail.size.y)
 						.min(ui.available_width() / thumbnail.size.x);
-					let response =
-						ui.image(thumbnail.id, thumbnail.size * scaling);
+					let response = ui.image(thumbnail.id, thumbnail.size * scaling);
 					if response.interact(Sense::click()).clicked() {
 						open_window = true;
 					}
@@ -242,13 +226,15 @@ impl NeosPeepsApp {
 		self.search_bar(ui);
 
 		let sessions: Vec<&NeosSession> = if self.stored.filter_friends_only {
-			self.runtime
+			self
+				.runtime
 				.friends
 				.par_iter()
 				.flat_map(|friend| &friend.user_status.active_sessions)
 				.collect()
 		} else {
-			self.runtime
+			self
+				.runtime
 				.sessions
 				.par_iter()
 				.filter(|session| {
@@ -291,10 +277,7 @@ impl NeosPeepsApp {
 	}
 
 	fn session_users(
-		&self,
-		ui: &mut Ui,
-		frame: &epi::Frame,
-		users: &[NeosSessionUser],
+		&self, ui: &mut Ui, frame: &epi::Frame, users: &[NeosSessionUser],
 	) {
 		use rayon::prelude::*;
 
@@ -314,12 +297,7 @@ impl NeosPeepsApp {
 					(true, true) => Color32::LIGHT_GREEN,
 					(true, false) => Color32::GREEN,
 					(false, true) => {
-						ui.style()
-							.visuals
-							.widgets
-							.noninteractive
-							.fg_stroke
-							.color
+						ui.style().visuals.widgets.noninteractive.fg_stroke.color
 					}
 					(false, false) => Color32::GRAY,
 				},
@@ -349,8 +327,7 @@ impl NeosPeepsApp {
 }
 
 pub fn find_focused_session<'a>(
-	id: &neos::id::User,
-	user_status: &'a NeosUserStatus,
+	id: &neos::id::User, user_status: &'a NeosUserStatus,
 ) -> Option<&'a NeosSession> {
 	use rayon::prelude::*;
 

@@ -1,4 +1,11 @@
-use crate::{app::NeosPeepsApp, image::TextureDetails};
+use std::{
+	cell::RefCell,
+	collections::{HashMap, HashSet},
+	rc::Rc,
+	sync::Arc,
+	time::{Duration, SystemTime},
+};
+
 use ahash::RandomState;
 use eframe::epi;
 use neos::{
@@ -14,13 +21,8 @@ use neos::{
 	NeosUserStatus,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-	cell::RefCell,
-	collections::{HashMap, HashSet},
-	rc::Rc,
-	sync::Arc,
-	time::{Duration, SystemTime},
-};
+
+use crate::{app::NeosPeepsApp, image::TextureDetails};
 
 #[derive(Serialize, Deserialize)]
 pub struct Stored {
@@ -42,18 +44,14 @@ pub enum Page {
 }
 
 impl Default for Page {
-	fn default() -> Self {
-		Self::Peeps
-	}
+	fn default() -> Self { Self::Peeps }
 }
 
 impl Default for Stored {
 	fn default() -> Self {
 		Self {
 			user_session: None,
-			identifier: NeosRequestUserSessionIdentifier::Username(
-				String::default(),
-			),
+			identifier: NeosRequestUserSessionIdentifier::Username(String::default()),
 			refresh_frequency: Duration::from_secs(120),
 			page: Page::default(),
 			row_height: 150_f32,
@@ -94,15 +92,11 @@ impl NeosPeepsApp {
 			std::mem::take(&mut self.runtime.used_textures).into_inner();
 		self.runtime.textures.retain(|id, _| used_textures.contains(id));
 	}
+
 	pub fn load_texture(
-		&self,
-		asset_url: &AssetUrl,
-		frame: &epi::Frame,
+		&self, asset_url: &AssetUrl, frame: &epi::Frame,
 	) -> Option<Rc<TextureDetails>> {
-		self.runtime
-			.used_textures
-			.borrow_mut()
-			.insert(asset_url.id().to_owned());
+		self.runtime.used_textures.borrow_mut().insert(asset_url.id().to_owned());
 		if let Some(texture) = self.runtime.textures.get(asset_url.id()) {
 			return Some(texture.clone());
 		}
@@ -126,8 +120,7 @@ impl NeosPeepsApp {
 			Ok(image) => {
 				let (size, image) = crate::image::to_epi_format(&image);
 				let image = Some(TextureDetails::new(frame, size, image));
-				if let Err(err) =
-					image_sender.send((asset_url.id().to_owned(), image))
+				if let Err(err) = image_sender.send((asset_url.id().to_owned(), image))
 				{
 					println!("Couldn't send image to main thread! {}", err);
 				}
@@ -153,9 +146,7 @@ pub enum LoginOperationState {
 }
 
 impl Default for LoginOperationState {
-	fn default() -> Self {
-		Self::None
-	}
+	fn default() -> Self { Self::None }
 }
 
 #[derive(Default, Debug)]

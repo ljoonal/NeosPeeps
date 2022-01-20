@@ -2,7 +2,6 @@
 
 use std::sync::Arc;
 
-use super::NeosPeepsApp;
 use eframe::{
 	egui::{Button, ComboBox, SelectableLabel, TextEdit, Ui},
 	epi,
@@ -19,19 +18,18 @@ use neos::{
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
+use super::NeosPeepsApp;
+
 impl NeosPeepsApp {
 	/// Makes the current API try to use a session, or switch to unauthenticated
 	/// on failure.
 	pub fn try_use_session(
-		&mut self,
-		user_session: NeosUserSession,
-		frame: &epi::Frame,
+		&mut self, user_session: NeosUserSession, frame: &epi::Frame,
 	) {
 		if self.runtime.loading.login_op() {
 			return; // Only allow one login op at once
 		}
-		self.runtime.loading.login =
-			crate::data::LoginOperationState::LoggingIn;
+		self.runtime.loading.login = crate::data::LoginOperationState::LoggingIn;
 
 		frame.request_repaint();
 
@@ -46,20 +44,14 @@ impl NeosPeepsApp {
 				Ok(_) => {
 					match auth_sender.send(Arc::new(neos_api.into())) {
 						Ok(_) => println!("Logged into Neos' API"),
-						Err(err) => println!(
-							"Failed to send auth to main thread! {}",
-							err
-						),
+						Err(err) => println!("Failed to send auth to main thread! {}", err),
 					};
 				}
 				Err(err) => {
-					match auth_sender
-						.send(Arc::new(neos_api.downgrade().into()))
-					{
-						Ok(_) => println!(
-							"Error with Neos API user session extension: {}",
-							err
-						),
+					match auth_sender.send(Arc::new(neos_api.downgrade().into())) {
+						Ok(_) => {
+							println!("Error with Neos API user session extension: {}", err)
+						}
 						Err(send_err) => println!(
 							"Error with Neos API user session extension, and also to main thread failed! {} - {}",
 							err, send_err
@@ -67,10 +59,7 @@ impl NeosPeepsApp {
 					};
 
 					if let Err(err) = user_session_sender.send(None) {
-						println!(
-							"Failed to send user_session to main thread! {}",
-							err
-						);
+						println!("Failed to send user_session to main thread! {}", err);
 					}
 				}
 			}
@@ -78,43 +67,31 @@ impl NeosPeepsApp {
 	}
 
 	pub fn login_new(
-		&mut self,
-		session_request: NeosRequestUserSession,
-		frame: &epi::Frame,
+		&mut self, session_request: NeosRequestUserSession, frame: &epi::Frame,
 	) {
 		if self.runtime.loading.login_op() {
 			return; // Only allow one login op at once
 		}
-		self.runtime.loading.login =
-			crate::data::LoginOperationState::LoggingIn;
+		self.runtime.loading.login = crate::data::LoginOperationState::LoggingIn;
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
 		let user_session_sender = self.channels.user_session_sender();
 		let auth_sender = self.channels.auth_sender();
 		std::thread::spawn(move || {
-			let neos_api: NeosUnauthenticated =
-				((*neos_api_arc).clone()).into();
+			let neos_api: NeosUnauthenticated = ((*neos_api_arc).clone()).into();
 
 			match neos_api.login(&session_request) {
 				Ok(neos_user_session) => {
-					match auth_sender.send(Arc::new(
-						neos_api.upgrade(neos_user_session.clone()).into(),
-					)) {
+					match auth_sender
+						.send(Arc::new(neos_api.upgrade(neos_user_session.clone()).into()))
+					{
 						Ok(_) => println!("Logged into Neos' API"),
-						Err(err) => println!(
-							"Failed to send auth to main thread! {}",
-							err
-						),
+						Err(err) => println!("Failed to send auth to main thread! {}", err),
 					};
 
-					if let Err(err) =
-						user_session_sender.send(Some(neos_user_session))
-					{
-						println!(
-							"Failed to send user_session to main thread! {}",
-							err
-						);
+					if let Err(err) = user_session_sender.send(Some(neos_user_session)) {
+						println!("Failed to send user_session to main thread! {}", err);
 					}
 				}
 				Err(err) => {
@@ -128,8 +105,7 @@ impl NeosPeepsApp {
 		if self.runtime.loading.login_op() {
 			return; // Only allow one login op at once
 		}
-		self.runtime.loading.login =
-			crate::data::LoginOperationState::LoggingOut;
+		self.runtime.loading.login = crate::data::LoginOperationState::LoggingOut;
 		frame.request_repaint();
 
 		let neos_api_arc = self.runtime.neos_api.clone();
@@ -168,10 +144,9 @@ impl NeosPeepsApp {
 					))
 					.clicked()
 				{
-					self.stored.identifier =
-						NeosRequestUserSessionIdentifier::Username(
-							self.stored.identifier.inner().into(),
-						);
+					self.stored.identifier = NeosRequestUserSessionIdentifier::Username(
+						self.stored.identifier.inner().into(),
+					);
 				}
 
 				if ui
@@ -184,10 +159,9 @@ impl NeosPeepsApp {
 					))
 					.clicked()
 				{
-					self.stored.identifier =
-						NeosRequestUserSessionIdentifier::Email(
-							self.stored.identifier.inner().into(),
-						);
+					self.stored.identifier = NeosRequestUserSessionIdentifier::Email(
+						self.stored.identifier.inner().into(),
+					);
 				}
 
 				if ui
@@ -200,10 +174,9 @@ impl NeosPeepsApp {
 					))
 					.clicked()
 				{
-					self.stored.identifier =
-						NeosRequestUserSessionIdentifier::OwnerID(
-							self.stored.identifier.inner().into(),
-						);
+					self.stored.identifier = NeosRequestUserSessionIdentifier::OwnerID(
+						self.stored.identifier.inner().into(),
+					);
 				}
 			});
 
@@ -258,25 +231,25 @@ impl NeosPeepsApp {
 				if submit_button_resp.clicked()
 					&& !self.stored.identifier.inner().is_empty()
 					&& !self.runtime.password.is_empty()
-					&& !is_loading && (self.runtime.totp.is_empty()
-					|| self.runtime.totp.chars().count() == 6)
+					&& !is_loading
+					&& (self.runtime.totp.is_empty()
+						|| self.runtime.totp.chars().count() == 6)
 				{
 					let rand_string: String = thread_rng()
 						.sample_iter(&Alphanumeric)
 						.take(30)
 						.map(char::from)
 						.collect();
-					let mut session_request =
-						NeosRequestUserSession::with_identifier(
-							self.stored.identifier.clone(),
-							std::mem::take(&mut self.runtime.password),
-						)
-						.remember_me(true)
-						.machine_id(rand_string);
+					let mut session_request = NeosRequestUserSession::with_identifier(
+						self.stored.identifier.clone(),
+						std::mem::take(&mut self.runtime.password),
+					)
+					.remember_me(true)
+					.machine_id(rand_string);
 
 					if !self.runtime.totp.is_empty() {
-						session_request = session_request
-							.totp(std::mem::take(&mut self.runtime.totp));
+						session_request =
+							session_request.totp(std::mem::take(&mut self.runtime.totp));
 					}
 
 					self.login_new(session_request, frame);

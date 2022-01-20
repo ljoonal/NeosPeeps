@@ -1,10 +1,10 @@
-use crate::data::Page;
-
-use super::NeosPeepsApp;
 use eframe::{
 	egui::{Button, Response, TextEdit, Ui},
 	epi,
 };
+
+use super::NeosPeepsApp;
+use crate::data::Page;
 
 impl NeosPeepsApp {
 	pub fn top_bar(&mut self, ui: &mut Ui, frame: &epi::Frame) {
@@ -67,10 +67,7 @@ impl NeosPeepsApp {
 			// Account menu.
 			if !is_logging_in && is_authenticated {
 				ui.menu_button("Account", |ui| {
-					if ui
-						.add_enabled(!is_loading, Button::new("Refresh"))
-						.clicked()
-					{
+					if ui.add_enabled(!is_loading, Button::new("Refresh")).clicked() {
 						ui.close_menu();
 						self.refresh_friends(frame);
 					}
