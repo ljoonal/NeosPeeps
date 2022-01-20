@@ -146,7 +146,7 @@ impl NeosPeepsApp {
 			ui.set_width(
 				self
 					.stored
-					.row_height
+					.col_min_width
 					.max(width - (self.stored.row_height * 2_f32) - spacing_width),
 			);
 

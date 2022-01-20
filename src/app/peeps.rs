@@ -245,10 +245,10 @@ impl NeosPeepsApp {
 		});
 		// The width for 2 each of the "columns" (last one not really) before
 		// the thumbnail.
-		let width_for_cols = self.stored.row_height.max(
+		let width_for_cols = self.stored.col_min_width.max(
 			(width
 				- self.stored.row_height
-				- (self.stored.row_height * 2_f32)
+				- (self.stored.col_min_width * 2_f32)
 				- (ui.style().spacing.item_spacing.x * 3_f32))
 				/ 2_f32,
 		);
@@ -271,7 +271,7 @@ impl NeosPeepsApp {
 					RichText::new(&friend.user_status.online_status.to_string())
 						.color(Color32::from_rgb(r, g, b)),
 				);
-				ui.label(RichText::new(friend.id.as_ref()).small().monospace());
+				self.clickable_user_id(ui, frame, &friend.id, None, None);
 			});
 		});
 
@@ -339,7 +339,7 @@ impl NeosPeepsApp {
 		});
 
 		let width_for_cols =
-			self.stored.row_height.max((width - self.stored.row_height) / 2_f32);
+			self.stored.col_min_width.max((width - self.stored.row_height) / 2_f32);
 
 		// User details
 		ui.with_layout(Layout::left_to_right(), |ui| {
@@ -443,6 +443,7 @@ impl NeosPeepsApp {
 				let width = ui.available_width();
 				Grid::new("users_list")
 					.start_row(row_range.start)
+					.striped(true)
 					.min_row_height(self.stored.row_height)
 					.num_columns(3)
 					.show(ui, |ui| {
@@ -490,6 +491,7 @@ impl NeosPeepsApp {
 				let width = ui.available_width();
 				Grid::new("friends_list")
 					.start_row(row_range.start)
+					.striped(true)
 					.min_row_height(self.stored.row_height)
 					.num_columns(3)
 					.show(ui, |ui| {
@@ -509,7 +511,7 @@ impl NeosPeepsApp {
 	) {
 		if ui
 			.add(
-				Label::new(RichText::new(username).heading())
+				Label::new(RichText::new(username).heading().color(Color32::WHITE))
 					.wrap(true)
 					.sense(Sense::click()),
 			)

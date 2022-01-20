@@ -31,6 +31,7 @@ pub struct Stored {
 	pub refresh_frequency: Duration,
 	pub page: Page,
 	pub row_height: f32,
+	pub col_min_width: f32,
 	pub filter_friends_only: bool,
 	pub filter_search: String,
 }
@@ -55,6 +56,7 @@ impl Default for Stored {
 			refresh_frequency: Duration::from_secs(120),
 			page: Page::default(),
 			row_height: 150_f32,
+			col_min_width: 200f32,
 			filter_friends_only: true,
 			filter_search: String::new(),
 		}
