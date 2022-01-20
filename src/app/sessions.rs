@@ -156,14 +156,26 @@ impl NeosPeepsApp {
 			ui.horizontal_wrapped(|ui| {
 				ui.label(session.access_level.as_ref());
 				ui.label("|");
-				ui.add(
-					Label::new("Host: ".to_owned() + &session.host_username)
-						.wrap(true),
-				);
+				if ui
+					.add(
+						Label::new(
+							"Host: ".to_owned() + &session.host_username,
+						)
+						.wrap(true)
+						.sense(Sense::click()),
+					)
+					.clicked()
+				{
+					if let Some(user_id) = &session.host_user_id {
+						*self.runtime.user_window.borrow_mut() =
+							Some((user_id.clone(), None, None));
+						self.get_user(frame, user_id);
+					}
+				}
 			});
 
 			ui.horizontal_wrapped(|ui| {
-				self.session_users(ui, &session.session_users);
+				self.session_users(ui, frame, &session.session_users);
 			});
 			ui.horizontal_wrapped(|ui| {
 				ui.label("Tags:");
@@ -249,7 +261,12 @@ impl NeosPeepsApp {
 		);
 	}
 
-	fn session_users(&self, ui: &mut Ui, users: &[NeosSessionUser]) {
+	fn session_users(
+		&self,
+		ui: &mut Ui,
+		frame: &epi::Frame,
+		users: &[NeosSessionUser],
+	) {
 		use rayon::prelude::*;
 
 		ui.label("Users:");
@@ -279,13 +296,25 @@ impl NeosPeepsApp {
 				},
 			);
 
-			ui.label(text).on_hover_text(
-				match &user.user_id {
-					Some(id) => id.as_ref().to_owned() + " is in ",
-					None => "User is in ".to_owned(),
-				} + user.output_device.as_ref()
-					+ " mode",
-			);
+			let label = Label::new(text).sense(Sense::click());
+
+			if ui
+				.add(label)
+				.on_hover_text(
+					match &user.user_id {
+						Some(id) => id.as_ref().to_owned() + " is in ",
+						None => "User is in ".to_owned(),
+					} + user.output_device.as_ref()
+						+ " mode",
+				)
+				.clicked()
+			{
+				if let Some(user_id) = &user.user_id {
+					*self.runtime.user_window.borrow_mut() =
+						Some((user_id.clone(), None, None));
+					self.get_user(frame, user_id);
+				}
+			}
 		}
 	}
 }
