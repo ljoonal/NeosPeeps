@@ -11,6 +11,23 @@ use neos::{
 	NeosSession, NeosSessionUser, NeosUserStatus,
 };
 
+pub fn session_users_count(ui: &mut Ui, session: &NeosSession) {
+	ui.horizontal(|ui| {
+		ui.style_mut().spacing.item_spacing = Vec2::ZERO;
+		ui.label(RichText::new(&session.active_users.to_string()))
+			.on_hover_text("Active users");
+		ui.label("/");
+		ui.label(
+			RichText::new(&session.joined_users.to_string())
+				.color(Color32::GRAY),
+		)
+		.on_hover_text("Joined users");
+		ui.label("/");
+		ui.label(RichText::new(&session.max_users.to_string()))
+			.on_hover_text("Max users");
+	});
+}
+
 impl NeosPeepsApp {
 	/// Refreshes sessions in a background thread
 	pub fn refresh_sessions(&mut self, frame: &epi::Frame) {
@@ -137,20 +154,7 @@ impl NeosPeepsApp {
 					open_window = true;
 				}
 
-				ui.horizontal(|ui| {
-					ui.style_mut().spacing.item_spacing = Vec2::ZERO;
-					ui.label(RichText::new(&session.active_users.to_string()))
-						.on_hover_text("Active users");
-					ui.label("/");
-					ui.label(
-						RichText::new(&session.joined_users.to_string())
-							.color(Color32::GRAY),
-					)
-					.on_hover_text("Joined users");
-					ui.label("/");
-					ui.label(RichText::new(&session.max_users.to_string()))
-						.on_hover_text("Max users");
-				});
+				session_users_count(ui, session);
 			});
 
 			ui.horizontal_wrapped(|ui| {
