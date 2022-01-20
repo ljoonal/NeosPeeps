@@ -84,10 +84,10 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 		"zillaslab-regular".to_owned(),
 		FontData::from_static(include_bytes!("../static/Raleway.ttf")),
 	);
-	fonts.font_data.insert(
-		"noto-cjk-jp".to_owned(),
-		FontData::from_static(include_bytes!("../static/NotoSansCJKjp-VF.ttf")),
-	);
+//	fonts.font_data.insert(
+//		"noto-cjk-jp".to_owned(),
+//		FontData::from_static(include_bytes!("../static/NotoSansCJKjp-VF.ttf")),
+//	);
 	fonts
 		.fonts_for_family
 		.get_mut(&FontFamily::Proportional)
@@ -99,16 +99,16 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 		.unwrap()
 		.push("zillaslab-regular".to_owned());
 
-	fonts
-		.fonts_for_family
-		.get_mut(&FontFamily::Proportional)
-		.unwrap()
-		.push("noto-cjk-jp".to_owned());
-	fonts
-		.fonts_for_family
-		.get_mut(&FontFamily::Monospace)
-		.unwrap()
-		.push("noto-cjk-jp".to_owned());
+//	fonts
+//		.fonts_for_family
+//		.get_mut(&FontFamily::Proportional)
+//		.unwrap()
+//		.push("noto-cjk-jp".to_owned());
+//	fonts
+//		.fonts_for_family
+//		.get_mut(&FontFamily::Monospace)
+//		.unwrap()
+//		.push("noto-cjk-jp".to_owned());
 
 	ctx.set_fonts(fonts);
 }
