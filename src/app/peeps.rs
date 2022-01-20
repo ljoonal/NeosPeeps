@@ -25,7 +25,6 @@ use eframe::{
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	AssetUrl,
 	NeosFriend,
 	NeosSession,
 	NeosUser,
@@ -195,6 +194,8 @@ impl NeosPeepsApp {
 
 	pub fn user_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
 		let mut should_close = false;
+		let mut refresh_user: Option<neos::id::User> = None;
+		let mut refresh_user_status: Option<neos::id::User> = None;
 		if let Some((id, user, status)) = &*self.runtime.user_window.borrow() {
 			Window::new("User ".to_owned() + id.as_ref()).show(ctx, |ui| {
 				if let Some(user) = user {
@@ -205,10 +206,16 @@ impl NeosPeepsApp {
 
 					ui.image(pfp.id, pfp.size * scaling);
 					ui.label(&user.username);
+					if ui.button("Refresh user details").clicked() {
+						refresh_user = Some(id.clone());
+					}
 				}
 
 				if let Some(status) = status {
 					ui.label(status.online_status.as_ref());
+					if ui.button("Refresh user status").clicked() {
+						refresh_user_status = Some(id.clone());
+					}
 				}
 
 				if ui.button("Close").clicked() {
@@ -218,6 +225,16 @@ impl NeosPeepsApp {
 		}
 		if should_close {
 			*self.runtime.user_window.borrow_mut() = None;
+		} else if let Some(id) = refresh_user {
+			if let Some(w_user) = &mut *self.runtime.user_window.borrow_mut() {
+				w_user.1 = None;
+			}
+			self.get_user(frame, &id);
+		} else if let Some(id) = refresh_user_status {
+			if let Some(w_user) = &mut *self.runtime.user_window.borrow_mut() {
+				w_user.2 = None;
+			}
+			self.get_user_status(frame, &id);
 		}
 	}
 

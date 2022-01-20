@@ -5,7 +5,6 @@ use eframe::{
 		Color32,
 		CtxRef,
 		Grid,
-		Id,
 		Label,
 		Layout,
 		RichText,
@@ -79,12 +78,12 @@ impl NeosPeepsApp {
 	}
 
 	/// Gets the session status for the session window
-	pub fn get_session(&self, frame: &epi::Frame, id: neos::id::Session) {
+	pub fn get_session(&self, frame: &epi::Frame, id: &neos::id::Session) {
 		if self.runtime.loading.login_op() {
 			return;
 		}
 		if let Some((w_id, _)) = &*self.runtime.session_window.borrow() {
-			if w_id != &id {
+			if w_id != id {
 				return;
 			}
 		} else {
@@ -94,6 +93,7 @@ impl NeosPeepsApp {
 
 		frame.request_repaint();
 
+		let id = id.clone();
 		let neos_api = self.runtime.neos_api.clone();
 		let session_sender = self.channels.session_sender();
 		rayon::spawn(move || match neos_api.get_session(id) {
@@ -110,6 +110,7 @@ impl NeosPeepsApp {
 
 	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
 		let mut should_close = false;
+		let mut refresh_id: Option<neos::id::Session> = None;
 		if let Some((id, session)) = &*self.runtime.session_window.borrow() {
 			Window::new("Session ".to_owned() + id.as_ref()).show(ctx, |ui| {
 				if let Some(session) = session {
@@ -123,6 +124,9 @@ impl NeosPeepsApp {
 							ui.image(thumbnail.id, thumbnail.size * scaling);
 						}
 					}
+					if ui.button("Refresh").clicked() {
+						refresh_id = Some(session.session_id.clone());
+					}
 				}
 
 				if ui.button("Close").clicked() {
@@ -130,8 +134,16 @@ impl NeosPeepsApp {
 				}
 			});
 		}
+
 		if should_close {
 			*self.runtime.session_window.borrow_mut() = None;
+		} else if let Some(id) = refresh_id {
+			if let Some(w_session) =
+				&mut *self.runtime.session_window.borrow_mut()
+			{
+				w_session.1 = None;
+			}
+			self.get_session(frame, &id);
 		}
 	}
 
