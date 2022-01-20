@@ -50,7 +50,7 @@ impl NeosPeepsApp {
 				Err(err) => {
 					match auth_sender.send(Arc::new(neos_api.downgrade().into())) {
 						Ok(_) => {
-							println!("Error with Neos API user session extension: {}", err)
+							println!("Error with Neos API user session extension: {}", err);
 						}
 						Err(send_err) => println!(
 							"Error with Neos API user session extension, and also to main thread failed! {} - {}",
