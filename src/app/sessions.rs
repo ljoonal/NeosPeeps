@@ -136,7 +136,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	fn session_row(
+	pub fn session_row(
 		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, session: &NeosSession,
 	) {
 		let mut open_window = false;

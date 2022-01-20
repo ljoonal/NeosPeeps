@@ -366,16 +366,10 @@ impl NeosPeepsApp {
 		});
 
 		if !status.active_sessions.is_empty() {
-			ui.group(|ui| {
-				self.sessions_table(
-					ui,
-					frame,
-					status
-						.active_sessions
-						.iter()
-						.collect::<Vec<&NeosSession>>()
-						.as_slice(),
-				);
+			ui.collapsing("Sessions", |ui| {
+				for session in &status.active_sessions {
+					self.session_row(ui, ui.available_width(), frame, session);
+				}
 			});
 		}
 	}
