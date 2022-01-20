@@ -4,6 +4,10 @@
 
 NeosPeeps is tool that allows for listing your [NeosVR](https://steamcommunity.com/app/740250) friends quickly, without having to actually open the whole game.
 
+Please note that this app is quite experimental and unofficial. Bug reports are welcome!
+
+## Features
+
 All the following functionality, in under 5MB:
 
 - Listing your friends
