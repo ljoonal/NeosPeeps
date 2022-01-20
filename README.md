@@ -2,7 +2,7 @@
 
 <img align="right" width="128" height="128" src="./static/logo.png"/>
 
-NeosPeeps is tool that allows for listing your [NeosVR](https://steamcommunity.com/app/740250) friends quickly, without having to actually open the whole game.
+NeosPeeps is tool that allows for listing your [NeosVR](https://steamcommunity.com/app/740250) friends quickly, without having to actually open the whole game. It also has a bunch of other features that you can find below, but that's how the project got it's name.
 
 Please note that this app is quite experimental and unofficial. Bug reports are welcome!
 
@@ -10,11 +10,11 @@ Please note that this app is quite experimental and unofficial. Bug reports are 
 
 All the following functionality, in under 5MB:
 
-- Listing your friends
+- Listing your friends, along the sessions that they're focused on.
 
 ![Screenshot of friends list](static/friends-list.png)
 
-- Listing all the sessions, or only the ones that your friends are in
+- Listing the details of all public sessions, or only the ones that your friends are in
 
 ![Screenshot of sessions list](static/sessions-list.png)
 
@@ -35,9 +35,21 @@ All the following functionality, in under 5MB:
 
 ![Screenshot of settings](static/settings-page.png)
 
-- CJK font support for all of you JP peeps
+- CJK font support for all of you JP peeps (requires `Noto Sans CJK JP` font to be installed on the system)
 
 ![Screenshot of settings](static/jp-session-search.png)
+
+## Installation & updating
+
+Hop over to the [releases page](https://git.ljoonal.xyz/ljoonal/NeosPeeps/releases), and grab the latest `.exe` file if you're on windows.
+There's no installer, so you might want to store it on your desktop for example.
+
+Then just run the file.
+
+You might get a warning about the executable not being signed.
+Getting a signing certificate would cost a lot of money.
+And I'm not willing to spend that much just for this hobby project.
+If you're paranoid about the security, I welcome you to [build the app from source](#building) yourself.
 
 ## License
 
@@ -53,16 +65,25 @@ This isn't legal advice of course, just my interpretation of the license.
 
 ## Development
 
-If you encounter bugs or have any other feedback, you can find me `ljoonal#2847` in the NeosVR discord as well as the Neos Modding discord servers.
+If you encounter bugs or have any other feedback, you can find me `ljoonal#2847` in the NeosVR discord as well as the Neos Modding discord server.
 
 ### Building
 
-Make sure you have the [Rust programming language](https://www.rust-lang.org/) installed.
+Requirements:
 
-Then in the project directory just run the `cargo run` command.
+- [Git](https://git-scm.com)
+- [Rust](https://www.rust-lang.org/)
 
-For building the releases on a standard linux distro, see [build-release.sh](./build-release.sh).
-For publishing to gitea, see [gitea-publish.sh](./gitea-publish.sh)
+Start off by cloning the project with git.
+
+```sh
+git clone https://git.ljoonal.xyz/ljoonal/NeosPeeps.git
+```
+
+Then open the project folder in your terminal, and just execute `cargo run` for a dev build.
+
+See [build-release.sh](./build-release.sh) for building the releases on a standard linux distro.
+If you have your own gitea server, [gitea-publish.sh](./gitea-publish.sh) is a handy script for automating creating the release.
 
 ### Contributing
 
