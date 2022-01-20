@@ -23,8 +23,8 @@ fn setup_style(ctx: &egui::CtxRef) {
 		style.debug.debug_on_hover = true;
 	}
 
-	let bg = Color32::from_rgb(7, 7, 7);
-	let bg_faint = Color32::from_rgb(10, 10, 10);
+	let bg = Color32::from_rgb(8, 3, 0);
+	let bg_faint = Color32::from_rgb(10, 5, 0);
 	let bg_interact = Color32::BLACK;
 	let fg = Color32::from_rgb(240, 240, 240);
 
