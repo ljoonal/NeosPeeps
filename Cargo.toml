@@ -12,7 +12,7 @@ publish = false
 build = "build.rs"
 
 [dependencies]
-neos = { version = "0.2.0-alpha.3", features = ["api_client"] }
+neos = { version = "0.2.0-alpha.4", features = ["api_client"] }
 
 eframe = { version = "0.16", default-features = false, features = [
 	"egui_glow",

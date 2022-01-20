@@ -86,8 +86,7 @@ impl NeosPeepsApp {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_friends() {
 					Ok(mut friends) => {
-						friends
-							.sort_by(|f1, f2| order_users(&f1.user_status, &f2.user_status));
+						friends.sort_by(|f1, f2| order_users(&f1.status, &f2.status));
 						if let Err(err) = friends_sender.send(friends) {
 							println!("Failed to send friends to main thread! {}", err);
 						}
@@ -202,7 +201,19 @@ impl NeosPeepsApp {
 				}
 
 				if let Some(status) = status {
-					ui.label(status.online_status.as_ref());
+					let (r, g, b) = status.online_status.color();
+					ui.label(
+						RichText::new(&status.online_status.to_string())
+							.color(Color32::from_rgb(r, g, b)),
+					);
+
+					if let Some(status_change) = status.last_status_change_time {
+						ui.horizontal(|ui| {
+							ui.label("Status last changed on");
+							ui.label(status_change.to_string());
+						});
+					}
+
 					if ui.button("Refresh user status").clicked() {
 						refresh_user_status = Some(id.clone());
 					}
@@ -258,17 +269,17 @@ impl NeosPeepsApp {
 
 			ui.separator();
 			ui.vertical(|ui| {
-				let (r, g, b) = friend.user_status.online_status.color();
+				let (r, g, b) = friend.status.online_status.color();
 				self.clickable_username(
 					ui,
 					frame,
 					&friend.id,
-					&friend.friend_username,
+					&friend.username,
 					None,
 					None,
 				);
 				ui.label(
-					RichText::new(&friend.user_status.online_status.to_string())
+					RichText::new(&friend.status.online_status.to_string())
 						.color(Color32::from_rgb(r, g, b)),
 				);
 				self.clickable_user_id(ui, frame, &friend.id, None, None);
@@ -289,8 +300,7 @@ impl NeosPeepsApp {
 	fn friend_row_session_col(
 		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, friend: &NeosFriend,
 	) {
-		if let Some(session) = find_focused_session(&friend.id, &friend.user_status)
-		{
+		if let Some(session) = find_focused_session(&friend.id, &friend.status) {
 			let show_thumbnail = width > self.stored.row_height;
 			ui.vertical(|ui| {
 				if show_thumbnail {
@@ -301,21 +311,20 @@ impl NeosPeepsApp {
 					.clicked()
 				{
 					*self.runtime.session_window.borrow_mut() =
-						Some((session.session_id.clone(), Some(session.clone())));
+						Some((session.id.clone(), Some(session.clone())));
 				}
-				ui.label(friend.user_status.current_session_access_level.as_ref());
+				ui.label(friend.status.current_session_access_level.as_ref());
 				session_users_count(ui, session);
 			});
 			if show_thumbnail {
 				self.friend_session_thumbnail(ui, frame, session);
 			}
-		} else if friend.user_status.online_status == NeosUserOnlineStatus::Offline
-		{
-			ui.label(friend.user_status.online_status.as_ref());
+		} else if friend.status.online_status == NeosUserOnlineStatus::Offline {
+			ui.label(friend.status.online_status.as_ref());
 		} else {
 			ui.vertical(|ui| {
 				ui.label("Couldn't find focused session");
-				ui.label(friend.user_status.current_session_access_level.as_ref());
+				ui.label(friend.status.current_session_access_level.as_ref());
 			});
 		}
 	}
@@ -467,10 +476,7 @@ impl NeosPeepsApp {
 			.par_iter()
 			.filter(|friend| {
 				self.stored.filter_search.is_empty()
-					|| friend
-						.friend_username
-						.to_lowercase()
-						.contains(&self.stored.filter_search)
+					|| friend.username.to_lowercase().contains(&self.stored.filter_search)
 					|| friend
 						.id
 						.as_ref()
@@ -577,7 +583,7 @@ impl NeosPeepsApp {
 
 					if response.interact(Sense::click()).clicked() {
 						*self.runtime.session_window.borrow_mut() =
-							Some((session.session_id.clone(), Some(session.clone())));
+							Some((session.id.clone(), Some(session.clone())));
 					}
 				}
 			});

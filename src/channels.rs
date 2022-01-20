@@ -191,7 +191,7 @@ impl NeosPeepsApp {
 			if let Some((session_id, w_session)) =
 				&mut *self.runtime.session_window.borrow_mut()
 			{
-				if session.session_id == *session_id {
+				if session.id == *session_id {
 					*w_session = Some(session);
 				}
 			}

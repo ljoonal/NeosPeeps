@@ -117,7 +117,7 @@ impl NeosPeepsApp {
 						}
 					}
 					if ui.button("Refresh").clicked() {
-						refresh_id = Some(session.session_id.clone());
+						refresh_id = Some(session.id.clone());
 					}
 				}
 
@@ -180,7 +180,7 @@ impl NeosPeepsApp {
 					)
 					.clicked()
 				{
-					if let Some(user_id) = &session.host_user_id {
+					if let Some(user_id) = &session.host_id {
 						*self.runtime.user_window.borrow_mut() =
 							Some((user_id.clone(), None, None));
 						self.get_user(frame, user_id);
@@ -189,7 +189,7 @@ impl NeosPeepsApp {
 			});
 
 			ui.horizontal_wrapped(|ui| {
-				self.session_users(ui, frame, &session.session_users);
+				self.session_users(ui, frame, &session.users);
 			});
 			ui.horizontal_wrapped(|ui| {
 				ui.label("Tags:");
@@ -214,9 +214,9 @@ impl NeosPeepsApp {
 		ui.end_row();
 
 		if open_window {
-			println!("{}", session.session_id.as_ref());
+			println!("{}", session.id.as_ref());
 			*self.runtime.session_window.borrow_mut() =
-				Some((session.session_id.clone(), Some(session.clone())));
+				Some((session.id.clone(), Some(session.clone())));
 		}
 	}
 
@@ -230,7 +230,7 @@ impl NeosPeepsApp {
 				.runtime
 				.friends
 				.par_iter()
-				.flat_map(|friend| &friend.user_status.active_sessions)
+				.flat_map(|friend| &friend.status.active_sessions)
 				.collect()
 		} else {
 			self
@@ -289,7 +289,7 @@ impl NeosPeepsApp {
 				.runtime
 				.friends
 				.par_iter()
-				.find_any(|fren| fren.friend_username == user.username)
+				.find_any(|fren| fren.username == user.username)
 				.is_some();
 
 			let text = RichText::new(&user.username).color(
@@ -308,7 +308,7 @@ impl NeosPeepsApp {
 			if ui
 				.add(label)
 				.on_hover_text(
-					match &user.user_id {
+					match &user.id {
 						Some(id) => id.as_ref().to_owned() + " is in ",
 						None => "User is in ".to_owned(),
 					} + user.output_device.as_ref()
@@ -316,7 +316,7 @@ impl NeosPeepsApp {
 				)
 				.clicked()
 			{
-				if let Some(user_id) = &user.user_id {
+				if let Some(user_id) = &user.id {
 					*self.runtime.user_window.borrow_mut() =
 						Some((user_id.clone(), None, None));
 					self.get_user(frame, user_id);
@@ -333,9 +333,9 @@ pub fn find_focused_session<'a>(
 
 	user_status.active_sessions.par_iter().find_any(|session| {
 		session
-			.session_users
+			.users
 			.par_iter()
-			.find_any(|user| match &user.user_id {
+			.find_any(|user| match &user.id {
 				Some(user_id) => user_id == id && user.is_present,
 				None => false,
 			})
