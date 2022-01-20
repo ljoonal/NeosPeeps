@@ -59,3 +59,5 @@ Then in the project directory just run the `cargo run` command.
 
 For building the releases on a standard linux distro, see [build-release.sh](./build-release.sh).
 For publishing to gitea, see [gitea-publish.sh](./gitea-publish.sh)
+
+If you encounter bugs or have any other feedback, you can find me `ljoonal#2847` in the NeosVR discord as well as the Neos Modding discord servers.
