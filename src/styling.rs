@@ -25,24 +25,28 @@ fn setup_style(ctx: &egui::CtxRef) {
 
 	let bg = Color32::from_rgb(8, 3, 0);
 	let bg_faint = Color32::from_rgb(10, 5, 0);
-	let bg_interact = Color32::BLACK;
 	let fg = Color32::from_rgb(240, 240, 240);
 
 	style.visuals.dark_mode = true;
-	style.visuals.widgets.noninteractive.fg_stroke.color = fg;
-	style.visuals.widgets.active.fg_stroke.color = fg;
-	style.visuals.widgets.inactive.bg_stroke =
-		Stroke { width: 1., color: Color32::from_rgb(100, 100, 100) };
-
 	style.visuals.faint_bg_color = bg_faint;
-	style.visuals.extreme_bg_color = bg_interact;
-	style.visuals.code_bg_color = fg;
+	style.visuals.extreme_bg_color = Color32::BLACK;
+	style.visuals.code_bg_color = Color32::BLACK;
 
-	style.visuals.widgets.noninteractive.bg_fill = bg;
 	style.visuals.widgets.open.bg_fill = bg_faint;
-	style.visuals.widgets.inactive.bg_fill = bg_interact;
-	style.visuals.widgets.active.bg_fill = bg_interact;
-	style.visuals.widgets.hovered.bg_fill = bg_interact;
+
+	style.visuals.widgets.active.bg_fill = Color32::BLACK;
+	style.visuals.widgets.active.fg_stroke.color = fg;
+
+	style.visuals.widgets.hovered.bg_fill = Color32::BLACK;
+	style.visuals.widgets.hovered.bg_stroke.color = fg;
+	style.visuals.widgets.hovered.fg_stroke.color = fg;
+
+	style.visuals.widgets.inactive.bg_fill = Color32::BLACK;
+	style.visuals.widgets.inactive.bg_stroke =
+		Stroke { width: 1., color: Color32::GRAY };
+
+	style.visuals.widgets.noninteractive.fg_stroke.color = fg;
+	style.visuals.widgets.noninteractive.bg_fill = bg;
 
 	style.spacing.item_spacing.y = 8_f32;
 	style.spacing.button_padding.y = 5_f32;
