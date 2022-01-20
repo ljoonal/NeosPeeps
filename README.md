@@ -4,13 +4,7 @@
 
 NeosPeeps is tool that allows for listing your [NeosVR](https://steamcommunity.com/app/740250) friends quickly, without having to actually open the whole game.
 
-## Future ideas
-
-- Listing sessions
-- Showing more details about a friend
-- Showing more details about a session
-- Filtering/searching friends
-- Filtering/searching sessions
+It also has functionality to list sessions, filter trough them and your friends, or even search for new ones!
 
 ## License
 
