@@ -217,13 +217,11 @@ impl NeosPeepsApp {
 
 		let width_for_cols = self.stored.row_height.max(
 			if self.if_four_col(width) {
-				// Spacing + separators (6.0 by default)
-				let spacing_width =
-					style.spacing.item_spacing.x.mul_add(3_f32, 6.0 * 2_f32);
+				let spacing_width = style.spacing.item_spacing.x * 3_f32;
 				width
 					- self.stored.row_height
 					- (self.stored.row_height * 2_f32)
-					- (spacing_width * 3_f32)
+					- spacing_width
 			} else {
 				width - self.stored.row_height
 			} / 2_f32,
