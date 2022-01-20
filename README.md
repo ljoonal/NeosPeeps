@@ -1,10 +1,16 @@
 # Neos Peeps
 
-<img align="right" width="256" height="256" src="https://git.ljoonal.xyz/ljoonal/NeosPeeps/raw/static/logo.png"/>
+<img align="right" width="256" height="256" src="./static/logo.png"/>
 
 NeosPeeps is tool that allows for listing your [NeosVR](https://steamcommunity.com/app/740250) friends quickly, without having to actually open the whole game.
 
 It also has functionality to list sessions, filter trough them and your friends, or even search for new ones!
+
+![Screenshot of friends list](static/friends-list.png)
+
+![Screenshot of sessions list](static/sessions-list.png)
+
+![Screenshot of login page](static/login-page.png)
 
 ## License
 
