@@ -179,9 +179,7 @@ impl NeosPeepsApp {
 					.clicked()
 				{
 					if let Some(user_id) = &session.host_id {
-						*self.runtime.user_window.borrow_mut() =
-							Some((user_id.clone(), None, None));
-						self.get_user(frame, user_id);
+						self.open_user(frame, user_id, None, None);
 					}
 				}
 			});
@@ -321,9 +319,7 @@ impl NeosPeepsApp {
 				.clicked()
 			{
 				if let Some(user_id) = &user.id {
-					*self.runtime.user_window.borrow_mut() =
-						Some((user_id.clone(), None, None));
-					self.get_user(frame, user_id);
+					self.open_user(frame, user_id, None, None);
 				}
 			}
 		}

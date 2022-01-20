@@ -484,9 +484,7 @@ impl NeosPeepsApp {
 			);
 
 			if response.interact(Sense::click()).clicked() {
-				*self.runtime.user_window.borrow_mut() =
-					Some((user.id.clone(), Some(user.clone()), None));
-				self.get_user_status(frame, &user.id);
+				self.open_user(frame, &user.id, Some(user.clone()), None);
 			}
 		});
 
@@ -675,7 +673,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	fn open_user(
+	pub fn open_user(
 		&self, frame: &epi::Frame, id: &neos::id::User, user: Option<NeosUser>,
 		user_status: Option<NeosUserStatus>,
 	) {
