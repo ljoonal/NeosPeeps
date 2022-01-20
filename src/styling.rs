@@ -81,34 +81,34 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 	}
 
 	fonts.font_data.insert(
-		"zillaslab-regular".to_owned(),
+		"raleway".to_owned(),
 		FontData::from_static(include_bytes!("../static/Raleway.ttf")),
 	);
-//	fonts.font_data.insert(
-//		"noto-cjk-jp".to_owned(),
-//		FontData::from_static(include_bytes!("../static/NotoSansCJKjp-VF.ttf")),
-//	);
+	//	fonts.font_data.insert(
+	//		"noto-cjk-jp".to_owned(),
+	//		FontData::from_static(include_bytes!("../static/NotoSansCJKjp-VF.ttf")),
+	//	);
 	fonts
 		.fonts_for_family
 		.get_mut(&FontFamily::Proportional)
 		.unwrap()
-		.insert(0, "zillaslab-regular".to_owned());
+		.insert(0, "raleway".to_owned());
 	fonts
 		.fonts_for_family
 		.get_mut(&FontFamily::Monospace)
 		.unwrap()
-		.push("zillaslab-regular".to_owned());
+		.push("raleway".to_owned());
 
-//	fonts
-//		.fonts_for_family
-//		.get_mut(&FontFamily::Proportional)
-//		.unwrap()
-//		.push("noto-cjk-jp".to_owned());
-//	fonts
-//		.fonts_for_family
-//		.get_mut(&FontFamily::Monospace)
-//		.unwrap()
-//		.push("noto-cjk-jp".to_owned());
+	//	fonts
+	//		.fonts_for_family
+	//		.get_mut(&FontFamily::Proportional)
+	//		.unwrap()
+	//		.push("noto-cjk-jp".to_owned());
+	//	fonts
+	//		.fonts_for_family
+	//		.get_mut(&FontFamily::Monospace)
+	//		.unwrap()
+	//		.push("noto-cjk-jp".to_owned());
 
 	ctx.set_fonts(fonts);
 }
