@@ -1,6 +1,6 @@
 //! The friends page of the app
 
-use std::{borrow::Borrow, cmp::Ordering, rc::Rc};
+use std::{cmp::Ordering, rc::Rc};
 
 use eframe::{
 	egui::{
@@ -204,7 +204,7 @@ impl NeosPeepsApp {
 						}
 					});
 
-					self.user_window_section_status(ui, frame, id, status);
+					self.user_window_section_status(ui, frame, status);
 				}
 			});
 		}
@@ -227,18 +227,88 @@ impl NeosPeepsApp {
 		&self, ui: &mut Ui, frame: &epi::Frame, user: &NeosUser,
 	) {
 		let pfp = self.get_pfp(frame, &user.profile);
-
 		let scaling = (ui.available_height() / pfp.size.y)
 			.min(ui.available_width() / pfp.size.x);
-
 		ui.image(pfp.id, pfp.size * scaling);
+
+		let friend = self.user_to_friend(user);
+
 		ui.horizontal(|ui| {
-			self.username_decorations(ui, frame, user);
+			username_decorations(ui, user, friend);
 			ui.heading(&user.username);
 		});
 
+		if let Some(friend) = friend {
+			if let Some(msg_time) = &friend.latest_message_time {
+				ui.horizontal(|ui| {
+					ui.label("Last message time: ");
+					ui.label(msg_time.format(&self.stored.datetime_format).to_string());
+				});
+			}
+		}
+
+		if user.used_bytes.is_some() || user.quota_bytes.is_some() {
+			ui.horizontal(|ui| {
+				ui.label("Bytes used: ");
+				ui.label(
+					user.used_bytes.map_or_else(|| "?".to_string(), |v| v.to_string()),
+				);
+				ui.label("/");
+				ui.label(
+					user.quota_bytes.map_or_else(|| "?".to_string(), |v| v.to_string()),
+				);
+			});
+		}
+
+		if let Some(email) = &user.email {
+			ui.horizontal(|ui| {
+				ui.label("Email: ");
+				ui.label(email);
+			});
+		}
+
+		if user.two_factor_login {
+			ui.label("Two factor enabled");
+		}
+
+		if !user.tags.is_empty() {
+			ui.horizontal_wrapped(|ui| {
+				ui.label("Tags: ");
+				user_tags(ui, user);
+			});
+		}
+
+		if let Some(referral_id) = &user.referral_id {
+			ui.horizontal(|ui| {
+				ui.label("Referral ID: ");
+				ui.label(referral_id);
+			});
+		}
+
+		if let Some(credits) = &user.credits {
+			if let Some(ncr) = credits.ncr {
+				ui.horizontal(|ui| {
+					ui.label("NCR: ");
+					ui.label(ncr.to_string());
+				});
+			}
+			if let Some(kfc) = credits.kfc {
+				ui.horizontal(|ui| {
+					ui.label("KFC: ");
+					ui.label(kfc.to_string());
+				});
+			}
+		}
+
+		if let Some(addr) = &user.ncr_deposit_address {
+			ui.horizontal(|ui| {
+				ui.label("NCR deposit addr: ");
+				ui.label(addr);
+			});
+		}
+
 		ui.horizontal(|ui| {
-			ui.label("Ban status");
+			ui.label("Ban status: ");
 			ui.vertical(|ui| {
 				user_bans(ui, user);
 			});
@@ -246,8 +316,7 @@ impl NeosPeepsApp {
 	}
 
 	fn user_window_section_status(
-		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
-		status: &NeosUserStatus,
+		&self, ui: &mut Ui, frame: &epi::Frame, status: &NeosUserStatus,
 	) {
 		let (r, g, b) = status.online_status.color();
 		ui.label(
@@ -431,7 +500,7 @@ impl NeosPeepsApp {
 			ui.separator();
 			ui.vertical(|ui| {
 				ui.horizontal(|ui| {
-					self.username_decorations(ui, frame, user);
+					username_decorations(ui, user, self.user_to_friend(user));
 					self.clickable_username(
 						ui,
 						frame,
@@ -443,19 +512,7 @@ impl NeosPeepsApp {
 				});
 
 				self.clickable_user_id(ui, frame, &user.id, Some(user), None);
-				ui.label(
-					RichText::new(
-						&user
-							.tags
-							.iter()
-							.filter(|tag| !tag.starts_with("custom badge"))
-							.map(std::string::String::as_str)
-							.collect::<Vec<&str>>()
-							.join(", "),
-					)
-					.small()
-					.monospace(),
-				);
+				user_tags(ui, user);
 			});
 		});
 
@@ -575,40 +632,6 @@ impl NeosPeepsApp {
 		);
 	}
 
-	fn username_decorations(
-		&self, ui: &mut Ui, frame: &epi::Frame, user: &NeosUser,
-	) {
-		use rayon::prelude::*;
-
-		let as_friend = self
-			.runtime
-			.friends
-			.par_iter()
-			.find_any(|f| f.is_accepted && f.id == user.id);
-
-		if let Some(as_friend) = as_friend {
-			if as_friend.is_accepted {
-				ui.label(RichText::new("F").color(Color32::from_rgb(255, 0, 122)))
-					.on_hover_text("Friend");
-			} else {
-				ui.label(RichText::new("R").color(Color32::YELLOW))
-					.on_hover_text("Requested friendship");
-			}
-		}
-
-		if user.is_verified {
-			ui.label(RichText::new("V").color(Color32::GREEN))
-				.on_hover_text("Verified (email)");
-		}
-		if user.is_locked {
-			ui.label(RichText::new("L").color(Color32::RED)).on_hover_text("Locked");
-		}
-		if user.supress_ban_evasion {
-			ui.label(RichText::new("B").color(Color32::KHAKI))
-				.on_hover_text("Ban evasion disabled");
-		}
-	}
-
 	fn clickable_username(
 		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
 		username: &str, user: Option<&NeosUser>,
@@ -703,6 +726,54 @@ impl NeosPeepsApp {
 
 		pfp.unwrap_or_else(|| self.runtime.default_profile_picture.clone().unwrap())
 	}
+
+	fn user_to_friend(&self, user: &NeosUser) -> Option<&NeosFriend> {
+		use rayon::prelude::*;
+
+		self.runtime.friends.par_iter().find_any(|f| f.id == user.id)
+	}
+}
+
+fn username_decorations(
+	ui: &mut Ui, user: &NeosUser, friend: Option<&NeosFriend>,
+) {
+	if let Some(as_friend) = friend {
+		if as_friend.is_accepted {
+			ui.label(RichText::new("F").color(Color32::from_rgb(255, 0, 122)))
+				.on_hover_text("Friend");
+		} else {
+			ui.label(RichText::new("R").color(Color32::YELLOW))
+				.on_hover_text("Requested friendship");
+		}
+	}
+
+	if user.is_verified {
+		ui.label(RichText::new("V").color(Color32::GREEN))
+			.on_hover_text("Verified (email)");
+	}
+	if user.is_locked {
+		ui.label(RichText::new("L").color(Color32::RED)).on_hover_text("Locked");
+	}
+	if user.supress_ban_evasion {
+		ui.label(RichText::new("B").color(Color32::KHAKI))
+			.on_hover_text("Ban evasion disabled");
+	}
+}
+
+fn user_tags(ui: &mut Ui, user: &NeosUser) {
+	ui.label(
+		RichText::new(
+			&user
+				.tags
+				.iter()
+				.filter(|tag| !tag.starts_with("custom badge"))
+				.map(std::string::String::as_str)
+				.collect::<Vec<&str>>()
+				.join(", "),
+		)
+		.small()
+		.monospace(),
+	);
 }
 
 fn user_bans(ui: &mut Ui, user: &NeosUser) {
