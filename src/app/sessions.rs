@@ -211,7 +211,6 @@ impl NeosPeepsApp {
 		ui.end_row();
 
 		if open_window {
-			println!("{}", session.id.as_ref());
 			*self.runtime.session_window.borrow_mut() =
 				Some((session.id.clone(), Some(session.clone())));
 		}
