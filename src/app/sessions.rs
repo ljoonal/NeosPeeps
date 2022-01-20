@@ -1,14 +1,27 @@
 use super::NeosPeepsApp;
 use eframe::{
 	egui::{
-		Align, Color32, CtxRef, Grid, Id, Label, Layout, RichText, ScrollArea,
-		Sense, Ui, Vec2, Window,
+		Align,
+		Color32,
+		CtxRef,
+		Grid,
+		Id,
+		Label,
+		Layout,
+		RichText,
+		ScrollArea,
+		Sense,
+		Ui,
+		Vec2,
+		Window,
 	},
 	epi,
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	NeosSession, NeosSessionUser, NeosUserStatus,
+	NeosSession,
+	NeosSessionUser,
+	NeosUserStatus,
 };
 
 pub fn session_users_count(ui: &mut Ui, session: &NeosSession) {

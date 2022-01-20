@@ -8,15 +8,30 @@ use super::{
 };
 use eframe::{
 	egui::{
-		Color32, CtxRef, Grid, Key, Label, Layout, RichText, ScrollArea, Sense,
-		Ui, Vec2, Window,
+		Color32,
+		CtxRef,
+		Grid,
+		Key,
+		Label,
+		Layout,
+		RichText,
+		ScrollArea,
+		Sense,
+		Ui,
+		Vec2,
+		Window,
 	},
 	epi,
 };
 use neos::{
 	api_client::{AnyNeos, Neos},
-	AssetUrl, NeosFriend, NeosSession, NeosUser, NeosUserOnlineStatus,
-	NeosUserProfile, NeosUserStatus,
+	AssetUrl,
+	NeosFriend,
+	NeosSession,
+	NeosUser,
+	NeosUserOnlineStatus,
+	NeosUserProfile,
+	NeosUserStatus,
 };
 use std::{cmp::Ordering, rc::Rc};
 
@@ -226,7 +241,8 @@ impl NeosPeepsApp {
 				open_window = true;
 			}
 		});
-		// The width for 2 each of the "columns" (last one not really) before the thumbnail.
+		// The width for 2 each of the "columns" (last one not really) before
+		// the thumbnail.
 		let width_for_cols = self.stored.row_height.max(
 			(width
 				- self.stored.row_height

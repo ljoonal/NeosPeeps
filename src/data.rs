@@ -3,9 +3,15 @@ use ahash::RandomState;
 use eframe::epi;
 use neos::{
 	api_client::{
-		AnyNeos, NeosRequestUserSessionIdentifier, NeosUnauthenticated,
+		AnyNeos,
+		NeosRequestUserSessionIdentifier,
+		NeosUnauthenticated,
 	},
-	AssetUrl, NeosSession, NeosUser, NeosUserSession, NeosUserStatus,
+	AssetUrl,
+	NeosSession,
+	NeosUser,
+	NeosUserSession,
+	NeosUserStatus,
 };
 use serde::{Deserialize, Serialize};
 use std::{
