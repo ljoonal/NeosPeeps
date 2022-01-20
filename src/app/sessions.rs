@@ -119,6 +119,7 @@ impl NeosPeepsApp {
 							let scaling = (ui.available_height() / thumbnail.size.y)
 								.min(ui.available_width() / thumbnail.size.x);
 							ui.image(thumbnail.id, thumbnail.size * scaling);
+							ui.heading(&session.name);
 						}
 					}
 				}
