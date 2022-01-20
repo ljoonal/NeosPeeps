@@ -310,12 +310,7 @@ impl NeosPeepsApp {
 			});
 		}
 
-		ui.horizontal_wrapped(|ui| {
-			ui.label("Ban status: ");
-			ui.vertical(|ui| {
-				user_bans(ui, user);
-			});
-		});
+		user_bans(ui, user);
 	}
 
 	fn user_window_section_status(
@@ -491,12 +486,9 @@ impl NeosPeepsApp {
 			}
 		});
 
-		let width_for_cols =
-			self.stored.col_min_width.max((width - self.stored.row_height) / 2_f32);
-
 		// User details
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			ui.set_max_width(width_for_cols);
+			ui.set_width(ui.available_width());
 
 			ui.separator();
 			ui.vertical(|ui| {
@@ -514,16 +506,6 @@ impl NeosPeepsApp {
 
 				self.clickable_user_id(ui, frame, &user.id, Some(user), None);
 				user_tags(ui, user);
-			});
-		});
-
-		// Bans
-		ui.with_layout(Layout::left_to_right(), |ui| {
-			ui.set_width(ui.available_width());
-			ui.separator();
-
-			ui.vertical(|ui| {
-				ui.label("Ban status");
 				user_bans(ui, user);
 			});
 		});
@@ -577,7 +559,7 @@ impl NeosPeepsApp {
 					.start_row(row_range.start)
 					.striped(true)
 					.min_row_height(self.stored.row_height)
-					.num_columns(3)
+					.num_columns(2)
 					.show(ui, |ui| {
 						for row in row_range {
 							let user = users[row];
@@ -778,34 +760,22 @@ fn user_tags(ui: &mut Ui, user: &NeosUser) {
 }
 
 fn user_bans(ui: &mut Ui, user: &NeosUser) {
-	let mut any_bans = false;
-
 	if let Some(ban) = &user.public_ban_type {
-		any_bans = true;
 		ui.label("Ban type: ".to_owned() + ban.as_ref());
 	}
 	if let Some(acc_ban) = &user.account_ban_expiration {
-		any_bans = true;
 		ui.label("Account banned until: ".to_owned() + &acc_ban.to_string());
 	}
 	if let Some(acc_ban) = &user.mute_ban_expiration {
-		any_bans = true;
 		ui.label("Muted until: ".to_owned() + &acc_ban.to_string());
 	}
 	if let Some(acc_ban) = &user.public_ban_expiration {
-		any_bans = true;
 		ui.label("Public ban until: ".to_owned() + &acc_ban.to_string());
 	}
 	if let Some(acc_ban) = &user.listing_ban_expiration {
-		any_bans = true;
 		ui.label("Listing ban until: ".to_owned() + &acc_ban.to_string());
 	}
 	if let Some(acc_ban) = &user.spectator_ban_expiration {
-		any_bans = true;
 		ui.label("Spectator ban until: ".to_owned() + &acc_ban.to_string());
-	}
-
-	if !any_bans {
-		ui.label("No bans :)");
 	}
 }

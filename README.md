@@ -1,16 +1,24 @@
 # Neos Peeps
 
-<img align="right" width="256" height="256" src="./static/logo.png"/>
+<img align="right" width="128" height="128" src="./static/logo.png"/>
 
 NeosPeeps is tool that allows for listing your [NeosVR](https://steamcommunity.com/app/740250) friends quickly, without having to actually open the whole game.
 
-It also has functionality to list sessions, filter trough them and your friends, or even search for new ones!
+The functionality includudes:
 
+- Listing your friends
 ![Screenshot of friends list](static/friends-list.png)
-
+- Listing all the sessions, or only the ones that your friends are in
 ![Screenshot of sessions list](static/sessions-list.png)
-
+- Logging in, even with email or with 2fa enabled
 ![Screenshot of login page](static/login-page.png)
+- Searching the lists
+![Screenshot of user search](static/user-search.png)
+- Showing details of a particular peep
+![Screenshot of user window](static/user-window.png)
+- Refreshing the data in the background every so often
+- Resizable grid
+![Screenshot of settings](static/settings-page.png)
 
 ## License
 
