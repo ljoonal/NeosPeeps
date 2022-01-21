@@ -464,9 +464,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	fn user_row(
-		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, user: &NeosUser,
-	) {
+	fn user_row(&self, ui: &mut Ui, frame: &epi::Frame, user: &NeosUser) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			let pfp = self.get_pfp(frame, &user.profile);
 
@@ -551,7 +549,6 @@ impl NeosPeepsApp {
 			self.stored.row_height,
 			users_count,
 			|ui, row_range| {
-				let width = ui.available_width();
 				Grid::new("users_list")
 					.start_row(row_range.start)
 					.striped(true)
@@ -560,7 +557,7 @@ impl NeosPeepsApp {
 					.show(ui, |ui| {
 						for row in row_range {
 							let user = users[row];
-							self.user_row(ui, width, frame, user);
+							self.user_row(ui, frame, user);
 						}
 					});
 			},

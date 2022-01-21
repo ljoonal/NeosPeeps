@@ -9,7 +9,6 @@ use crate::data::Page;
 impl NeosPeepsApp {
 	pub fn top_bar(&mut self, ui: &mut Ui, frame: &epi::Frame) {
 		let is_authenticated = self.runtime.neos_api.is_authenticated();
-		let is_loading = self.runtime.loading.is_loading();
 		let is_logging_in = self.runtime.loading.login_op();
 
 		eframe::egui::menu::bar(ui, |ui| {
