@@ -127,7 +127,8 @@ impl NeosPeepsApp {
 						ui.horizontal_wrapped(|ui| {
 							session_decorations(ui, session);
 							ui.add(
-								Label::new(RichText::new(&session.name).heading()).wrap(true),
+								Label::new(RichText::new(session.stripped_name()).heading())
+									.wrap(true),
 							);
 							ui.label(
 								RichText::new(session.access_level.as_ref()).small_raised(),
