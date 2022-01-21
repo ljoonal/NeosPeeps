@@ -46,8 +46,9 @@ There's no installer, so you might want to store it on your desktop for example.
 
 Then just run the file.
 
-You might get a warning about the executable not being signed.
-Getting a signing certificate would cost a lot of money.
+Edge and Chrome won't let you download unsigned executables on windows apparently.
+So use Firefox, or completely disable smart screen I guess (which I wouldn't recommend).
+Since getting a signing certificate would cost a lot of money.
 And I'm not willing to spend that much just for this hobby project.
 If you're paranoid about the security, I welcome you to [build the app from source](#building) yourself.
 
