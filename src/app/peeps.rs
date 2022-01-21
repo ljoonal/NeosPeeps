@@ -7,6 +7,7 @@ use eframe::{
 		Color32,
 		CtxRef,
 		Grid,
+		Id,
 		Key,
 		Label,
 		Layout,
@@ -173,41 +174,45 @@ impl NeosPeepsApp {
 	pub fn user_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
 		let mut open = true;
 		if let Some((id, user, status)) = &*self.runtime.user_window.borrow() {
-			Window::new(id.as_ref()).open(&mut open).vscroll(true).show(ctx, |ui| {
-				if self.threads.loading.user.get() {
-					ui.vertical_centered_justified(|ui| {
-						ui.label("Loading user...");
-					});
-				} else {
-					ui.vertical_centered(|ui| {
-						if ui.button("Refresh user").clicked() {
-							self.get_user(frame, id);
-						}
-					});
-				}
+			Window::new(id.as_ref())
+				.open(&mut open)
+				.id(Id::new("user_window"))
+				.vscroll(true)
+				.show(ctx, |ui| {
+					if self.threads.loading.user.get() {
+						ui.vertical_centered_justified(|ui| {
+							ui.label("Loading user...");
+						});
+					} else {
+						ui.vertical_centered(|ui| {
+							if ui.button("Refresh user").clicked() {
+								self.get_user(frame, id);
+							}
+						});
+					}
 
-				if let Some(user) = user {
-					self.user_window_section_user(ui, frame, user);
-				}
+					if let Some(user) = user {
+						self.user_window_section_user(ui, frame, user);
+					}
 
-				ui.separator();
+					ui.separator();
 
-				if self.threads.loading.user_status.get() {
-					ui.vertical_centered_justified(|ui| {
-						ui.label("Loading user status...");
-					});
-				} else {
-					ui.vertical_centered(|ui| {
-						if ui.button("Refresh status").clicked() {
-							self.get_user_status(frame, id);
-						}
-					});
-				}
+					if self.threads.loading.user_status.get() {
+						ui.vertical_centered_justified(|ui| {
+							ui.label("Loading user status...");
+						});
+					} else {
+						ui.vertical_centered(|ui| {
+							if ui.button("Refresh status").clicked() {
+								self.get_user_status(frame, id);
+							}
+						});
+					}
 
-				if let Some(status) = status {
-					self.user_window_section_status(ui, frame, status);
-				}
-			});
+					if let Some(status) = status {
+						self.user_window_section_status(ui, frame, status);
+					}
+				});
 		}
 		if !open {
 			*self.runtime.user_window.borrow_mut() = None;
