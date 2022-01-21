@@ -4,6 +4,7 @@ use eframe::{
 		Color32,
 		CtxRef,
 		Grid,
+		Id,
 		Label,
 		Layout,
 		RichText,
@@ -98,30 +99,105 @@ impl NeosPeepsApp {
 	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
 		let mut open = true;
 		if let Some((id, session)) = &*self.runtime.session_window.borrow() {
-			Window::new(id.as_ref()).open(&mut open).vscroll(true).show(ctx, |ui| {
-				if self.threads.loading.session.get() {
-					ui.vertical_centered_justified(|ui| {
-						ui.label("Loading...");
-					});
-				} else {
-					ui.vertical_centered(|ui| {
-						if ui.button("Refresh").clicked() {
-							self.get_session(frame, id);
-						}
-					});
-				}
-
-				if let Some(session) = session {
-					if let Some(asset_url) = &session.thumbnail {
-						if let Some(thumbnail) = self.load_texture(asset_url, frame) {
-							let scaling = (ui.available_height() / thumbnail.size.y)
-								.min(ui.available_width() / thumbnail.size.x);
-							ui.image(thumbnail.id, thumbnail.size * scaling);
-						}
+			Window::new(id.as_ref())
+				.id(Id::new("session_window"))
+				.open(&mut open)
+				.vscroll(true)
+				.show(ctx, |ui| {
+					if self.threads.loading.session.get() {
+						ui.vertical_centered_justified(|ui| {
+							ui.label("Loading...");
+						});
+					} else {
+						ui.vertical_centered(|ui| {
+							if ui.button("Refresh").clicked() {
+								self.get_session(frame, id);
+							}
+						});
 					}
-					ui.heading(&session.name);
-				}
-			});
+
+					if let Some(session) = session {
+						if let Some(asset_url) = &session.thumbnail {
+							if let Some(thumbnail) = self.load_texture(asset_url, frame) {
+								let scaling = (ui.available_height() / thumbnail.size.y)
+									.min(ui.available_width() / thumbnail.size.x);
+								ui.image(thumbnail.id, thumbnail.size * scaling);
+							}
+						}
+						ui.horizontal_wrapped(|ui| {
+							session_decorations(ui, session);
+							ui.add(
+								Label::new(RichText::new(&session.name).heading()).wrap(true),
+							);
+						});
+
+						ui.label(session.access_level.as_ref());
+
+						if !session.tags.is_empty() {
+							ui.horizontal_wrapped(|ui| {
+								ui.label("Tags:");
+								session_tags(ui, session);
+							});
+						}
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("User count: ");
+							session_users_count(ui, session);
+						});
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("Host: ");
+							if let Some(host_id) = &session.host_id {
+								ui.label(host_id.as_ref());
+								ui.label(" - ");
+								ui.label("'".to_owned() + &session.host_username + "'");
+							} else {
+								ui.label(&session.host_username);
+							}
+						});
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("Host machine: ");
+							ui.label(&session.host_machine_id);
+						});
+
+						if !session.users.is_empty() {
+							ui.horizontal_wrapped(|ui| {
+								self.session_users(ui, frame, &session.users);
+							});
+						}
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("Started at: ");
+							ui.label(
+								session
+									.session_begin_time
+									.format(&self.stored.datetime_format)
+									.to_string(),
+							);
+						});
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("Last update at: ");
+							ui.label(
+								session
+									.last_update_time
+									.format(&self.stored.datetime_format)
+									.to_string(),
+							);
+						});
+
+						ui.horizontal(|ui| {
+							ui.label("Neos V:");
+							ui.label(&session.neos_version);
+						});
+
+						ui.horizontal(|ui| {
+							ui.label("Compatibility hash:");
+							ui.label(&session.compatibility_hash);
+						});
+					}
+				});
 		}
 
 		if !open {
@@ -183,7 +259,7 @@ impl NeosPeepsApp {
 			});
 			ui.horizontal_wrapped(|ui| {
 				ui.label("Tags:");
-				ui.label(RichText::new(session.tags.join(", ")).small());
+				session_tags(ui, session);
 			});
 		});
 
@@ -214,9 +290,11 @@ impl NeosPeepsApp {
 
 		self.search_bar(ui);
 
-		if self.threads.loading.sessions.get() {
+		if !self.stored.filter_friends_only && self.threads.loading.sessions.get()
+			|| self.stored.filter_friends_only && self.threads.loading.friends.get()
+		{
 			ui.vertical_centered_justified(|ui| {
-				ui.label("Refreshing friends list");
+				ui.label("Refreshing sessions list");
 			});
 		}
 
@@ -323,6 +401,24 @@ impl NeosPeepsApp {
 			}
 		}
 	}
+}
+
+fn session_decorations(ui: &mut Ui, session: &NeosSession) {
+	if !session.is_valid {
+		ui.label(RichText::new("!").color(Color32::RED))
+			.on_hover_text("Non-valid session");
+	}
+	if session.has_ended {
+		ui.label(RichText::new("E").color(Color32::YELLOW)).on_hover_text("Ended");
+	}
+	if session.is_mobile_friendly {
+		ui.label(RichText::new("M").color(Color32::GREEN))
+			.on_hover_text("Mobile friendly session");
+	}
+}
+
+fn session_tags(ui: &mut Ui, session: &NeosSession) {
+	ui.label(RichText::new(session.tags.join(", ")).small().monospace());
 }
 
 pub fn find_focused_session<'a>(
