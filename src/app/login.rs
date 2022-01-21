@@ -31,9 +31,9 @@ impl NeosPeepsApp {
 			None => return,
 		};
 		self.runtime.neos_api = None;
-		let auth_sender = self.channels.auth_sender();
-		let user_session_sender = self.channels.user_session_sender();
-		self.thread.spawn_login_op(move || {
+		let auth_sender = self.threads.channels.auth_sender();
+		let user_session_sender = self.threads.channels.user_session_sender();
+		self.threads.spawn_login_op(move || {
 			let neos_api = NeosUnauthenticated::from((*neos_api_arc).clone())
 				.upgrade(user_session);
 
@@ -73,9 +73,9 @@ impl NeosPeepsApp {
 			None => return,
 		};
 		self.runtime.neos_api = None;
-		let user_session_sender = self.channels.user_session_sender();
-		let auth_sender = self.channels.auth_sender();
-		self.thread.spawn_login_op(move || {
+		let user_session_sender = self.threads.channels.user_session_sender();
+		let auth_sender = self.threads.channels.auth_sender();
+		self.threads.spawn_login_op(move || {
 			let neos_api: NeosUnauthenticated = ((*neos_api_arc).clone()).into();
 
 			match neos_api.login(&session_request) {
@@ -106,9 +106,9 @@ impl NeosPeepsApp {
 			None => return,
 		};
 		self.runtime.neos_api = None;
-		let user_session_sender = self.channels.user_session_sender();
-		let auth_sender = self.channels.auth_sender();
-		self.thread.spawn_login_op(move || {
+		let user_session_sender = self.threads.channels.user_session_sender();
+		let auth_sender = self.threads.channels.auth_sender();
+		self.threads.spawn_login_op(move || {
 			let new_api = match (*neos_api_arc).clone() {
 				AnyNeos::Authenticated(neos_api) => {
 					neos_api.logout().ok();

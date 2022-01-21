@@ -25,11 +25,10 @@ lazy_static::lazy_static! {
 }
 
 mod app;
-mod channels;
 mod data;
 mod image;
 mod styling;
-mod threads;
+mod threading;
 
 fn main() {
 	let app = app::NeosPeepsApp::default();

@@ -1,15 +1,22 @@
 use rayon::ThreadPool;
 
+mod channels;
+mod pools;
+
+use channels::Channels;
+
 #[derive(Debug)]
-pub struct ThreadManager {
+pub struct Manager {
+	pub channels: Channels,
 	data: ThreadPool,
 	// Also logout operations
 	login: ThreadPool,
 }
 
-impl Default for ThreadManager {
+impl Default for Manager {
 	fn default() -> Self {
 		Self {
+			channels: Channels::default(),
 			data: rayon::ThreadPoolBuilder::new()
 				.panic_handler(move |m| {
 					println!("WARNING: Data thread panicked! {:?}", m);
@@ -27,7 +34,7 @@ impl Default for ThreadManager {
 	}
 }
 
-impl ThreadManager {
+impl Manager {
 	/// Also for logout operations
 	pub fn spawn_login_op<OP>(&self, op: OP)
 	where

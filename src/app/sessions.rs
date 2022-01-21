@@ -49,8 +49,8 @@ impl NeosPeepsApp {
 			Some(api) => api.clone(),
 			None => return,
 		};
-		let sessions_sender = self.channels.sessions_sender();
-		self.thread.spawn_data_op(move || {
+		let sessions_sender = self.threads.channels.sessions_sender();
+		self.threads.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_sessions() {
 					Ok(mut sessions) => {
@@ -87,8 +87,8 @@ impl NeosPeepsApp {
 		}
 
 		let id = id.clone();
-		let session_sender = self.channels.session_sender();
-		self.thread.spawn_data_op(move || match neos_api.get_session(id) {
+		let session_sender = self.threads.channels.session_sender();
+		self.threads.spawn_data_op(move || match neos_api.get_session(id) {
 			Ok(session) => {
 				if let Err(err) = session_sender.send(session) {
 					println!("Failed to send session to main thread! {}", err);

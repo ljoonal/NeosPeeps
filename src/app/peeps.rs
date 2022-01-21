@@ -77,8 +77,8 @@ impl NeosPeepsApp {
 			Some(api) => api.clone(),
 			None => return,
 		};
-		let friends_sender = self.channels.friends_sender();
-		self.thread.spawn_data_op(move || {
+		let friends_sender = self.threads.channels.friends_sender();
+		self.threads.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_friends() {
 					Ok(mut friends) => {
@@ -102,9 +102,9 @@ impl NeosPeepsApp {
 			Some(api) => api.clone(),
 			None => return,
 		};
-		let users_sender = self.channels.users_sender();
+		let users_sender = self.threads.channels.users_sender();
 		let search = self.stored.filter_search.clone();
-		self.thread.spawn_data_op(move || match neos_api.search_users(&search) {
+		self.threads.spawn_data_op(move || match neos_api.search_users(&search) {
 			Ok(users) => {
 				if let Err(err) = users_sender.send(users) {
 					println!("Failed to send users to main thread! {}", err);
@@ -134,8 +134,8 @@ impl NeosPeepsApp {
 		}
 
 		let id = id.clone();
-		let user_sender = self.channels.user_sender();
-		self.thread.spawn_data_op(move || match neos_api.get_user(id) {
+		let user_sender = self.threads.channels.user_sender();
+		self.threads.spawn_data_op(move || match neos_api.get_user(id) {
 			Ok(user) => {
 				if let Err(err) = user_sender.send(user) {
 					println!("Failed to send user to main thread! {}", err);
@@ -164,8 +164,8 @@ impl NeosPeepsApp {
 		}
 
 		let id = id.clone();
-		let user_status_sender = self.channels.user_status_sender();
-		self.thread.spawn_data_op(move || {
+		let user_status_sender = self.threads.channels.user_status_sender();
+		self.threads.spawn_data_op(move || {
 			match neos_api.get_user_status(id.clone()) {
 				Ok(user_status) => {
 					if let Err(err) = user_status_sender.send((id, user_status)) {

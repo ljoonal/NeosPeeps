@@ -16,6 +16,7 @@ use crate::{app::NeosPeepsApp, image::TextureDetails};
 type ImageMsg = (String, Option<TextureDetails>);
 type UserStatusMsg = (neos::id::User, NeosUserStatus);
 
+#[derive(Debug)]
 pub struct Channels {
 	/// Friends bg refresh
 	friends: (Sender<Vec<NeosFriend>>, Receiver<Vec<NeosFriend>>),
@@ -123,33 +124,33 @@ impl NeosPeepsApp {
 	pub fn try_recv(&mut self, frame: &epi::Frame) {
 		let mut repaint = false;
 
-		if let Some(friends) = self.channels.try_recv_friends() {
+		if let Some(friends) = self.threads.channels.try_recv_friends() {
 			self.runtime.friends = friends;
 			repaint = true;
 		}
 
-		if let Some(users) = self.channels.try_recv_users() {
+		if let Some(users) = self.threads.channels.try_recv_users() {
 			self.runtime.users = users;
 			repaint = true;
 		}
 
-		if let Some(sessions) = self.channels.try_recv_sessions() {
+		if let Some(sessions) = self.threads.channels.try_recv_sessions() {
 			self.runtime.sessions = sessions;
 			repaint = true;
 		}
 
-		if let Some(user_session) = self.channels.try_recv_user_session() {
+		if let Some(user_session) = self.threads.channels.try_recv_user_session() {
 			self.stored.user_session = user_session;
 			*self.runtime.session_window.borrow_mut() = None;
 			*self.runtime.user_window.borrow_mut() = None;
 		}
 
-		if let Some(client) = self.channels.try_recv_auth() {
+		if let Some(client) = self.threads.channels.try_recv_auth() {
 			self.runtime.neos_api = Some(client);
 			repaint = true;
 		}
 
-		for (id, image) in self.channels.try_recv_images() {
+		for (id, image) in self.threads.channels.try_recv_images() {
 			self.runtime.loading_textures.get_mut().remove(&id);
 			if let Some(image) = image {
 				self.runtime.textures.insert(id, Rc::new(image));
@@ -157,7 +158,7 @@ impl NeosPeepsApp {
 			repaint = true;
 		}
 
-		if let Some(user) = self.channels.try_recv_user() {
+		if let Some(user) = self.threads.channels.try_recv_user() {
 			if let Some((user_id, w_user, _)) =
 				&mut *self.runtime.user_window.borrow_mut()
 			{
@@ -168,7 +169,9 @@ impl NeosPeepsApp {
 			repaint = true;
 		}
 
-		if let Some((user_id, user_status)) = self.channels.try_recv_user_status() {
+		if let Some((user_id, user_status)) =
+			self.threads.channels.try_recv_user_status()
+		{
 			if let Some((w_user_id, _, w_user_status)) =
 				&mut *self.runtime.user_window.borrow_mut()
 			{
@@ -179,7 +182,7 @@ impl NeosPeepsApp {
 			repaint = true;
 		}
 
-		if let Some(session) = self.channels.try_recv_session() {
+		if let Some(session) = self.threads.channels.try_recv_session() {
 			if let Some((session_id, w_session)) =
 				&mut *self.runtime.session_window.borrow_mut()
 			{

@@ -3,10 +3,9 @@ use std::{rc::Rc, time::SystemTime};
 use eframe::{egui, epi};
 
 use crate::{
-	channels::Channels,
 	data::{Page, Stored},
 	image::TextureDetails,
-	threads::ThreadManager,
+	threading,
 };
 
 mod about;
@@ -25,9 +24,7 @@ pub struct NeosPeepsApp {
 	#[serde(skip)]
 	pub runtime: crate::data::RuntimeOnly,
 	#[serde(skip)]
-	pub channels: Channels,
-	#[serde(skip)]
-	pub thread: ThreadManager,
+	pub threads: threading::Manager,
 }
 
 impl Default for NeosPeepsApp {
@@ -38,8 +35,7 @@ impl Default for NeosPeepsApp {
 		Self {
 			stored: Stored::default(),
 			runtime,
-			channels: Channels::default(),
-			thread: ThreadManager::default(),
+			threads: threading::Manager::default(),
 		}
 	}
 }
