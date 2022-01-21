@@ -314,7 +314,7 @@ impl NeosPeepsApp {
 		);
 
 		if let Some(status_change) = status.last_status_change_time {
-			ui.horizontal(|ui| {
+			ui.horizontal_wrapped(|ui| {
 				ui.label("Status last changed on:");
 				ui.label(
 					status_change.format(&self.stored.datetime_format).to_string(),
@@ -323,35 +323,35 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(neos_version) = &status.neos_version {
-			ui.horizontal(|ui| {
+			ui.horizontal_wrapped(|ui| {
 				ui.label("Neos V:");
 				ui.label(neos_version);
 			});
 		}
 
 		if let Some(hash) = &status.compatibility_hash {
-			ui.horizontal(|ui| {
+			ui.horizontal_wrapped(|ui| {
 				ui.label("Compatibility hash:");
 				ui.label(hash);
 			});
 		}
 
-		ui.horizontal(|ui| {
+		ui.horizontal_wrapped(|ui| {
 			ui.label("Output device:");
 			ui.label(status.output_device.as_ref());
 		});
 
-		ui.horizontal(|ui| {
+		ui.horizontal_wrapped(|ui| {
 			ui.label("Mobile:");
 			ui.label(status.is_mobile.to_string());
 		});
 
-		ui.horizontal(|ui| {
+		ui.horizontal_wrapped(|ui| {
 			ui.label("Current session is hidden:");
 			ui.label(status.is_current_session_hidden.to_string());
 		});
 
-		ui.horizontal(|ui| {
+		ui.horizontal_wrapped(|ui| {
 			ui.label("Hosting:");
 			ui.label(status.is_current_hosting.to_string());
 		});
