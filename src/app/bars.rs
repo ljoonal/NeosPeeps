@@ -1,3 +1,5 @@
+use std::time::SystemTime;
+
 use eframe::{
 	egui::{Button, Response, TextEdit, Ui},
 	epi,
@@ -68,7 +70,7 @@ impl NeosPeepsApp {
 				ui.menu_button("Account", |ui| {
 					if ui.add(Button::new("Refresh")).clicked() {
 						ui.close_menu();
-						self.refresh_friends(frame);
+						self.runtime.last_background_refresh = SystemTime::UNIX_EPOCH;
 					}
 					ui.separator();
 					if ui.add(Button::new("Log out")).clicked() {
