@@ -99,7 +99,7 @@ impl NeosPeepsApp {
 	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
 		let mut open = true;
 		if let Some((id, session)) = &*self.runtime.session_window.borrow() {
-			Window::new(id.as_ref())
+			Window::new(RichText::new(id.as_ref()).small())
 				.id(Id::new("session_window"))
 				.open(&mut open)
 				.vscroll(true)
@@ -187,12 +187,12 @@ impl NeosPeepsApp {
 							);
 						});
 
-						ui.horizontal(|ui| {
+						ui.horizontal_wrapped(|ui| {
 							ui.label("Neos V:");
 							ui.label(&session.neos_version);
 						});
 
-						ui.horizontal(|ui| {
+						ui.horizontal_wrapped(|ui| {
 							ui.label("Compatibility hash:");
 							ui.label(&session.compatibility_hash);
 						});
