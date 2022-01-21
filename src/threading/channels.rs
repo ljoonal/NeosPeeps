@@ -1,6 +1,6 @@
 use std::{rc::Rc, sync::Arc};
 
-use crossbeam::channel::{bounded, unbounded, Receiver, Sender, TryIter};
+use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
 use eframe::epi;
 use neos::{
 	api_client::AnyNeos,
@@ -47,15 +47,15 @@ pub struct Channels {
 impl Default for Channels {
 	fn default() -> Self {
 		Self {
-			friends: bounded(1),
+			friends: unbounded(),
 			users: unbounded(),
-			auth: bounded(1),
-			sessions: bounded(1),
-			user_session: bounded(1),
+			auth: unbounded(),
+			sessions: unbounded(),
+			user_session: unbounded(),
 			image: unbounded(),
-			user: bounded(1),
-			user_status: bounded(1),
-			session: bounded(1),
+			user: unbounded(),
+			user_status: unbounded(),
+			session: unbounded(),
 		}
 	}
 }
