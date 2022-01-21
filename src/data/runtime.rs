@@ -16,6 +16,7 @@ use neos::{
 use super::{SessionWindow, TexturesMap, UserWindow};
 use crate::{app::NeosPeepsApp, image::TextureDetails};
 
+#[allow(clippy::module_name_repetitions)]
 pub struct RuntimeOnly {
 	pub password: String,
 	pub totp: String,
