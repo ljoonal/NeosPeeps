@@ -129,43 +129,56 @@ impl NeosPeepsApp {
 							ui.add(
 								Label::new(RichText::new(&session.name).heading()).wrap(true),
 							);
+							ui.label(
+								RichText::new(session.access_level.as_ref()).small_raised(),
+							);
 						});
 
-						ui.label(session.access_level.as_ref());
-
 						if !session.tags.is_empty() {
+							ui.heading("Tags:");
 							ui.horizontal_wrapped(|ui| {
-								ui.label("Tags:");
 								session_tags(ui, session);
 							});
 						}
 
 						ui.horizontal_wrapped(|ui| {
-							ui.label("User count: ");
+							ui.heading("Users: ");
 							session_users_count(ui, session);
 						});
-
-						ui.horizontal_wrapped(|ui| {
-							ui.label("Host: ");
-							if let Some(host_id) = &session.host_id {
-								ui.label(host_id.as_ref());
-								ui.label(" - ");
-								ui.label("'".to_owned() + &session.host_username + "'");
-							} else {
-								ui.label(&session.host_username);
-							}
-						});
-
-						ui.horizontal_wrapped(|ui| {
-							ui.label("Host machine: ");
-							ui.label(&session.host_machine_id);
-						});
-
 						if !session.users.is_empty() {
 							ui.horizontal_wrapped(|ui| {
 								self.session_users(ui, frame, &session.users);
 							});
 						}
+
+						ui.horizontal_wrapped(|ui| {
+							ui.heading("Host: ");
+							if let Some(host_id) = &session.host_id {
+								ui.label(host_id.as_ref());
+							}
+						});
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("Username: ");
+							ui.label(&session.host_username);
+						});
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("MachineID: ");
+							ui.label(&session.host_machine_id);
+						});
+
+						ui.heading("Misc");
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("Neos V:");
+							ui.label(&session.neos_version);
+						});
+
+						ui.horizontal_wrapped(|ui| {
+							ui.label("Compatibility hash:");
+							ui.label(&session.compatibility_hash);
+						});
 
 						ui.horizontal_wrapped(|ui| {
 							ui.label("Started at: ");
@@ -185,16 +198,6 @@ impl NeosPeepsApp {
 									.format(&self.stored.datetime_format)
 									.to_string(),
 							);
-						});
-
-						ui.horizontal_wrapped(|ui| {
-							ui.label("Neos V:");
-							ui.label(&session.neos_version);
-						});
-
-						ui.horizontal_wrapped(|ui| {
-							ui.label("Compatibility hash:");
-							ui.label(&session.compatibility_hash);
 						});
 					}
 				});
@@ -255,6 +258,7 @@ impl NeosPeepsApp {
 			});
 
 			ui.horizontal_wrapped(|ui| {
+				ui.label("Users:");
 				self.session_users(ui, frame, &session.users);
 			});
 			ui.horizontal_wrapped(|ui| {
@@ -359,8 +363,6 @@ impl NeosPeepsApp {
 		&self, ui: &mut Ui, frame: &epi::Frame, users: &[NeosSessionUser],
 	) {
 		use rayon::prelude::*;
-
-		ui.label("Users:");
 
 		// TODO: Probably possible to do with .par_iter
 		for user in users {
