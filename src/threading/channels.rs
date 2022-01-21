@@ -1,7 +1,6 @@
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
-use eframe::epi;
 use neos::{
 	api_client::AnyNeos,
 	NeosFriend,
@@ -11,7 +10,7 @@ use neos::{
 	NeosUserStatus,
 };
 
-use crate::{app::NeosPeepsApp, image::TextureDetails};
+use crate::image::TextureDetails;
 
 type ImageMsg = (String, Option<TextureDetails>);
 type UserStatusMsg = (neos::id::User, NeosUserStatus);
@@ -125,113 +124,5 @@ impl Channels {
 
 	pub fn try_recv_session(&self) -> Option<Res<NeosSession>> {
 		self.session.1.try_recv().ok()
-	}
-}
-
-impl NeosPeepsApp {
-	/// Tries to receive messages from other threads
-	pub fn try_recv(&mut self, frame: &epi::Frame) {
-		let mut repaint = false;
-
-		if let Some(res) = self.threads.channels.try_recv_friends() {
-			match res {
-				Ok(friends) => {
-					self.runtime.friends = friends;
-					repaint = true;
-				}
-				Err(e) => println!("Failed to fetch friends! {}", e),
-			}
-		}
-
-		if let Some(res) = self.threads.channels.try_recv_users() {
-			match res {
-				Ok(users) => {
-					self.runtime.users = users;
-					repaint = true;
-				}
-				Err(e) => println!("Failed to fetch users! {}", e),
-			}
-		}
-
-		if let Some(res) = self.threads.channels.try_recv_sessions() {
-			match res {
-				Ok(sessions) => {
-					self.runtime.sessions = sessions;
-					repaint = true;
-				}
-				Err(e) => println!("Failed to fetch sessions! {}", e),
-			}
-		}
-
-		if let Some(user_session) = self.threads.channels.try_recv_user_session() {
-			self.stored.user_session = user_session;
-			*self.runtime.session_window.borrow_mut() = None;
-			*self.runtime.user_window.borrow_mut() = None;
-		}
-
-		if let Some(client) = self.threads.channels.try_recv_auth() {
-			self.runtime.neos_api = Some(client);
-			repaint = true;
-		}
-
-		for (id, image) in self.threads.channels.try_recv_images() {
-			self.runtime.loading_textures.get_mut().remove(&id);
-			if let Some(image) = image {
-				self.runtime.textures.insert(id, Rc::new(image));
-			}
-			repaint = true;
-		}
-
-		if let Some(res) = self.threads.channels.try_recv_user() {
-			match res {
-				Ok(user) => {
-					if let Some((user_id, w_user, _)) =
-						&mut *self.runtime.user_window.borrow_mut()
-					{
-						if user.id == *user_id {
-							*w_user = Some(user);
-						}
-					}
-					repaint = true;
-				}
-				Err(e) => println!("Failed to fetch user! {}", e),
-			}
-		}
-
-		if let Some(res) = self.threads.channels.try_recv_user_status() {
-			match res {
-				Ok((user_id, user_status)) => {
-					if let Some((w_user_id, _, w_user_status)) =
-						&mut *self.runtime.user_window.borrow_mut()
-					{
-						if user_id == *w_user_id {
-							*w_user_status = Some(user_status);
-						}
-					}
-					repaint = true;
-				}
-				Err(e) => println!("Failed to fetch user! {}", e),
-			}
-		}
-
-		if let Some(res) = self.threads.channels.try_recv_session() {
-			match res {
-				Ok(session) => {
-					if let Some((session_id, w_session)) =
-						&mut *self.runtime.session_window.borrow_mut()
-					{
-						if session.id == *session_id {
-							*w_session = Some(session);
-						}
-					}
-					repaint = true;
-				}
-				Err(e) => println!("Failed to fetch user! {}", e),
-			}
-		}
-
-		if repaint {
-			frame.request_repaint();
-		}
 	}
 }
