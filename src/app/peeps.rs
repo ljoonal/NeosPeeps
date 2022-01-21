@@ -172,43 +172,45 @@ impl NeosPeepsApp {
 
 	pub fn user_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
 		let mut open = true;
-		let mut refresh_user: Option<neos::id::User> = None;
-		let mut refresh_user_status: Option<neos::id::User> = None;
 		if let Some((id, user, status)) = &*self.runtime.user_window.borrow() {
 			Window::new(id.as_ref()).open(&mut open).vscroll(true).show(ctx, |ui| {
-				if let Some(user) = user {
+				if self.threads.loading.user.get() {
+					ui.vertical_centered_justified(|ui| {
+						ui.label("Loading user...");
+					});
+				} else {
 					ui.vertical_centered(|ui| {
 						if ui.button("Refresh user").clicked() {
-							refresh_user = Some(id.clone());
+							self.get_user(frame, id);
 						}
 					});
+				}
+
+				if let Some(user) = user {
 					self.user_window_section_user(ui, frame, user);
 				}
 
-				if let Some(status) = status {
-					ui.separator();
+				ui.separator();
+
+				if self.threads.loading.user_status.get() {
+					ui.vertical_centered_justified(|ui| {
+						ui.label("Loading user status...");
+					});
+				} else {
 					ui.vertical_centered(|ui| {
 						if ui.button("Refresh status").clicked() {
-							refresh_user_status = Some(id.clone());
+							self.get_user_status(frame, id);
 						}
 					});
+				}
 
+				if let Some(status) = status {
 					self.user_window_section_status(ui, frame, status);
 				}
 			});
 		}
 		if !open {
 			*self.runtime.user_window.borrow_mut() = None;
-		} else if let Some(id) = refresh_user {
-			if let Some(w_user) = &mut *self.runtime.user_window.borrow_mut() {
-				w_user.1 = None;
-			}
-			self.get_user(frame, &id);
-		} else if let Some(id) = refresh_user_status {
-			if let Some(w_user) = &mut *self.runtime.user_window.borrow_mut() {
-				w_user.2 = None;
-			}
-			self.get_user_status(frame, &id);
 		}
 	}
 
@@ -511,6 +513,12 @@ impl NeosPeepsApp {
 			self.search_users(frame);
 		}
 
+		if self.threads.loading.users.get() {
+			ui.vertical_centered_justified(|ui| {
+				ui.label("Searching...");
+			});
+		}
+
 		let users: Vec<&NeosUser> = self
 			.runtime
 			.users
@@ -557,6 +565,12 @@ impl NeosPeepsApp {
 		use rayon::prelude::*;
 
 		self.search_bar(ui);
+
+		if self.threads.loading.friends.get() {
+			ui.vertical_centered_justified(|ui| {
+				ui.label("Refreshing friends list");
+			});
+		}
 
 		let friends: Vec<&NeosFriend> = self
 			.runtime

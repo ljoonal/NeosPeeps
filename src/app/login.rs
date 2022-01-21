@@ -194,6 +194,12 @@ impl NeosPeepsApp {
 
 		let login_op_in_progress = self.runtime.neos_api.is_none();
 
+		if login_op_in_progress {
+			ui.vertical_centered_justified(|ui| {
+				ui.label("Loading...");
+			});
+		}
+
 		ui.add_enabled_ui(!login_op_in_progress, |ui| {
 			ui.group(|ui| {
 				self.identifier_picker(ui, login_op_in_progress);

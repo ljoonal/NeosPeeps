@@ -97,34 +97,35 @@ impl NeosPeepsApp {
 
 	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
 		let mut open = true;
-		let mut refresh_id: Option<neos::id::Session> = None;
 		if let Some((id, session)) = &*self.runtime.session_window.borrow() {
 			Window::new(id.as_ref()).open(&mut open).vscroll(true).show(ctx, |ui| {
-				if let Some(session) = session {
+				if self.threads.loading.session.get() {
+					ui.vertical_centered_justified(|ui| {
+						ui.label("Loading...");
+					});
+				} else {
 					ui.vertical_centered(|ui| {
 						if ui.button("Refresh").clicked() {
-							refresh_id = Some(session.id.clone());
+							self.get_session(frame, id);
 						}
 					});
+				}
+
+				if let Some(session) = session {
 					if let Some(asset_url) = &session.thumbnail {
 						if let Some(thumbnail) = self.load_texture(asset_url, frame) {
 							let scaling = (ui.available_height() / thumbnail.size.y)
 								.min(ui.available_width() / thumbnail.size.x);
 							ui.image(thumbnail.id, thumbnail.size * scaling);
-							ui.heading(&session.name);
 						}
 					}
+					ui.heading(&session.name);
 				}
 			});
 		}
 
 		if !open {
 			*self.runtime.session_window.borrow_mut() = None;
-		} else if let Some(id) = refresh_id {
-			if let Some(w_session) = &mut *self.runtime.session_window.borrow_mut() {
-				w_session.1 = None;
-			}
-			self.get_session(frame, &id);
 		}
 	}
 
@@ -212,6 +213,12 @@ impl NeosPeepsApp {
 		use rayon::prelude::*;
 
 		self.search_bar(ui);
+
+		if self.threads.loading.sessions.get() {
+			ui.vertical_centered_justified(|ui| {
+				ui.label("Refreshing friends list");
+			});
+		}
 
 		let sessions: Vec<&NeosSession> = if self.stored.filter_friends_only {
 			self
