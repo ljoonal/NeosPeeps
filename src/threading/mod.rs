@@ -65,7 +65,7 @@ impl NeosPeepsApp {
 		let mut repaint = false;
 
 		if let Some(res) = self.threads.channels.try_recv_friends() {
-			*self.threads.loading.friends.borrow_mut() = false;
+			self.threads.loading.friends.set(false);
 			match res {
 				Ok(friends) => {
 					self.runtime.friends = friends;
@@ -76,7 +76,7 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(res) = self.threads.channels.try_recv_users() {
-			*self.threads.loading.users.borrow_mut() = false;
+			self.threads.loading.users.set(false);
 			match res {
 				Ok(users) => {
 					self.runtime.users = users;
@@ -87,7 +87,7 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(res) = self.threads.channels.try_recv_sessions() {
-			*self.threads.loading.sessions.borrow_mut() = false;
+			self.threads.loading.sessions.set(false);
 			match res {
 				Ok(sessions) => {
 					self.runtime.sessions = sessions;
@@ -117,7 +117,7 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(res) = self.threads.channels.try_recv_user() {
-			*self.threads.loading.user.borrow_mut() = false;
+			self.threads.loading.user.set(false);
 			match res {
 				Ok(user) => {
 					if let Some((user_id, w_user, _)) =
@@ -134,7 +134,7 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(res) = self.threads.channels.try_recv_user_status() {
-			*self.threads.loading.user_status.borrow_mut() = false;
+			self.threads.loading.user_status.set(false);
 			match res {
 				Ok((user_id, user_status)) => {
 					if let Some((w_user_id, _, w_user_status)) =
@@ -151,7 +151,7 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(res) = self.threads.channels.try_recv_session() {
-			*self.threads.loading.session.borrow_mut() = false;
+			self.threads.loading.session.set(false);
 			match res {
 				Ok(session) => {
 					if let Some((session_id, w_session)) =

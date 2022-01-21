@@ -78,7 +78,7 @@ impl NeosPeepsApp {
 			None => return,
 		};
 
-		*self.threads.loading.friends.borrow_mut() = true;
+		self.threads.loading.friends.set(true);
 		let friends_sender = self.threads.channels.friends_sender();
 		self.threads.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
@@ -103,7 +103,7 @@ impl NeosPeepsApp {
 			None => return,
 		};
 
-		*self.threads.loading.users.borrow_mut() = true;
+		self.threads.loading.users.set(true);
 		let users_sender = self.threads.channels.users_sender();
 		let search = self.stored.filter_search.clone();
 		self.threads.spawn_data_op(move || {
@@ -129,7 +129,7 @@ impl NeosPeepsApp {
 			*self.runtime.user_window.borrow_mut() = Some((id.clone(), None, None));
 		}
 
-		*self.threads.loading.user.borrow_mut() = true;
+		self.threads.loading.user.set(true);
 
 		let id = id.clone();
 		let user_sender = self.threads.channels.user_sender();
@@ -154,7 +154,7 @@ impl NeosPeepsApp {
 			*self.runtime.user_window.borrow_mut() = Some((id.clone(), None, None));
 		}
 
-		*self.threads.loading.user_status.borrow_mut() = true;
+		self.threads.loading.user_status.set(true);
 
 		let id = id.clone();
 		let user_status_sender = self.threads.channels.user_status_sender();

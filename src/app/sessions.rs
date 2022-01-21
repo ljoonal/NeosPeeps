@@ -50,7 +50,7 @@ impl NeosPeepsApp {
 			None => return,
 		};
 
-		*self.threads.loading.sessions.borrow_mut() = true;
+		self.threads.loading.sessions.set(true);
 		let sessions_sender = self.threads.channels.sessions_sender();
 		self.threads.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
@@ -84,7 +84,7 @@ impl NeosPeepsApp {
 			*self.runtime.session_window.borrow_mut() = Some((id.clone(), None));
 		}
 
-		*self.threads.loading.session.borrow_mut() = true;
+		self.threads.loading.session.set(true);
 		let id = id.clone();
 		let session_sender = self.threads.channels.session_sender();
 		self.threads.spawn_data_op(move || {
