@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 
 use eframe::{
-	egui::{Button, Response, TextEdit, Ui},
+	egui::{Button, Layout, Response, TextEdit, Ui},
 	epi,
 };
 
@@ -81,9 +81,14 @@ impl NeosPeepsApp {
 				ui.separator();
 			}
 
-			if ui.button("Quit").clicked() {
-				frame.quit();
-			}
+			ui.with_layout(Layout::right_to_left(), |ui| {
+				if ui.button("Quit").clicked() {
+					frame.quit();
+				}
+				if self.threads.loading.any() {
+					ui.label("...");
+				}
+			});
 		});
 	}
 
