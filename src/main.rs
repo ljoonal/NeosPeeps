@@ -29,6 +29,7 @@ mod channels;
 mod data;
 mod image;
 mod styling;
+mod threads;
 
 fn main() {
 	let app = app::NeosPeepsApp::default();

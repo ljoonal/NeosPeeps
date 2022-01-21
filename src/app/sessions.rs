@@ -45,15 +45,12 @@ impl NeosPeepsApp {
 	pub fn refresh_sessions(&mut self, frame: &epi::Frame) {
 		use rayon::prelude::*;
 
-		if self.runtime.loading.login_op() {
-			return;
-		}
-		self.runtime.loading.fetching_sessions = true;
-		frame.request_repaint();
-
-		let neos_api_arc = self.runtime.neos_api.clone();
+		let neos_api_arc = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
 		let sessions_sender = self.channels.sessions_sender();
-		rayon::spawn(move || {
+		self.thread.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_sessions() {
 					Ok(mut sessions) => {
@@ -70,13 +67,17 @@ impl NeosPeepsApp {
 				}
 			}
 		});
+
+		frame.request_repaint();
 	}
 
 	/// Gets the session status for the session window
 	pub fn get_session(&self, frame: &epi::Frame, id: &neos::id::Session) {
-		if self.runtime.loading.login_op() {
-			return;
-		}
+		let neos_api = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+
 		if let Some((w_id, _)) = &*self.runtime.session_window.borrow() {
 			if w_id != id {
 				return;
@@ -85,12 +86,9 @@ impl NeosPeepsApp {
 			*self.runtime.session_window.borrow_mut() = Some((id.clone(), None));
 		}
 
-		frame.request_repaint();
-
 		let id = id.clone();
-		let neos_api = self.runtime.neos_api.clone();
 		let session_sender = self.channels.session_sender();
-		rayon::spawn(move || match neos_api.get_session(id) {
+		self.thread.spawn_data_op(move || match neos_api.get_session(id) {
 			Ok(session) => {
 				if let Err(err) = session_sender.send(session) {
 					println!("Failed to send session to main thread! {}", err);
@@ -100,6 +98,8 @@ impl NeosPeepsApp {
 				println!("Error with Neos API: {}", e);
 			}
 		});
+
+		frame.request_repaint();
 	}
 
 	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {

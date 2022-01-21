@@ -11,11 +11,7 @@ use neos::{
 	NeosUserStatus,
 };
 
-use crate::{
-	app::NeosPeepsApp,
-	data::LoginOperationState,
-	image::TextureDetails,
-};
+use crate::{app::NeosPeepsApp, image::TextureDetails};
 
 type ImageMsg = (String, Option<TextureDetails>);
 type UserStatusMsg = (neos::id::User, NeosUserStatus);
@@ -129,19 +125,16 @@ impl NeosPeepsApp {
 
 		if let Some(friends) = self.channels.try_recv_friends() {
 			self.runtime.friends = friends;
-			self.runtime.loading.fetching_friends = false;
 			repaint = true;
 		}
 
 		if let Some(users) = self.channels.try_recv_users() {
 			self.runtime.users = users;
-			self.runtime.loading.fetching_users = false;
 			repaint = true;
 		}
 
 		if let Some(sessions) = self.channels.try_recv_sessions() {
 			self.runtime.sessions = sessions;
-			self.runtime.loading.fetching_sessions = false;
 			repaint = true;
 		}
 
@@ -152,8 +145,7 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(client) = self.channels.try_recv_auth() {
-			self.runtime.neos_api = client;
-			self.runtime.loading.login = LoginOperationState::None;
+			self.runtime.neos_api = Some(client);
 			repaint = true;
 		}
 

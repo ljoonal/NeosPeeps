@@ -26,17 +26,14 @@ impl NeosPeepsApp {
 	pub fn try_use_session(
 		&mut self, user_session: NeosUserSession, frame: &epi::Frame,
 	) {
-		if self.runtime.loading.login_op() {
-			return; // Only allow one login op at once
-		}
-		self.runtime.loading.login = crate::data::LoginOperationState::LoggingIn;
-
-		frame.request_repaint();
-
-		let neos_api_arc = self.runtime.neos_api.clone();
+		let neos_api_arc = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+		self.runtime.neos_api = None;
 		let auth_sender = self.channels.auth_sender();
 		let user_session_sender = self.channels.user_session_sender();
-		std::thread::spawn(move || {
+		self.thread.spawn_login_op(move || {
 			let neos_api = NeosUnauthenticated::from((*neos_api_arc).clone())
 				.upgrade(user_session);
 
@@ -64,21 +61,21 @@ impl NeosPeepsApp {
 				}
 			}
 		});
+
+		frame.request_repaint();
 	}
 
 	pub fn login_new(
 		&mut self, session_request: NeosRequestUserSession, frame: &epi::Frame,
 	) {
-		if self.runtime.loading.login_op() {
-			return; // Only allow one login op at once
-		}
-		self.runtime.loading.login = crate::data::LoginOperationState::LoggingIn;
-		frame.request_repaint();
-
-		let neos_api_arc = self.runtime.neos_api.clone();
+		let neos_api_arc = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+		self.runtime.neos_api = None;
 		let user_session_sender = self.channels.user_session_sender();
 		let auth_sender = self.channels.auth_sender();
-		std::thread::spawn(move || {
+		self.thread.spawn_login_op(move || {
 			let neos_api: NeosUnauthenticated = ((*neos_api_arc).clone()).into();
 
 			match neos_api.login(&session_request) {
@@ -99,19 +96,19 @@ impl NeosPeepsApp {
 				}
 			}
 		});
+
+		frame.request_repaint();
 	}
 
 	pub fn logout(&mut self, frame: &epi::Frame) {
-		if self.runtime.loading.login_op() {
-			return; // Only allow one login op at once
-		}
-		self.runtime.loading.login = crate::data::LoginOperationState::LoggingOut;
-		frame.request_repaint();
-
-		let neos_api_arc = self.runtime.neos_api.clone();
+		let neos_api_arc = match &mut self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+		self.runtime.neos_api = None;
 		let user_session_sender = self.channels.user_session_sender();
 		let auth_sender = self.channels.auth_sender();
-		std::thread::spawn(move || {
+		self.thread.spawn_login_op(move || {
 			let new_api = match (*neos_api_arc).clone() {
 				AnyNeos::Authenticated(neos_api) => {
 					neos_api.logout().ok();
@@ -128,6 +125,8 @@ impl NeosPeepsApp {
 				println!("Failed to send user_session to main thread! {}", err);
 			}
 		});
+
+		frame.request_repaint();
 	}
 
 	fn identifier_picker(&mut self, ui: &mut Ui, is_loading: bool) {
@@ -190,29 +189,26 @@ impl NeosPeepsApp {
 	}
 
 	pub fn login_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		let is_loading = self.runtime.loading.is_loading();
-
 		ui.heading("Log in");
 		ui.label("Currently Neos' Oauth doesn't implement the required details for this application, thus logging in is the only way to actually use it.");
-		if is_loading {
-			ui.label("Logging in...");
-		}
 
-		ui.add_enabled_ui(!is_loading, |ui| {
+		let login_op_in_progress = self.runtime.neos_api.is_none();
+
+		ui.add_enabled_ui(!login_op_in_progress, |ui| {
 			ui.group(|ui| {
-				self.identifier_picker(ui, is_loading);
+				self.identifier_picker(ui, login_op_in_progress);
 
 				ui.add(
 					TextEdit::singleline(&mut self.runtime.password)
 						.password(true)
 						.hint_text("Password")
-						.interactive(!is_loading),
+						.interactive(!login_op_in_progress),
 				);
 
 				let totp_resp = ui.add(
 					TextEdit::singleline(&mut self.runtime.totp)
 						.hint_text("2FA")
-						.interactive(!is_loading)
+						.interactive(!login_op_in_progress)
 						.desired_width(80_f32),
 				);
 
@@ -231,7 +227,7 @@ impl NeosPeepsApp {
 				if submit_button_resp.clicked()
 					&& !self.stored.identifier.inner().is_empty()
 					&& !self.runtime.password.is_empty()
-					&& !is_loading
+					&& !login_op_in_progress
 					&& (self.runtime.totp.is_empty()
 						|| self.runtime.totp.chars().count() == 6)
 				{

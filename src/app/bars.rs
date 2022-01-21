@@ -8,8 +8,8 @@ use crate::data::Page;
 
 impl NeosPeepsApp {
 	pub fn top_bar(&mut self, ui: &mut Ui, frame: &epi::Frame) {
-		let is_authenticated = self.runtime.neos_api.is_authenticated();
-		let is_logging_in = self.runtime.loading.login_op();
+		let is_authenticated =
+			self.runtime.neos_api.as_ref().map_or(false, |a| a.is_authenticated());
 
 		eframe::egui::menu::bar(ui, |ui| {
 			// View menu
@@ -25,7 +25,7 @@ impl NeosPeepsApp {
 					ui.close_menu();
 				}
 
-				if !is_logging_in && is_authenticated {
+				if is_authenticated {
 					if ui
 						.add_enabled(
 							!matches!(self.stored.page, Page::Peeps),
@@ -64,15 +64,9 @@ impl NeosPeepsApp {
 			ui.separator();
 
 			// Account menu.
-			if !is_logging_in && is_authenticated {
+			if is_authenticated {
 				ui.menu_button("Account", |ui| {
-					if ui
-						.add_enabled(
-							!self.runtime.loading.login_op(),
-							Button::new("Refresh"),
-						)
-						.clicked()
-					{
+					if ui.add(Button::new("Refresh")).clicked() {
 						ui.close_menu();
 						self.refresh_friends(frame);
 					}
@@ -92,12 +86,10 @@ impl NeosPeepsApp {
 	}
 
 	pub fn search_bar(&mut self, ui: &mut Ui) -> Response {
-		let is_loading = self.runtime.loading.is_loading();
 		let mut resp = None;
 		ui.horizontal(|ui| {
 			resp = Some(
-				ui.add_enabled(
-					!is_loading,
+				ui.add(
 					TextEdit::singleline(&mut self.stored.filter_search)
 						.hint_text("Filter"),
 				),

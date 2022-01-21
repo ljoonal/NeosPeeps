@@ -73,16 +73,12 @@ fn order_users(s1: &NeosUserStatus, s2: &NeosUserStatus) -> Ordering {
 impl NeosPeepsApp {
 	/// Refreshes friends in a background thread
 	pub fn refresh_friends(&mut self, frame: &epi::Frame) {
-		if self.runtime.loading.login_op() {
-			return;
-		}
-		self.runtime.loading.fetching_friends = true;
-
-		frame.request_repaint();
-
-		let neos_api_arc = self.runtime.neos_api.clone();
+		let neos_api_arc = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
 		let friends_sender = self.channels.friends_sender();
-		rayon::spawn(move || {
+		self.thread.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				match neos_api.get_friends() {
 					Ok(mut friends) => {
@@ -97,19 +93,18 @@ impl NeosPeepsApp {
 				}
 			}
 		});
+
+		frame.request_repaint();
 	}
 
 	pub fn search_users(&mut self, frame: &epi::Frame) {
-		if self.stored.filter_search.is_empty() || self.runtime.loading.login_op() {
-			return;
-		}
-
-		frame.request_repaint();
-
-		let neos_api = self.runtime.neos_api.clone();
+		let neos_api = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
 		let users_sender = self.channels.users_sender();
 		let search = self.stored.filter_search.clone();
-		rayon::spawn(move || match neos_api.search_users(&search) {
+		self.thread.spawn_data_op(move || match neos_api.search_users(&search) {
 			Ok(users) => {
 				if let Err(err) = users_sender.send(users) {
 					println!("Failed to send users to main thread! {}", err);
@@ -119,13 +114,17 @@ impl NeosPeepsApp {
 				println!("Error with Neos API: {}", e);
 			}
 		});
+
+		frame.request_repaint();
 	}
 
 	/// Gets the user for the user window
 	pub fn get_user(&self, frame: &epi::Frame, id: &neos::id::User) {
-		if self.runtime.loading.login_op() {
-			return;
-		}
+		let neos_api = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+
 		if let Some((w_id, _, _)) = &*self.runtime.user_window.borrow() {
 			if w_id != id {
 				return;
@@ -134,12 +133,9 @@ impl NeosPeepsApp {
 			*self.runtime.user_window.borrow_mut() = Some((id.clone(), None, None));
 		}
 
-		frame.request_repaint();
-
 		let id = id.clone();
-		let neos_api = self.runtime.neos_api.clone();
 		let user_sender = self.channels.user_sender();
-		rayon::spawn(move || match neos_api.get_user(id) {
+		self.thread.spawn_data_op(move || match neos_api.get_user(id) {
 			Ok(user) => {
 				if let Err(err) = user_sender.send(user) {
 					println!("Failed to send user to main thread! {}", err);
@@ -149,13 +145,16 @@ impl NeosPeepsApp {
 				println!("Error with Neos API: {}", e);
 			}
 		});
+
+		frame.request_repaint();
 	}
 
 	/// Gets the user status for the user window
 	pub fn get_user_status(&self, frame: &epi::Frame, id: &neos::id::User) {
-		if self.runtime.loading.login_op() {
-			return;
-		}
+		let neos_api = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
 		if let Some((w_id, _, _)) = &*self.runtime.user_window.borrow() {
 			if w_id != id {
 				return;
@@ -164,21 +163,22 @@ impl NeosPeepsApp {
 			*self.runtime.user_window.borrow_mut() = Some((id.clone(), None, None));
 		}
 
-		frame.request_repaint();
-
 		let id = id.clone();
-		let neos_api = self.runtime.neos_api.clone();
 		let user_status_sender = self.channels.user_status_sender();
-		rayon::spawn(move || match neos_api.get_user_status(id.clone()) {
-			Ok(user_status) => {
-				if let Err(err) = user_status_sender.send((id, user_status)) {
-					println!("Failed to send user status to main thread! {}", err);
+		self.thread.spawn_data_op(move || {
+			match neos_api.get_user_status(id.clone()) {
+				Ok(user_status) => {
+					if let Err(err) = user_status_sender.send((id, user_status)) {
+						println!("Failed to send user status to main thread! {}", err);
+					}
+				}
+				Err(e) => {
+					println!("Error with Neos API: {}", e);
 				}
 			}
-			Err(e) => {
-				println!("Error with Neos API: {}", e);
-			}
 		});
+
+		frame.request_repaint();
 	}
 
 	pub fn user_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {

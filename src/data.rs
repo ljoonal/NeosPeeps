@@ -77,9 +77,8 @@ pub type SessionWindow = (neos::id::Session, Option<NeosSession>);
 pub struct RuntimeOnly {
 	pub password: String,
 	pub totp: String,
-	pub loading: LoadingState,
 	pub default_profile_picture: Option<Rc<TextureDetails>>,
-	pub neos_api: Arc<AnyNeos>,
+	pub neos_api: Option<Arc<AnyNeos>>,
 	pub friends: Vec<neos::NeosFriend>,
 	/// Searched users.
 	pub users: Vec<neos::NeosUser>,
@@ -122,57 +121,28 @@ impl NeosPeepsApp {
 			return;
 		}
 		let image_sender = self.channels.image_sender();
-		rayon::spawn_fifo(move || match crate::image::retrieve(&asset_url) {
-			Ok(image) => {
-				let (size, image) = crate::image::to_epi_format(&image);
-				let image = Some(TextureDetails::new(frame, size, image));
-				if let Err(err) = image_sender.send((asset_url.id().to_owned(), image))
-				{
-					println!("Couldn't send image to main thread! {}", err);
+		self.thread.spawn_data_op(move || {
+			match crate::image::retrieve(&asset_url) {
+				Ok(image) => {
+					let (size, image) = crate::image::to_epi_format(&image);
+					let image = Some(TextureDetails::new(frame, size, image));
+					if let Err(err) =
+						image_sender.send((asset_url.id().to_owned(), image))
+					{
+						println!("Couldn't send image to main thread! {}", err);
+					}
+				}
+				Err(err) => {
+					match image_sender.send((asset_url.id().to_owned(), None)) {
+						Ok(_) => println!("Failed to fetch image! {}", err),
+						Err(thread_err) => println!(
+							"Failed to fetch image & to send to main thread: {} - {}",
+							err, thread_err
+						),
+					};
 				}
 			}
-			Err(err) => {
-				match image_sender.send((asset_url.id().to_owned(), None)) {
-					Ok(_) => println!("Failed to fetch image! {}", err),
-					Err(thread_err) => println!(
-						"Failed to fetch image & to send to main thread: {} - {}",
-						err, thread_err
-					),
-				};
-			}
 		});
-	}
-}
-
-#[derive(Debug)]
-pub enum LoginOperationState {
-	None,
-	LoggingIn,
-	LoggingOut,
-}
-
-impl Default for LoginOperationState {
-	fn default() -> Self { Self::None }
-}
-
-#[derive(Default, Debug)]
-pub struct LoadingState {
-	pub fetching_friends: bool,
-	pub fetching_users: bool,
-	pub fetching_sessions: bool,
-	pub login: LoginOperationState,
-}
-
-impl LoadingState {
-	pub const fn is_loading(&self) -> bool {
-		self.fetching_friends
-			|| self.fetching_users
-			|| self.fetching_sessions
-			|| self.login_op()
-	}
-
-	pub const fn login_op(&self) -> bool {
-		!matches!(self.login, LoginOperationState::None)
 	}
 }
 
@@ -183,9 +153,8 @@ impl Default for RuntimeOnly {
 		Self {
 			totp: String::default(),
 			password: String::default(),
-			loading: LoadingState::default(),
 			default_profile_picture: Option::default(),
-			neos_api: Arc::new(AnyNeos::Unauthenticated(api)),
+			neos_api: Some(Arc::new(AnyNeos::Unauthenticated(api))),
 			friends: Vec::default(),
 			users: Vec::default(),
 			sessions: Vec::default(),

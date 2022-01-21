@@ -6,6 +6,7 @@ use crate::{
 	channels::Channels,
 	data::{Page, Stored},
 	image::TextureDetails,
+	threads::ThreadManager,
 };
 
 mod about;
@@ -25,6 +26,8 @@ pub struct NeosPeepsApp {
 	pub runtime: crate::data::RuntimeOnly,
 	#[serde(skip)]
 	pub channels: Channels,
+	#[serde(skip)]
+	pub thread: ThreadManager,
 }
 
 impl Default for NeosPeepsApp {
@@ -32,7 +35,12 @@ impl Default for NeosPeepsApp {
 		use crate::data::RuntimeOnly;
 		let runtime = RuntimeOnly::default();
 
-		Self { stored: Stored::default(), runtime, channels: Channels::default() }
+		Self {
+			stored: Stored::default(),
+			runtime,
+			channels: Channels::default(),
+			thread: ThreadManager::default(),
+		}
 	}
 }
 
@@ -63,8 +71,8 @@ impl epi::App for NeosPeepsApp {
 	/// second. Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`,
 	/// `Window` or `Area`.
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
-		let is_authenticated = self.runtime.neos_api.is_authenticated();
-		let is_loading = self.runtime.loading.is_loading();
+		let is_authenticated =
+			self.runtime.neos_api.as_ref().map_or(false, |a| a.is_authenticated());
 
 		if self.runtime.default_profile_picture.is_none() {
 			let user_img =
@@ -74,8 +82,7 @@ impl epi::App for NeosPeepsApp {
 				Some(Rc::new(TextureDetails::from_image(frame.clone(), &user_img)));
 		}
 
-		if !is_loading
-			&& is_authenticated
+		if is_authenticated
 			&& self.runtime.last_background_refresh + self.stored.refresh_frequency
 				< SystemTime::now()
 		{
@@ -92,12 +99,6 @@ impl epi::App for NeosPeepsApp {
 		});
 
 		egui::CentralPanel::default().show(ctx, |ui| {
-			if is_loading {
-				ui.vertical_centered_justified(|ui| {
-					ui.label("Loading...");
-				});
-			}
-
 			egui::ScrollArea::vertical().show(ui, |ui| {
 				ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
 					if is_authenticated {
