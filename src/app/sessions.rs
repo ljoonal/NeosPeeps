@@ -57,13 +57,9 @@ impl NeosPeepsApp {
 						sessions.par_sort_by(|s1, s2| {
 							s1.active_users.cmp(&s2.active_users).reverse()
 						});
-						if let Err(err) = sessions_sender.send(sessions) {
-							println!("Failed to send sessions to main thread! {}", err);
-						}
+						sessions_sender.send(Ok(sessions)).unwrap();
 					}
-					Err(e) => {
-						println!("Error with Neos API: {}", e);
-					}
+					Err(e) => sessions_sender.send(Err(e.to_string())).unwrap(),
 				}
 			}
 		});
@@ -88,15 +84,9 @@ impl NeosPeepsApp {
 
 		let id = id.clone();
 		let session_sender = self.threads.channels.session_sender();
-		self.threads.spawn_data_op(move || match neos_api.get_session(id) {
-			Ok(session) => {
-				if let Err(err) = session_sender.send(session) {
-					println!("Failed to send session to main thread! {}", err);
-				}
-			}
-			Err(e) => {
-				println!("Error with Neos API: {}", e);
-			}
+		self.threads.spawn_data_op(move || {
+			let res = neos_api.get_session(id);
+			session_sender.send(res.map_err(|e| e.to_string())).unwrap();
 		});
 
 		frame.request_repaint();

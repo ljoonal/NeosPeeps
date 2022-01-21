@@ -83,12 +83,10 @@ impl NeosPeepsApp {
 				match neos_api.get_friends() {
 					Ok(mut friends) => {
 						friends.sort_by(|f1, f2| order_users(&f1.status, &f2.status));
-						if let Err(err) = friends_sender.send(friends) {
-							println!("Failed to send friends to main thread! {}", err);
-						}
+						friends_sender.send(Ok(friends)).unwrap();
 					}
 					Err(e) => {
-						println!("Error with Neos API: {}", e);
+						friends_sender.send(Err(e.to_string())).unwrap();
 					}
 				}
 			}
@@ -104,15 +102,9 @@ impl NeosPeepsApp {
 		};
 		let users_sender = self.threads.channels.users_sender();
 		let search = self.stored.filter_search.clone();
-		self.threads.spawn_data_op(move || match neos_api.search_users(&search) {
-			Ok(users) => {
-				if let Err(err) = users_sender.send(users) {
-					println!("Failed to send users to main thread! {}", err);
-				}
-			}
-			Err(e) => {
-				println!("Error with Neos API: {}", e);
-			}
+		self.threads.spawn_data_op(move || {
+			let res = neos_api.search_users(&search);
+			users_sender.send(res.map_err(|e| e.to_string())).unwrap();
 		});
 
 		frame.request_repaint();
@@ -135,17 +127,10 @@ impl NeosPeepsApp {
 
 		let id = id.clone();
 		let user_sender = self.threads.channels.user_sender();
-		self.threads.spawn_data_op(move || match neos_api.get_user(id) {
-			Ok(user) => {
-				if let Err(err) = user_sender.send(user) {
-					println!("Failed to send user to main thread! {}", err);
-				}
-			}
-			Err(e) => {
-				println!("Error with Neos API: {}", e);
-			}
+		self.threads.spawn_data_op(move || {
+			let res = neos_api.get_user(id);
+			user_sender.send(res.map_err(|e| e.to_string())).unwrap();
 		});
-
 		frame.request_repaint();
 	}
 
@@ -168,13 +153,9 @@ impl NeosPeepsApp {
 		self.threads.spawn_data_op(move || {
 			match neos_api.get_user_status(id.clone()) {
 				Ok(user_status) => {
-					if let Err(err) = user_status_sender.send((id, user_status)) {
-						println!("Failed to send user status to main thread! {}", err);
-					}
+					user_status_sender.send(Ok((id, user_status))).unwrap();
 				}
-				Err(e) => {
-					println!("Error with Neos API: {}", e);
-				}
+				Err(e) => user_status_sender.send(Err(e.to_string())).unwrap(),
 			}
 		});
 

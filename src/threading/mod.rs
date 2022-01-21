@@ -1,7 +1,6 @@
 use rayon::ThreadPool;
 
 mod channels;
-mod pools;
 
 use channels::Channels;
 
