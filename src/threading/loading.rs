@@ -12,7 +12,7 @@ pub struct Tracker {
 }
 
 impl Tracker {
-	fn any(&self) -> bool {
+	pub fn any(&self) -> bool {
 		self.friends.get()
 			|| self.users.get()
 			|| self.sessions.get()
