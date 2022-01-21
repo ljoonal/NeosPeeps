@@ -8,5 +8,5 @@ tea release create --draft --target main \
   --tag v$VERSION --title v$VERSION \
   -a target/release/neos_peeps \
   -a target/release/neos_peeps.sha256\
-  -a target/x86_64-pc-windows-gnu/release/neos_peeps.exe \
-  -a target/x86_64-pc-windows-gnu/release/neos_peeps.exe.sha256
+  -a target/x86_64-pc-windows-gnu/release/win-neos_peeps.exe \
+  -a target/x86_64-pc-windows-gnu/release/win-neos_peeps.exe.sha256

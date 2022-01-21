@@ -15,3 +15,6 @@ target/
 
 # Linux directory file.
 .directory
+
+# Signing stuff
+*.pfx
