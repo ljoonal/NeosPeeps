@@ -41,8 +41,8 @@ All the following functionality, in under 5MB:
 
 ## Installation & updating
 
-Hop over to the [releases page](https://git.ljoonal.xyz/ljoonal/NeosPeeps/releases), and grab the latest `.zip` file and unzip the file.
-There's no installer, so you might want to store the executable on your desktop for example.
+Hop over to the [releases page](https://git.ljoonal.xyz/ljoonal/NeosPeeps/releases), and grab the latest `.exe` file if you're on windows.
+There's no installer, so you might want to store it on your desktop for example.
 
 Then just run the file.
 
