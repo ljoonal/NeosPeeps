@@ -57,6 +57,20 @@ impl epi::App for NeosPeepsApp {
 				self.try_use_session(user_session, frame);
 			}
 		}
+
+		// Request screen updates at least once in a while
+		// As normally egui doesn't update if it doesn't need to.
+		let frame = frame.clone();
+		std::thread::spawn(move || {
+			let frame = std::sync::Arc::<
+				std::sync::Mutex<eframe::epi::backend::FrameData>,
+			>::downgrade(&frame.0);
+			while let Some(frame_data) = frame.upgrade() {
+				let frame = epi::Frame(frame_data);
+				frame.request_repaint();
+				std::thread::sleep(std::time::Duration::from_millis(1000));
+			}
+		});
 	}
 
 	fn save(&mut self, storage: &mut dyn epi::Storage) {
