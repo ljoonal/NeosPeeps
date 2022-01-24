@@ -28,8 +28,11 @@ lazy_static::lazy_static! {
 mod app;
 mod data;
 mod image;
+mod login;
+mod sessions;
 mod styling;
 mod threading;
+mod users;
 
 fn main() {
 	let app = app::NeosPeepsApp::default();
