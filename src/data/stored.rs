@@ -21,6 +21,7 @@ pub struct Stored {
 #[derive(Serialize, Deserialize)]
 pub enum Page {
 	About,
+	Credits,
 	Peeps,
 	Sessions,
 	Settings,

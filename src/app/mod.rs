@@ -120,6 +120,7 @@ impl epi::App for NeosPeepsApp {
 
 						match self.stored.page {
 							Page::About => self.about_page(ui),
+							Page::Credits => self.credits_page(ui),
 							Page::Peeps => self.peeps_page(ui, frame),
 							Page::Sessions => self.sessions_page(ui, frame),
 							Page::Settings => self.settings_page(ui, frame),
@@ -127,6 +128,7 @@ impl epi::App for NeosPeepsApp {
 					} else {
 						match self.stored.page {
 							Page::About => self.about_page(ui),
+							Page::Credits => self.credits_page(ui),
 							Page::Settings => self.settings_page(ui, frame),
 							_ => self.login_page(ui, frame),
 						}

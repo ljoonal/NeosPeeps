@@ -32,4 +32,20 @@ impl NeosPeepsApp {
 			self.stored.page = Page::Peeps;
 		}
 	}
+
+	pub fn credits_page(&mut self, ui: &mut Ui) {
+		ui.heading("Credits & thanks");
+		ui.label(concat!("Creating the app: ", env!("CARGO_PKG_AUTHORS")));
+		ui.label("Posing for the screenshots: Soap");
+		ui.label("Helping with URLs: kazu0617");
+		ui.label("Initial help with neosdb urls: brodokk.");
+		ui.label("Docs & code used as a reference: PolyLogiX.");
+		ui.label("Pointing out smart screen issues with the .exe file: Ukilop.");
+		ui.label("Good tutorials & smart comments: ProbablePrime.");
+		ui.label("2b2t/4chan meme vibes: The Neos Modding discord");
+
+		if ui.button("Back").clicked() {
+			self.stored.page = Page::Peeps;
+		}
+	}
 }

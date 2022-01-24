@@ -16,17 +16,6 @@ impl NeosPeepsApp {
 		eframe::egui::menu::bar(ui, |ui| {
 			// View menu
 			ui.menu_button("View", |ui| {
-				if ui
-					.add_enabled(
-						!matches!(self.stored.page, Page::About),
-						Button::new("About"),
-					)
-					.clicked()
-				{
-					self.stored.page = Page::About;
-					ui.close_menu();
-				}
-
 				if is_authenticated {
 					if ui
 						.add_enabled(
@@ -51,6 +40,8 @@ impl NeosPeepsApp {
 					}
 				}
 
+				ui.separator();
+
 				if ui
 					.add_enabled(
 						!matches!(self.stored.page, Page::Settings),
@@ -59,6 +50,30 @@ impl NeosPeepsApp {
 					.clicked()
 				{
 					self.stored.page = Page::Settings;
+					ui.close_menu();
+				}
+
+				ui.separator();
+
+				if ui
+					.add_enabled(
+						!matches!(self.stored.page, Page::About),
+						Button::new("About"),
+					)
+					.clicked()
+				{
+					self.stored.page = Page::About;
+					ui.close_menu();
+				}
+
+				if ui
+					.add_enabled(
+						!matches!(self.stored.page, Page::Credits),
+						Button::new("Credits"),
+					)
+					.clicked()
+				{
+					self.stored.page = Page::Credits;
 					ui.close_menu();
 				}
 			});
