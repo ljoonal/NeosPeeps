@@ -1,23 +1,25 @@
 //! Styles for the application
 
 use eframe::egui::{
-	self,
 	Color32,
+	Context,
 	FontData,
 	FontDefinitions,
 	FontFamily,
 	Stroke,
+	Style,
 	TextStyle,
 };
 
-pub fn setup_styles(ctx: &egui::CtxRef) {
-	setup_style(ctx);
-	setup_fonts(ctx);
+pub fn setup_styles(ctx: &Context) {
+	let mut style = (*ctx.style()).clone();
+	setup_style(ctx, &mut style);
+	setup_fonts(ctx, &mut style);
+
+	ctx.set_style(style);
 }
 
-fn setup_style(ctx: &egui::CtxRef) {
-	let mut style = (*ctx.style()).clone();
-
+fn setup_style(_ctx: &Context, style: &mut Style) {
 	#[cfg(debug_assertions)]
 	{
 		style.debug.debug_on_hover = true;
@@ -56,11 +58,9 @@ fn setup_style(ctx: &egui::CtxRef) {
 
 	style.spacing.item_spacing.y = 8_f32;
 	style.spacing.button_padding.y = 5_f32;
-
-	ctx.set_style(style);
 }
 
-fn setup_fonts(ctx: &egui::CtxRef) {
+fn setup_fonts(ctx: &Context, style: &mut Style) {
 	use font_kit::family_name::FamilyName;
 	use font_kit::properties::{Properties, Style, Weight};
 	use font_kit::source::SystemSource;
@@ -70,24 +70,23 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 
 	let mut fonts = FontDefinitions::default();
 
-	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Heading) {
-		*size = 34_f32;
+	if let Some(font_id) = style.text_styles.get_mut(&TextStyle::Heading) {
+		font_id.size = 34_f32;
 	}
 
-	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Body) {
-		*size = 24_f32;
+	if let Some(font_id) = style.text_styles.get_mut(&TextStyle::Body) {
+		font_id.size = 24_f32;
 	}
-	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Button) {
-		*size = 26_f32;
-	}
-
-	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Monospace)
-	{
-		*size = 22_f32;
+	if let Some(font_id) = style.text_styles.get_mut(&TextStyle::Button) {
+		font_id.size = 26_f32;
 	}
 
-	if let Some((_, size)) = fonts.family_and_size.get_mut(&TextStyle::Small) {
-		*size = 16_f32;
+	if let Some(font_id) = style.text_styles.get_mut(&TextStyle::Monospace) {
+		font_id.size = 22_f32;
+	}
+
+	if let Some(font_id) = style.text_styles.get_mut(&TextStyle::Small) {
+		font_id.size = 16_f32;
 	}
 
 	fonts.font_data.insert(
@@ -95,12 +94,12 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 		FontData::from_static(include_bytes!("../static/Raleway.ttf")),
 	);
 	fonts
-		.fonts_for_family
+		.families
 		.get_mut(&FontFamily::Proportional)
 		.unwrap()
 		.insert(0, "raleway".to_owned());
 	fonts
-		.fonts_for_family
+		.families
 		.get_mut(&FontFamily::Monospace)
 		.unwrap()
 		.push("raleway".to_owned());
@@ -116,12 +115,12 @@ fn setup_fonts(ctx: &egui::CtxRef) {
 					FontData::from_owned((*font_data).clone()),
 				);
 				fonts
-					.fonts_for_family
+					.families
 					.get_mut(&FontFamily::Proportional)
 					.unwrap()
 					.push("noto-cjk-jp".to_owned());
 				fonts
-					.fonts_for_family
+					.families
 					.get_mut(&FontFamily::Monospace)
 					.unwrap()
 					.push("noto-cjk-jp".to_owned());

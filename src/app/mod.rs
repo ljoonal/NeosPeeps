@@ -1,10 +1,13 @@
 use std::{rc::Rc, time::SystemTime};
 
-use eframe::{egui, epi};
+use eframe::{
+	egui::{self, Context},
+	epi,
+};
 
 use crate::{
 	data::{Page, Stored},
-	image::TextureDetails,
+	image::from_dynamic_image,
 	threading,
 };
 
@@ -45,7 +48,7 @@ impl epi::App for NeosPeepsApp {
 
 	/// Called once before the first frame.
 	fn setup(
-		&mut self, ctx: &egui::CtxRef, frame: &epi::Frame,
+		&mut self, ctx: &Context, frame: &epi::Frame,
 		storage: Option<&dyn epi::Storage>,
 	) {
 		crate::styling::setup_styles(ctx);
@@ -79,7 +82,7 @@ impl epi::App for NeosPeepsApp {
 	/// Called each time the UI needs repainting, which may be many times per
 	/// second. Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`,
 	/// `Window` or `Area`.
-	fn update(&mut self, ctx: &egui::CtxRef, frame: &epi::Frame) {
+	fn update(&mut self, ctx: &Context, frame: &epi::Frame) {
 		let is_authenticated =
 			self.runtime.neos_api.as_ref().map_or(false, |a| a.is_authenticated());
 
@@ -87,8 +90,9 @@ impl epi::App for NeosPeepsApp {
 			let user_img =
 				image::load_from_memory(include_bytes!("../../static/user.png"))
 					.expect("Failed to load image");
-			self.runtime.default_profile_picture =
-				Some(Rc::new(TextureDetails::from_image(frame.clone(), &user_img)));
+			self.runtime.default_profile_picture = Some(Rc::new(
+				ctx.load_texture("default-pfp", from_dynamic_image(&user_img)),
+			));
 		}
 
 		if is_authenticated
@@ -121,15 +125,15 @@ impl epi::App for NeosPeepsApp {
 						match self.stored.page {
 							Page::About => self.about_page(ui),
 							Page::Credits => self.credits_page(ui),
-							Page::Peeps => self.peeps_page(ui, frame),
-							Page::Sessions => self.sessions_page(ui, frame),
-							Page::Settings => self.settings_page(ui, frame),
+							Page::Peeps => self.peeps_page(ctx, frame, ui),
+							Page::Sessions => self.sessions_page(ctx, frame, ui),
+							Page::Settings => self.settings_page(ui),
 						}
 					} else {
 						match self.stored.page {
 							Page::About => self.about_page(ui),
 							Page::Credits => self.credits_page(ui),
-							Page::Settings => self.settings_page(ui, frame),
+							Page::Settings => self.settings_page(ui),
 							_ => self.login_page(ui, frame),
 						}
 					}

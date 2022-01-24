@@ -72,3 +72,4 @@ winres = "0.1"
 
 [patch.crates-io]
 #neos = { path = "../neos_rs/" }
+eframe = { git = "https://github.com/emilk/egui.git" }

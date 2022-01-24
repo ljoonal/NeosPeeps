@@ -2,7 +2,7 @@ use eframe::{
 	egui::{
 		Align,
 		Color32,
-		CtxRef,
+		Context,
 		Grid,
 		Id,
 		Label,
@@ -37,7 +37,7 @@ pub fn session_users_count(ui: &mut Ui, session: &NeosSession) {
 }
 
 impl NeosPeepsApp {
-	pub fn session_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
+	pub fn session_window(&mut self, ctx: &Context, frame: &epi::Frame) {
 		let mut open = true;
 		if let Some((id, session)) = &*self.runtime.session_window.borrow() {
 			Window::new(RichText::new(id.as_ref()).small())
@@ -59,10 +59,11 @@ impl NeosPeepsApp {
 
 					if let Some(session) = session {
 						if let Some(asset_url) = &session.thumbnail {
-							if let Some(thumbnail) = self.load_texture(asset_url, frame) {
-								let scaling = (ui.available_height() / thumbnail.size.y)
-									.min(ui.available_width() / thumbnail.size.x);
-								ui.image(thumbnail.id, thumbnail.size * scaling);
+							if let Some(thumbnail) = self.load_texture(asset_url, ctx) {
+								let size = thumbnail.size_vec2();
+								let scaling = (ui.available_height() / size.y)
+									.min(ui.available_width() / size.x);
+								ui.image(thumbnail.id(), size * scaling);
 							}
 						}
 						ui.horizontal_wrapped(|ui| {
@@ -151,7 +152,8 @@ impl NeosPeepsApp {
 	}
 
 	pub fn session_row(
-		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, session: &NeosSession,
+		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, width: f32,
+		session: &NeosSession,
 	) {
 		let mut open_window = false;
 		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
@@ -212,10 +214,11 @@ impl NeosPeepsApp {
 		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			ui.set_min_width(ui.available_width());
 			if let Some(asset_url) = &session.thumbnail {
-				if let Some(thumbnail) = self.load_texture(asset_url, frame) {
-					let scaling = (ui.available_height() / thumbnail.size.y)
-						.min(ui.available_width() / thumbnail.size.x);
-					let response = ui.image(thumbnail.id, thumbnail.size * scaling);
+				if let Some(thumbnail) = self.load_texture(asset_url, ctx) {
+					let size = thumbnail.size_vec2();
+					let scaling =
+						(ui.available_height() / size.y).min(ui.available_width() / size.x);
+					let response = ui.image(thumbnail.id(), size * scaling);
 					if response.interact(Sense::click()).clicked() {
 						open_window = true;
 					}
@@ -231,7 +234,9 @@ impl NeosPeepsApp {
 		}
 	}
 
-	pub fn sessions_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+	pub fn sessions_page(
+		&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
+	) {
 		use rayon::prelude::*;
 
 		self.search_bar(ui);
@@ -272,11 +277,12 @@ impl NeosPeepsApp {
 
 		ui.heading(sessions.len().to_string() + " Sessions");
 
-		self.sessions_table(ui, frame, &sessions);
+		self.sessions_table(ctx, frame, ui, &sessions);
 	}
 
 	pub fn sessions_table(
-		&self, ui: &mut Ui, frame: &epi::Frame, sessions: &[&NeosSession],
+		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
+		sessions: &[&NeosSession],
 	) {
 		let sessions_count = sessions.len();
 
@@ -294,7 +300,7 @@ impl NeosPeepsApp {
 					.show(ui, |ui| {
 						for row in row_range {
 							let session = sessions[row];
-							self.session_row(ui, width, frame, session);
+							self.session_row(ctx, frame, ui, width, session);
 						}
 					});
 			},

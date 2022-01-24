@@ -7,20 +7,20 @@ use std::{
 };
 
 use ahash::RandomState;
-use eframe::epi;
+use eframe::egui::{Context, TextureHandle};
 use neos::{
 	api_client::{AnyNeos, NeosUnauthenticated},
 	AssetUrl,
 };
 
 use super::{SessionWindow, TexturesMap, UserWindow};
-use crate::{app::NeosPeepsApp, image::TextureDetails};
+use crate::app::NeosPeepsApp;
 
 #[allow(clippy::module_name_repetitions)]
 pub struct RuntimeOnly {
 	pub password: String,
 	pub totp: String,
-	pub default_profile_picture: Option<Rc<TextureDetails>>,
+	pub default_profile_picture: Option<Rc<TextureHandle>>,
 	pub neos_api: Option<Arc<AnyNeos>>,
 	pub friends: Vec<neos::NeosFriend>,
 	/// Searched users.
@@ -64,19 +64,19 @@ impl NeosPeepsApp {
 	}
 
 	pub fn load_texture(
-		&self, asset_url: &AssetUrl, frame: &epi::Frame,
-	) -> Option<Rc<TextureDetails>> {
+		&self, asset_url: &AssetUrl, ctx: &Context,
+	) -> Option<Rc<TextureHandle>> {
 		self.runtime.used_textures.borrow_mut().insert(asset_url.id().to_owned());
 		if let Some(texture) = self.runtime.textures.get(asset_url.id()) {
 			return Some(texture.clone());
 		}
-		self.start_retrieving_image(asset_url.clone(), frame.clone());
+		self.start_retrieving_image(asset_url.clone(), ctx.clone());
 
 		None
 	}
 
 	/// Starts a thread to start retrieving the image if wasn't already.
-	fn start_retrieving_image(&self, asset_url: AssetUrl, frame: epi::Frame) {
+	fn start_retrieving_image(&self, asset_url: AssetUrl, ctx: Context) {
 		if !self
 			.runtime
 			.loading_textures
@@ -89,22 +89,13 @@ impl NeosPeepsApp {
 		self.threads.spawn_data_op(move || {
 			match crate::image::retrieve(&asset_url) {
 				Ok(image) => {
-					let (size, image) = crate::image::to_epi_format(&image);
-					let image = Some(TextureDetails::new(frame, size, image));
-					if let Err(err) =
-						image_sender.send((asset_url.id().to_owned(), image))
-					{
-						println!("Couldn't send image to main thread! {}", err);
-					}
+					let image = crate::image::from_dynamic_image(&image);
+					let image = ctx.load_texture(asset_url.id(), image);
+					image_sender.send((asset_url.id().to_owned(), Some(image))).unwrap();
 				}
 				Err(err) => {
-					match image_sender.send((asset_url.id().to_owned(), None)) {
-						Ok(_) => println!("Failed to fetch image! {}", err),
-						Err(thread_err) => println!(
-							"Failed to fetch image & to send to main thread: {} - {}",
-							err, thread_err
-						),
-					};
+					image_sender.send((asset_url.id().to_owned(), None)).unwrap();
+					println!("Failed to fetch image! {}", err);
 				}
 			}
 		});

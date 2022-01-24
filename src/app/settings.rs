@@ -1,15 +1,12 @@
 use std::time::Duration;
 
-use eframe::{
-	egui::{Slider, Ui},
-	epi,
-};
+use eframe::egui::{Slider, Ui};
 
 use super::NeosPeepsApp;
 use crate::data::Page;
 
 impl NeosPeepsApp {
-	pub fn settings_page(&mut self, ui: &mut Ui, _frame: &epi::Frame) {
+	pub fn settings_page(&mut self, ui: &mut Ui) {
 		ui.heading("Settings");
 
 		{

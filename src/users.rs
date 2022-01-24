@@ -2,7 +2,10 @@
 
 use std::{cmp::Ordering, rc::Rc};
 
-use eframe::epi;
+use eframe::{
+	egui::{Context, TextureHandle},
+	epi,
+};
 use neos::{
 	api_client::{AnyNeos, Neos},
 	NeosFriend,
@@ -12,7 +15,7 @@ use neos::{
 	NeosUserStatus,
 };
 
-use crate::{app::NeosPeepsApp, image::TextureDetails};
+use crate::app::NeosPeepsApp;
 
 fn order_users(s1: &NeosUserStatus, s2: &NeosUserStatus) -> Ordering {
 	// if their current session is joinable
@@ -166,14 +169,14 @@ impl NeosPeepsApp {
 	}
 
 	pub fn get_pfp(
-		&self, frame: &epi::Frame, profile: &Option<NeosUserProfile>,
-	) -> Rc<TextureDetails> {
+		&self, ctx: &Context, profile: &Option<NeosUserProfile>,
+	) -> Rc<TextureHandle> {
 		let pfp_url = match profile {
 			Some(profile) => &profile.icon_url,
 			None => &None,
 		};
 		let pfp = match pfp_url {
-			Some(pfp_url) => self.load_texture(pfp_url, frame),
+			Some(pfp_url) => self.load_texture(pfp_url, ctx),
 			None => None,
 		};
 

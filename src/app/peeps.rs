@@ -2,7 +2,7 @@
 use eframe::{
 	egui::{
 		Color32,
-		CtxRef,
+		Context,
 		Grid,
 		Id,
 		Key,
@@ -29,7 +29,7 @@ use super::{sessions::session_users_count, NeosPeepsApp};
 use crate::sessions::find_focused_session;
 
 impl NeosPeepsApp {
-	pub fn user_window(&mut self, ctx: &CtxRef, frame: &epi::Frame) {
+	pub fn user_window(&mut self, ctx: &Context, frame: &epi::Frame) {
 		let mut open = true;
 		if let Some((id, user, status)) = &*self.runtime.user_window.borrow() {
 			Window::new(id.as_ref())
@@ -50,7 +50,7 @@ impl NeosPeepsApp {
 					}
 
 					if let Some(user) = user {
-						self.user_window_section_user(ui, frame, user);
+						self.user_window_section_user(ui, ctx, user);
 					}
 
 					ui.separator();
@@ -68,7 +68,7 @@ impl NeosPeepsApp {
 					}
 
 					if let Some(status) = status {
-						self.user_window_section_status(ui, frame, status);
+						self.user_window_section_status(ctx, frame, ui, status);
 					}
 				});
 		}
@@ -78,12 +78,13 @@ impl NeosPeepsApp {
 	}
 
 	fn user_window_section_user(
-		&self, ui: &mut Ui, frame: &epi::Frame, user: &NeosUser,
+		&self, ui: &mut Ui, ctx: &Context, user: &NeosUser,
 	) {
-		let pfp = self.get_pfp(frame, &user.profile);
-		let scaling = (ui.available_height() / pfp.size.y)
-			.min(ui.available_width() / pfp.size.x);
-		ui.image(pfp.id, pfp.size * scaling);
+		let pfp = self.get_pfp(ctx, &user.profile);
+		let size = pfp.size_vec2();
+		let scaling =
+			(ui.available_height() / size.y).min(ui.available_width() / size.x);
+		ui.image(pfp.id(), size * scaling);
 
 		let friend = self.user_to_friend(user);
 
@@ -168,7 +169,8 @@ impl NeosPeepsApp {
 	}
 
 	fn user_window_section_status(
-		&self, ui: &mut Ui, frame: &epi::Frame, status: &NeosUserStatus,
+		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
+		status: &NeosUserStatus,
 	) {
 		let (r, g, b) = status.online_status.color();
 		ui.label(
@@ -222,20 +224,21 @@ impl NeosPeepsApp {
 		if !status.active_sessions.is_empty() {
 			ui.collapsing("Sessions", |ui| {
 				for session in &status.active_sessions {
-					self.session_row(ui, ui.available_width(), frame, session);
+					self.session_row(ctx, frame, ui, ui.available_width(), session);
 				}
 			});
 		}
 	}
 
 	fn friend_row(
-		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, friend: &NeosFriend,
+		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, width: f32,
+		friend: &NeosFriend,
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			let pfp = self.get_pfp(frame, &friend.profile);
+			let pfp = self.get_pfp(ctx, &friend.profile);
 
 			let response = ui.image(
-				pfp.id,
+				pfp.id(),
 				Vec2::new(self.stored.row_height, self.stored.row_height),
 			);
 
@@ -280,14 +283,14 @@ impl NeosPeepsApp {
 
 			ui.separator();
 
-			self.friend_row_session_col(ui, width_for_cols, frame, friend);
+			self.friend_row_session_col(ctx, ui, width_for_cols, friend);
 		});
 
 		ui.end_row();
 	}
 
 	fn friend_row_session_col(
-		&self, ui: &mut Ui, width: f32, frame: &epi::Frame, friend: &NeosFriend,
+		&self, ctx: &Context, ui: &mut Ui, width: f32, friend: &NeosFriend,
 	) {
 		if let Some(session) = find_focused_session(&friend.id, &friend.status) {
 			let show_thumbnail = width > self.stored.row_height;
@@ -306,7 +309,7 @@ impl NeosPeepsApp {
 				session_users_count(ui, session);
 			});
 			if show_thumbnail {
-				self.friend_session_thumbnail(ui, frame, session);
+				self.friend_session_thumbnail(ctx, ui, session);
 			}
 		} else if friend.status.online_status == NeosUserOnlineStatus::Offline {
 			ui.label(friend.status.online_status.as_ref());
@@ -318,12 +321,14 @@ impl NeosPeepsApp {
 		}
 	}
 
-	fn user_row(&self, ui: &mut Ui, frame: &epi::Frame, user: &NeosUser) {
+	fn user_row(
+		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, user: &NeosUser,
+	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
-			let pfp = self.get_pfp(frame, &user.profile);
+			let pfp = self.get_pfp(ctx, &user.profile);
 
 			let response = ui.image(
-				pfp.id,
+				pfp.id(),
 				Vec2::new(self.stored.row_height, self.stored.row_height),
 			);
 
@@ -359,15 +364,15 @@ impl NeosPeepsApp {
 		ui.end_row();
 	}
 
-	pub fn peeps_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+	pub fn peeps_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
 		if self.stored.filter_friends_only {
-			self.friends_page(ui, frame);
+			self.friends_page(ctx, frame, ui);
 		} else {
-			self.users_page(ui, frame);
+			self.users_page(ctx, frame, ui);
 		}
 	}
 
-	fn users_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+	fn users_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
 		use rayon::prelude::*;
 
 		let bar_response = self.search_bar(ui);
@@ -417,14 +422,14 @@ impl NeosPeepsApp {
 					.show(ui, |ui| {
 						for row in row_range {
 							let user = users[row];
-							self.user_row(ui, frame, user);
+							self.user_row(ctx, frame, ui, user);
 						}
 					});
 			},
 		);
 	}
 
-	fn friends_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+	fn friends_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
 		use rayon::prelude::*;
 
 		self.search_bar(ui);
@@ -471,7 +476,7 @@ impl NeosPeepsApp {
 					.show(ui, |ui| {
 						for row in row_range {
 							let friend = friends[row];
-							self.friend_row(ui, width, frame, friend);
+							self.friend_row(ctx, frame, ui, width, friend);
 						}
 					});
 			},
@@ -522,16 +527,17 @@ impl NeosPeepsApp {
 	}
 
 	fn friend_session_thumbnail(
-		&self, ui: &mut Ui, frame: &epi::Frame, session: &NeosSession,
+		&self, ctx: &Context, ui: &mut Ui, session: &NeosSession,
 	) {
 		if let Some(thumbnail) = &session.thumbnail {
 			ui.with_layout(Layout::right_to_left(), |ui| {
 				ui.set_width(ui.available_width());
-				let session_pics = self.load_texture(thumbnail, frame);
+				let session_pics = self.load_texture(thumbnail, ctx);
 				if let Some(session_pic) = session_pics {
-					let scaling = (ui.available_height() / session_pic.size.y)
-						.min(ui.available_width() / session_pic.size.x);
-					let response = ui.image(session_pic.id, session_pic.size * scaling);
+					let size = session_pic.size_vec2();
+					let scaling =
+						(ui.available_height() / size.y).min(ui.available_width() / size.x);
+					let response = ui.image(session_pic.id(), size * scaling);
 
 					if response.interact(Sense::click()).clicked() {
 						*self.runtime.session_window.borrow_mut() =

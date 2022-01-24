@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
+use eframe::egui::TextureHandle;
 use neos::{
 	api_client::AnyNeos,
 	NeosFriend,
@@ -10,9 +11,7 @@ use neos::{
 	NeosUserStatus,
 };
 
-use crate::image::TextureDetails;
-
-type ImageMsg = (String, Option<TextureDetails>);
+type ImageMsg = (String, Option<TextureHandle>);
 type UserStatusMsg = (neos::id::User, NeosUserStatus);
 
 // Sender & Receiver than can have errors.
