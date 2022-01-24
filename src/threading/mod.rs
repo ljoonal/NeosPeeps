@@ -64,12 +64,47 @@ impl NeosPeepsApp {
 	pub fn try_recv(&mut self, frame: &epi::Frame) {
 		let mut repaint = false;
 
+		self.try_recv_auth(&mut repaint);
+		self.try_recv_lists(&mut repaint);
+		self.try_recv_window(&mut repaint);
+
+		for (id, image) in self.threads.channels.try_recv_images() {
+			self.runtime.loading_textures.get_mut().remove(&id);
+			if let Some(image) = image {
+				self.runtime.textures.insert(id, Rc::new(image));
+			}
+			repaint = true;
+		}
+
+		if let Some(latest_ver) = self.threads.channels.try_recv_updates() {
+			self.runtime.available_update = Some(latest_ver);
+		}
+
+		if repaint {
+			frame.request_repaint();
+		}
+	}
+
+	fn try_recv_auth(&mut self, repaint: &mut bool) {
+		if let Some(user_session) = self.threads.channels.try_recv_user_session() {
+			self.stored.user_session = user_session;
+			*self.runtime.session_window.borrow_mut() = None;
+			*self.runtime.user_window.borrow_mut() = None;
+		}
+
+		if let Some(client) = self.threads.channels.try_recv_auth() {
+			self.runtime.neos_api = Some(client);
+			*repaint = true;
+		}
+	}
+
+	fn try_recv_lists(&mut self, repaint: &mut bool) {
 		if let Some(res) = self.threads.channels.try_recv_friends() {
 			self.threads.loading.friends.set(false);
 			match res {
 				Ok(friends) => {
 					self.runtime.friends = friends;
-					repaint = true;
+					*repaint = true;
 				}
 				Err(e) => println!("Failed to fetch friends! {}", e),
 			}
@@ -80,7 +115,7 @@ impl NeosPeepsApp {
 			match res {
 				Ok(users) => {
 					self.runtime.users = users;
-					repaint = true;
+					*repaint = true;
 				}
 				Err(e) => println!("Failed to fetch users! {}", e),
 			}
@@ -91,31 +126,14 @@ impl NeosPeepsApp {
 			match res {
 				Ok(sessions) => {
 					self.runtime.sessions = sessions;
-					repaint = true;
+					*repaint = true;
 				}
 				Err(e) => println!("Failed to fetch sessions! {}", e),
 			}
 		}
+	}
 
-		if let Some(user_session) = self.threads.channels.try_recv_user_session() {
-			self.stored.user_session = user_session;
-			*self.runtime.session_window.borrow_mut() = None;
-			*self.runtime.user_window.borrow_mut() = None;
-		}
-
-		if let Some(client) = self.threads.channels.try_recv_auth() {
-			self.runtime.neos_api = Some(client);
-			repaint = true;
-		}
-
-		for (id, image) in self.threads.channels.try_recv_images() {
-			self.runtime.loading_textures.get_mut().remove(&id);
-			if let Some(image) = image {
-				self.runtime.textures.insert(id, Rc::new(image));
-			}
-			repaint = true;
-		}
-
+	fn try_recv_window(&mut self, repaint: &mut bool) {
 		if let Some(res) = self.threads.channels.try_recv_user() {
 			self.threads.loading.user.set(false);
 			match res {
@@ -127,7 +145,7 @@ impl NeosPeepsApp {
 							*w_user = Some(user);
 						}
 					}
-					repaint = true;
+					*repaint = true;
 				}
 				Err(e) => println!("Failed to fetch user! {}", e),
 			}
@@ -144,7 +162,7 @@ impl NeosPeepsApp {
 							*w_user_status = Some(user_status);
 						}
 					}
-					repaint = true;
+					*repaint = true;
 				}
 				Err(e) => println!("Failed to fetch user! {}", e),
 			}
@@ -161,14 +179,10 @@ impl NeosPeepsApp {
 							*w_session = Some(session);
 						}
 					}
-					repaint = true;
+					*repaint = true;
 				}
 				Err(e) => println!("Failed to fetch user! {}", e),
 			}
-		}
-
-		if repaint {
-			frame.request_repaint();
 		}
 	}
 }

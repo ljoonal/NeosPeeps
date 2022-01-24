@@ -32,6 +32,7 @@ mod login;
 mod sessions;
 mod styling;
 mod threading;
+mod updating;
 mod users;
 
 fn main() {

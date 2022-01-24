@@ -80,10 +80,9 @@ impl NeosPeepsApp {
 
 			ui.separator();
 
-			// Account menu.
-			if is_authenticated {
-				ui.menu_button("Account", |ui| {
-					if ui.add(Button::new("Refresh")).clicked() {
+			ui.menu_button("Network", |ui| {
+				if is_authenticated {
+					if ui.add(Button::new("Refresh lists")).clicked() {
 						ui.close_menu();
 						self.runtime.last_background_refresh = SystemTime::UNIX_EPOCH;
 					}
@@ -92,9 +91,15 @@ impl NeosPeepsApp {
 						ui.close_menu();
 						self.logout(frame);
 					}
-				});
-				ui.separator();
-			}
+					ui.separator();
+				}
+				if ui.add(Button::new("Check for app updates")).clicked() {
+					ui.close_menu();
+					self.check_updates();
+				}
+			});
+
+			ui.separator();
 
 			ui.with_layout(Layout::right_to_left(), |ui| {
 				if ui.button("Quit").clicked() {

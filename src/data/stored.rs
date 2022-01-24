@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use neos::{api_client::NeosRequestUserSessionIdentifier, NeosUserSession};
 use serde::{Deserialize, Serialize};
@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
 pub struct Stored {
+	pub check_updates: bool,
+	pub last_update_check_time: SystemTime,
 	pub user_session: Option<NeosUserSession>,
 	pub identifier: NeosRequestUserSessionIdentifier,
 	pub refresh_frequency: Duration,
@@ -34,6 +36,8 @@ impl Default for Page {
 impl Default for Stored {
 	fn default() -> Self {
 		Self {
+			last_update_check_time: SystemTime::now(),
+			check_updates: false,
 			user_session: None,
 			identifier: NeosRequestUserSessionIdentifier::Username(String::default()),
 			refresh_frequency: Duration::from_secs(120),

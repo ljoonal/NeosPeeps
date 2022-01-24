@@ -11,6 +11,8 @@ use neos::{
 	NeosUserStatus,
 };
 
+use crate::updating::GiteaReleasesResponse;
+
 type ImageMsg = (String, Option<TextureHandle>);
 type UserStatusMsg = (neos::id::User, NeosUserStatus);
 
@@ -40,6 +42,8 @@ pub struct Channels {
 	user_status: (ResSender<UserStatusMsg>, ResReceiver<UserStatusMsg>),
 	/// Lookups for the session window
 	session: (ResSender<NeosSession>, ResReceiver<NeosSession>),
+	update_check:
+		(Sender<GiteaReleasesResponse>, Receiver<GiteaReleasesResponse>),
 }
 
 impl Default for Channels {
@@ -54,6 +58,7 @@ impl Default for Channels {
 			user: unbounded(),
 			user_status: unbounded(),
 			session: unbounded(),
+			update_check: unbounded(),
 		}
 	}
 }
@@ -90,6 +95,10 @@ impl Channels {
 		self.session.0.clone()
 	}
 
+	pub fn update_check_sender(&self) -> Sender<GiteaReleasesResponse> {
+		self.update_check.0.clone()
+	}
+
 	pub fn try_recv_friends(&self) -> Option<Res<Vec<NeosFriend>>> {
 		self.friends.1.try_recv().ok()
 	}
@@ -123,5 +132,9 @@ impl Channels {
 
 	pub fn try_recv_session(&self) -> Option<Res<NeosSession>> {
 		self.session.1.try_recv().ok()
+	}
+
+	pub fn try_recv_updates(&self) -> Option<GiteaReleasesResponse> {
+		self.update_check.1.try_recv().ok()
 	}
 }

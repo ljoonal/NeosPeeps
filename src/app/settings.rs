@@ -9,6 +9,9 @@ impl NeosPeepsApp {
 	pub fn settings_page(&mut self, ui: &mut Ui) {
 		ui.heading("Settings");
 
+		ui.style_mut().spacing.slider_width =
+			50f32.max(ui.available_width() - 250f32);
+
 		{
 			let mut refresh_freq: u64 = self.stored.refresh_frequency.as_secs();
 			if ui
@@ -35,6 +38,11 @@ impl NeosPeepsApp {
 				.fixed_decimals(0)
 				.clamp_to_range(false)
 				.text("Column min width"),
+		);
+
+		ui.checkbox(
+			&mut self.stored.check_updates,
+			"Automatically check for app updates?",
 		);
 
 		if ui.button("Back").clicked() {

@@ -61,6 +61,14 @@ impl epi::App for NeosPeepsApp {
 			}
 		}
 
+		if self.stored.check_updates
+			&& self.stored.last_update_check_time
+				+ std::time::Duration::from_secs(60 * 60 * 24)
+				< SystemTime::now()
+		{
+			self.check_updates();
+		}
+
 		// Request screen updates at least once in a while
 		// As normally egui doesn't update if it doesn't need to.
 		let frame = std::sync::Arc::<
@@ -115,6 +123,9 @@ impl epi::App for NeosPeepsApp {
 			egui::ScrollArea::vertical().show(ui, |ui| {
 				ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
 					if is_authenticated {
+						if self.runtime.available_update.is_some() {
+							self.update_window(ctx);
+						}
 						if self.runtime.user_window.borrow().is_some() {
 							self.user_window(ctx, frame);
 						}

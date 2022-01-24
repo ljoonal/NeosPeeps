@@ -39,6 +39,8 @@ All the following functionality, in under 5MB:
 
 ![Screenshot of settings](static/jp-session-search.png)
 
+- Optional (disabled by default) automatic update checking (see [the privacy policy for more details](./PrivacyPolicy.md))
+
 ## Installation & updating
 
 Hop over to the [releases page](https://git.ljoonal.xyz/ljoonal/NeosPeeps/releases), and grab the latest `.exe` file if you're on windows.

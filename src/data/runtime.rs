@@ -14,7 +14,7 @@ use neos::{
 };
 
 use super::{SessionWindow, TexturesMap, UserWindow};
-use crate::app::NeosPeepsApp;
+use crate::{app::NeosPeepsApp, updating::GiteaReleasesResponse};
 
 #[allow(clippy::module_name_repetitions)]
 pub struct RuntimeOnly {
@@ -32,6 +32,7 @@ pub struct RuntimeOnly {
 	pub loading_textures: RefCell<HashSet<String, RandomState>>,
 	pub user_window: RefCell<Option<UserWindow>>,
 	pub session_window: RefCell<Option<SessionWindow>>,
+	pub available_update: Option<GiteaReleasesResponse>,
 }
 
 impl Default for RuntimeOnly {
@@ -52,6 +53,7 @@ impl Default for RuntimeOnly {
 			loading_textures: RefCell::default(),
 			user_window: RefCell::default(),
 			session_window: RefCell::default(),
+			available_update: None,
 		}
 	}
 }
