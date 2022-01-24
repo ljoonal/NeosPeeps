@@ -51,6 +51,9 @@ fn setup_style(ctx: &egui::CtxRef) {
 	style.visuals.widgets.noninteractive.fg_stroke.color = fg;
 	style.visuals.widgets.noninteractive.bg_fill = bg;
 
+	style.visuals.selection.bg_fill = Color32::BLACK;
+	style.visuals.selection.stroke.color = fg;
+
 	style.spacing.item_spacing.y = 8_f32;
 	style.spacing.button_padding.y = 5_f32;
 
