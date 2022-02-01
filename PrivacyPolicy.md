@@ -1,10 +1,10 @@
 # Privacy policy
 
-NeosPeeps contacts the Neos API, so by using this application you're going to also be subject to [their privacy policy](https://wiki.neos.com/Neos_Wiki:Privacy_policy) as well.
+NeosPeeps contacts the Neos API, so by using this application you're going to also be subject to [Neos' privacy policy](https://wiki.neos.com/Neos_Wiki:Privacy_policy) as well.
 
 ## Stored configuration files
 
-The application stores your Neos session details as well as other configuration options locally on your PC. The data is stored in plain text so you can inspect it, and isn't sent elsewhere (with the exception of using the Neos session details to authenticate to the Neos API). Your actual password, neither the totp code are never stored outside of the running application's memory.
+The application stores your Neos session details as well as other configuration options locally on your PC. The data is stored in plain text so you can inspect it, and isn't sent elsewhere (with the exception of using the Neos session details to authenticate to the Neos API). Your actual password and your 2fa code are never stored outside of the running application's memory.
 
 ## Cached data
 
