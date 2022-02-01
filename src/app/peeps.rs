@@ -299,7 +299,11 @@ impl NeosPeepsApp {
 					ui.set_width(width);
 				}
 				if ui
-					.add(Label::new(&session.name).wrap(true).sense(Sense::click()))
+					.add(
+						Label::new(session.stripped_name())
+							.wrap(true)
+							.sense(Sense::click()),
+					)
 					.clicked()
 				{
 					*self.runtime.session_window.borrow_mut() =
