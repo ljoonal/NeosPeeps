@@ -2,15 +2,12 @@
 set -e
 
 # Build for linux
-cargo +stable build --release \
-	&& strip target/release/neos_peeps \
-	&& sstrip target/release/neos_peeps
+cargo +stable build --release
 # Create sha256 integrity hash
 cd target/release && sha256sum neos_peeps > neos_peeps.sha256 && cd ../..
 
 # Build for windows
-cargo +stable build --release --target x86_64-pc-windows-gnu \
-	&& strip target/x86_64-pc-windows-gnu/release/neos_peeps.exe
+cargo +stable build --release --target x86_64-pc-windows-gnu
 
 # Windows AV pseudo-requires code to be signed. 
 # So doing that with a self-signed cert.
