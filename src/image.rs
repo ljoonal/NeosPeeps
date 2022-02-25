@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use eframe::egui::ColorImage;
-use image::{DynamicImage, GenericImageView};
+use image::DynamicImage;
 use neos::AssetUrl;
 
 #[allow(clippy::module_name_repetitions)]
