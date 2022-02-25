@@ -14,7 +14,7 @@ build = "build.rs"
 [dependencies]
 neos = { version = "0.2.0", features = ["api_client"] }
 
-eframe = { version = "0.16", default-features = false, features = [
+eframe = { version = "0.17", default-features = false, features = [
 	"egui_glow",
 	"persistence",
 ] }
@@ -34,14 +34,14 @@ lazy_static = "1.4"
 # ~10x faster than default, we don't need cryptographic guarantees for hashmaps
 ahash = "0.7.6"
 
-webp = "0.2"
+webp = "0.2.1"
 
 [dependencies.minreq]
 version = "2.5"
 features = ["https-rustls-probe", "json-using-serde"]
 
 [dependencies.image]
-version = "0.23"
+version = "0.24.1"
 default-features = false
 
 features = [
@@ -72,4 +72,4 @@ winres = "0.1"
 
 [patch.crates-io]
 #neos = { path = "../neos_rs/" }
-eframe = { git = "https://github.com/emilk/egui.git" }
+#eframe = { git = "https://github.com/emilk/egui.git" }
