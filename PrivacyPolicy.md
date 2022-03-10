@@ -8,14 +8,14 @@ The application stores your Neos session details as well as other configuration 
 
 ## Cached data
 
-The application stores requested images in the system's temporary folder to avoid re-requesting large files over and over again.
+The application stores requested images in the system's temporary files folder to avoid re-requesting large files (like images for example) over and over again.
 
 ## Update checks
 
-The application can optionally check for applications.
+The application can optionally check for updates.
 This either happens when the user manually presses the check for updates button, or if the auto update checking feature is enabled (disabled by default for your privacy).
 
-The update checks contact the git host API to check retrieve the latest release.
+The update checks contact the git host API to retrieve the latest release version.
 Logs of such requests may be kept on the server side.
 These logs can contain the request path, the user agent as well as timing and network related information.
-The information is stored in order to keep providing the service in a secure manner and to prevent malicious use like (D)DOS attacks for example.
+The information is stored in order to keep providing the service in a secure manner and to prevent malicious actions, like (D)DOS attacks for example.

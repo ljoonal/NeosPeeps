@@ -48,14 +48,16 @@ There's no installer, so you might want to store it on your desktop for example.
 
 Then just run the file.
 
-### "Virus detected"
+### Smart Screen
 
 Edge and Chrome apparently treat all unsigned executables as viruses.
-And getting a signing certificate would cost a lot of money (like 200$/year).
-And I'm not willing to spend that much just for this hobby project.
+Getting a trusted signing certificate would cost a lot of money, which I'm not doing for a hobby project.
 
-So use Firefox, or completely disable smart screen I guess (which I wouldn't recommend).
-Or if you're paranoid about the security, I welcome you to [build the app from source](#building) yourself.
+There's a decent chance that you can click on "Show more" type of buttons to manage to still download the self-signed executable.
+You could also use Firefox with download scanning disabled.
+Or you could completely disable smart screen (I wouldn't recommend it though).
+
+If you're paranoid about the security or just really techy, I welcome you to [build the app from source](#building) yourself.
 
 ## License
 
