@@ -136,6 +136,7 @@ impl epi::App for NeosPeepsApp {
 						match self.stored.page {
 							Page::About => self.about_page(ui),
 							Page::Credits => self.credits_page(ui),
+							Page::License => self.license_page(ui),
 							Page::Peeps => self.peeps_page(ctx, frame, ui),
 							Page::Sessions => self.sessions_page(ctx, frame, ui),
 							Page::Settings => self.settings_page(ui),
@@ -144,6 +145,7 @@ impl epi::App for NeosPeepsApp {
 						match self.stored.page {
 							Page::About => self.about_page(ui),
 							Page::Credits => self.credits_page(ui),
+							Page::License => self.license_page(ui),
 							Page::Settings => self.settings_page(ui),
 							_ => self.login_page(ui, frame),
 						}

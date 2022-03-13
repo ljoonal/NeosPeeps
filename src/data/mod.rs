@@ -2,7 +2,6 @@ use std::{collections::HashMap, rc::Rc};
 
 use ahash::RandomState;
 use eframe::egui::TextureHandle;
-use neos::{NeosSession, NeosUser, NeosUserStatus};
 
 mod runtime;
 mod stored;
@@ -14,5 +13,5 @@ pub use stored::*;
 pub type TexturesMap = HashMap<String, Rc<TextureHandle>, RandomState>;
 
 pub type UserWindow =
-	(neos::id::User, Option<NeosUser>, Option<NeosUserStatus>);
-pub type SessionWindow = (neos::id::Session, Option<NeosSession>);
+	(neos::id::User, Option<neos::User>, Option<neos::UserStatus>);
+pub type SessionWindow = (neos::id::Session, Option<neos::SessionInfo>);

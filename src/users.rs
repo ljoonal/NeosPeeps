@@ -6,18 +6,11 @@ use eframe::{
 	egui::{Context, TextureHandle},
 	epi,
 };
-use neos::{
-	api_client::{AnyNeos, Neos},
-	NeosFriend,
-	NeosUser,
-	NeosUserOnlineStatus,
-	NeosUserProfile,
-	NeosUserStatus,
-};
+use neos::api_client::{AnyNeos, Neos};
 
 use crate::app::NeosPeepsApp;
 
-fn order_users(s1: &NeosUserStatus, s2: &NeosUserStatus) -> Ordering {
+fn order_users(s1: &neos::UserStatus, s2: &neos::UserStatus) -> Ordering {
 	// if their current session is joinable
 	if s1.current_session_access_level > s2.current_session_access_level {
 		return Ordering::Less;
@@ -27,25 +20,25 @@ fn order_users(s1: &NeosUserStatus, s2: &NeosUserStatus) -> Ordering {
 	};
 
 	// if the friends are marked as online
-	if s1.online_status == NeosUserOnlineStatus::Online
-		&& s2.online_status != NeosUserOnlineStatus::Online
+	if s1.online_status == neos::OnlineStatus::Online
+		&& s2.online_status != neos::OnlineStatus::Online
 	{
 		return Ordering::Less;
 	};
-	if s1.online_status != NeosUserOnlineStatus::Online
-		&& s2.online_status == NeosUserOnlineStatus::Online
+	if s1.online_status != neos::OnlineStatus::Online
+		&& s2.online_status == neos::OnlineStatus::Online
 	{
 		return Ordering::Greater;
 	};
 
 	// if at least not offline
-	if s1.online_status != NeosUserOnlineStatus::Offline
-		&& s2.online_status == NeosUserOnlineStatus::Offline
+	if s1.online_status != neos::OnlineStatus::Offline
+		&& s2.online_status == neos::OnlineStatus::Offline
 	{
 		return Ordering::Less;
 	};
-	if s1.online_status == NeosUserOnlineStatus::Offline
-		&& s2.online_status != NeosUserOnlineStatus::Offline
+	if s1.online_status == neos::OnlineStatus::Offline
+		&& s2.online_status != neos::OnlineStatus::Offline
 	{
 		return Ordering::Greater;
 	};
@@ -64,7 +57,7 @@ impl NeosPeepsApp {
 		let friends_sender = self.threads.channels.friends_sender();
 		self.threads.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
-				match neos_api.get_friends() {
+				match neos_api.get_friends(None) {
 					Ok(mut friends) => {
 						friends.sort_by(|f1, f2| order_users(&f1.status, &f2.status));
 						friends_sender.send(Ok(friends)).unwrap();
@@ -89,7 +82,7 @@ impl NeosPeepsApp {
 		let users_sender = self.threads.channels.users_sender();
 		let search = self.stored.filter_search.clone();
 		self.threads.spawn_data_op(move || {
-			let res = neos_api.search_users(&search);
+			let res = neos_api.search_users(search);
 			users_sender.send(res.map_err(|e| e.to_string())).unwrap();
 		});
 
@@ -153,8 +146,8 @@ impl NeosPeepsApp {
 	}
 
 	pub fn open_user(
-		&self, frame: &epi::Frame, id: &neos::id::User, user: Option<NeosUser>,
-		user_status: Option<NeosUserStatus>,
+		&self, frame: &epi::Frame, id: &neos::id::User, user: Option<neos::User>,
+		user_status: Option<neos::UserStatus>,
 	) {
 		let (missing_user, missing_status) =
 			(user.is_none(), user_status.is_none());
@@ -169,7 +162,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn get_pfp(
-		&self, ctx: &Context, profile: &Option<NeosUserProfile>,
+		&self, ctx: &Context, profile: &Option<neos::UserProfile>,
 	) -> Rc<TextureHandle> {
 		let pfp_url = match profile {
 			Some(profile) => &profile.icon_url,
@@ -183,7 +176,7 @@ impl NeosPeepsApp {
 		pfp.unwrap_or_else(|| self.runtime.default_profile_picture.clone().unwrap())
 	}
 
-	pub fn user_to_friend(&self, user: &NeosUser) -> Option<&NeosFriend> {
+	pub fn user_to_friend(&self, user: &neos::User) -> Option<&neos::Friend> {
 		use rayon::prelude::*;
 
 		self.runtime.friends.par_iter().find_any(|f| f.id == user.id)

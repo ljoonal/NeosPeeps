@@ -16,11 +16,10 @@ use eframe::{
 	},
 	epi,
 };
-use neos::{NeosSession, NeosSessionUser};
 
 use super::NeosPeepsApp;
 
-pub fn session_users_count(ui: &mut Ui, session: &NeosSession) {
+pub fn session_users_count(ui: &mut Ui, session: &neos::SessionInfo) {
 	ui.horizontal(|ui| {
 		ui.style_mut().spacing.item_spacing = Vec2::ZERO;
 		ui.label(RichText::new(&session.active_users.to_string()))
@@ -153,7 +152,7 @@ impl NeosPeepsApp {
 
 	pub fn session_row(
 		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, width: f32,
-		session: &NeosSession,
+		session: &neos::SessionInfo,
 	) {
 		let mut open_window = false;
 		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
@@ -249,7 +248,7 @@ impl NeosPeepsApp {
 			});
 		}
 
-		let sessions: Vec<&NeosSession> = if self.stored.filter_friends_only {
+		let sessions: Vec<&neos::SessionInfo> = if self.stored.filter_friends_only {
 			self
 				.runtime
 				.friends
@@ -282,7 +281,7 @@ impl NeosPeepsApp {
 
 	pub fn sessions_table(
 		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
-		sessions: &[&NeosSession],
+		sessions: &[&neos::SessionInfo],
 	) {
 		let sessions_count = sessions.len();
 
@@ -308,7 +307,7 @@ impl NeosPeepsApp {
 	}
 
 	fn session_users(
-		&self, ui: &mut Ui, frame: &epi::Frame, users: &[NeosSessionUser],
+		&self, ui: &mut Ui, frame: &epi::Frame, users: &[neos::SessionUser],
 	) {
 		use rayon::prelude::*;
 
@@ -353,7 +352,7 @@ impl NeosPeepsApp {
 	}
 }
 
-fn session_decorations(ui: &mut Ui, session: &NeosSession) {
+fn session_decorations(ui: &mut Ui, session: &neos::SessionInfo) {
 	if !session.is_valid {
 		ui.label(RichText::new("!").color(Color32::RED))
 			.on_hover_text("Non-valid session");
@@ -367,6 +366,6 @@ fn session_decorations(ui: &mut Ui, session: &NeosSession) {
 	}
 }
 
-fn session_tags(ui: &mut Ui, session: &NeosSession) {
+fn session_tags(ui: &mut Ui, session: &neos::SessionInfo) {
 	ui.label(RichText::new(session.tags.join(", ")).small().monospace());
 }

@@ -1,6 +1,5 @@
 use std::time::{Duration, SystemTime};
 
-use neos::{api_client::NeosRequestUserSessionIdentifier, NeosUserSession};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -8,8 +7,8 @@ use serde::{Deserialize, Serialize};
 pub struct Stored {
 	pub check_updates: bool,
 	pub last_update_check_time: SystemTime,
-	pub user_session: Option<NeosUserSession>,
-	pub identifier: NeosRequestUserSessionIdentifier,
+	pub user_session: Option<neos::UserSession>,
+	pub identifier: neos::LoginCredentialsIdentifier,
 	pub refresh_frequency: Duration,
 	pub page: Page,
 	pub row_height: f32,
@@ -20,13 +19,14 @@ pub struct Stored {
 	pub datetime_format: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq)]
 pub enum Page {
 	About,
 	Credits,
 	Peeps,
 	Sessions,
 	Settings,
+	License,
 }
 
 impl Default for Page {
@@ -39,7 +39,7 @@ impl Default for Stored {
 			last_update_check_time: SystemTime::now(),
 			check_updates: false,
 			user_session: None,
-			identifier: NeosRequestUserSessionIdentifier::Username(String::default()),
+			identifier: neos::LoginCredentialsIdentifier::Username(String::default()),
 			refresh_frequency: Duration::from_secs(120),
 			page: Page::default(),
 			row_height: 150_f32,

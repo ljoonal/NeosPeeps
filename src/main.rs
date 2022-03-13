@@ -8,6 +8,8 @@
 
 use std::path::PathBuf;
 
+const LICENSE_TEXT: &str = include_str!("../LICENSE.md");
+
 const USER_AGENT: &str = concat!(
 	env!("CARGO_PKG_NAME"),
 	"/",

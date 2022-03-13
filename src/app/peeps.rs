@@ -17,13 +17,6 @@ use eframe::{
 	},
 	epi,
 };
-use neos::{
-	NeosFriend,
-	NeosSession,
-	NeosUser,
-	NeosUserOnlineStatus,
-	NeosUserStatus,
-};
 
 use super::{sessions::session_users_count, NeosPeepsApp};
 use crate::sessions::find_focused_session;
@@ -78,7 +71,7 @@ impl NeosPeepsApp {
 	}
 
 	fn user_window_section_user(
-		&self, ui: &mut Ui, ctx: &Context, user: &NeosUser,
+		&self, ui: &mut Ui, ctx: &Context, user: &neos::User,
 	) {
 		let pfp = self.get_pfp(ctx, &user.profile);
 		let size = pfp.size_vec2();
@@ -144,16 +137,10 @@ impl NeosPeepsApp {
 		}
 
 		if let Some(credits) = &user.credits {
-			if let Some(ncr) = credits.ncr {
+			for (token, amount) in credits {
 				ui.horizontal_wrapped(|ui| {
-					ui.label("NCR: ");
-					ui.label(ncr.to_string());
-				});
-			}
-			if let Some(kfc) = credits.kfc {
-				ui.horizontal_wrapped(|ui| {
-					ui.label("KFC: ");
-					ui.label(kfc.to_string());
+					ui.label(token.clone() + ": ");
+					ui.label(amount.to_string());
 				});
 			}
 		}
@@ -170,7 +157,7 @@ impl NeosPeepsApp {
 
 	fn user_window_section_status(
 		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
-		status: &NeosUserStatus,
+		status: &neos::UserStatus,
 	) {
 		let (r, g, b) = status.online_status.color();
 		ui.label(
@@ -232,7 +219,7 @@ impl NeosPeepsApp {
 
 	fn friend_row(
 		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, width: f32,
-		friend: &NeosFriend,
+		friend: &neos::Friend,
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			let pfp = self.get_pfp(ctx, &friend.profile);
@@ -290,7 +277,7 @@ impl NeosPeepsApp {
 	}
 
 	fn friend_row_session_col(
-		&self, ctx: &Context, ui: &mut Ui, width: f32, friend: &NeosFriend,
+		&self, ctx: &Context, ui: &mut Ui, width: f32, friend: &neos::Friend,
 	) {
 		if let Some(session) = find_focused_session(&friend.id, &friend.status) {
 			let show_thumbnail = width > self.stored.row_height;
@@ -315,7 +302,7 @@ impl NeosPeepsApp {
 			if show_thumbnail {
 				self.friend_session_thumbnail(ctx, ui, session);
 			}
-		} else if friend.status.online_status == NeosUserOnlineStatus::Offline {
+		} else if friend.status.online_status == neos::OnlineStatus::Offline {
 			ui.label(friend.status.online_status.as_ref());
 		} else {
 			ui.vertical(|ui| {
@@ -326,7 +313,7 @@ impl NeosPeepsApp {
 	}
 
 	fn user_row(
-		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, user: &NeosUser,
+		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, user: &neos::User,
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			let pfp = self.get_pfp(ctx, &user.profile);
@@ -391,7 +378,7 @@ impl NeosPeepsApp {
 			});
 		}
 
-		let users: Vec<&NeosUser> = self
+		let users: Vec<&neos::User> = self
 			.runtime
 			.users
 			.par_iter()
@@ -444,7 +431,7 @@ impl NeosPeepsApp {
 			});
 		}
 
-		let friends: Vec<&NeosFriend> = self
+		let friends: Vec<&neos::Friend> = self
 			.runtime
 			.friends
 			.par_iter()
@@ -489,8 +476,8 @@ impl NeosPeepsApp {
 
 	fn clickable_username(
 		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
-		username: &str, user: Option<&NeosUser>,
-		user_status: Option<&NeosUserStatus>,
+		username: &str, user: Option<&neos::User>,
+		user_status: Option<&neos::UserStatus>,
 	) {
 		if ui
 			.add(
@@ -511,7 +498,7 @@ impl NeosPeepsApp {
 
 	fn clickable_user_id(
 		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
-		user: Option<&NeosUser>, user_status: Option<&NeosUserStatus>,
+		user: Option<&neos::User>, user_status: Option<&neos::UserStatus>,
 	) {
 		if ui
 			.add(
@@ -531,7 +518,7 @@ impl NeosPeepsApp {
 	}
 
 	fn friend_session_thumbnail(
-		&self, ctx: &Context, ui: &mut Ui, session: &NeosSession,
+		&self, ctx: &Context, ui: &mut Ui, session: &neos::SessionInfo,
 	) {
 		if let Some(thumbnail) = &session.thumbnail {
 			ui.with_layout(Layout::right_to_left(), |ui| {
@@ -554,7 +541,7 @@ impl NeosPeepsApp {
 }
 
 fn username_decorations(
-	ui: &mut Ui, user: &NeosUser, friend: Option<&NeosFriend>,
+	ui: &mut Ui, user: &neos::User, friend: Option<&neos::Friend>,
 ) {
 	if let Some(as_friend) = friend {
 		if as_friend.is_accepted {
@@ -579,7 +566,7 @@ fn username_decorations(
 	}
 }
 
-fn user_tags(ui: &mut Ui, user: &NeosUser) {
+fn user_tags(ui: &mut Ui, user: &neos::User) {
 	ui.label(
 		RichText::new(
 			&user
@@ -595,7 +582,7 @@ fn user_tags(ui: &mut Ui, user: &NeosUser) {
 	);
 }
 
-fn user_bans(ui: &mut Ui, user: &NeosUser) {
+fn user_bans(ui: &mut Ui, user: &neos::User) {
 	if let Some(ban) = &user.public_ban_type {
 		ui.label("Ban type: ".to_owned() + ban.as_ref());
 	}

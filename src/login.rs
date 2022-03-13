@@ -3,10 +3,7 @@
 use std::sync::Arc;
 
 use eframe::epi;
-use neos::{
-	api_client::{AnyNeos, NeosRequestUserSession, NeosUnauthenticated},
-	NeosUserSession,
-};
+use neos::api_client::{AnyNeos, NeosUnauthenticated};
 
 use crate::app::NeosPeepsApp;
 
@@ -14,7 +11,7 @@ impl NeosPeepsApp {
 	/// Makes the current API try to use a session, or switch to unauthenticated
 	/// on failure.
 	pub fn try_use_session(
-		&mut self, user_session: NeosUserSession, frame: &epi::Frame,
+		&mut self, user_session: neos::UserSession, frame: &epi::Frame,
 	) {
 		let neos_api_arc = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
@@ -56,7 +53,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn login_new(
-		&mut self, session_request: NeosRequestUserSession, frame: &epi::Frame,
+		&mut self, session_request: neos::LoginCredentials, frame: &epi::Frame,
 	) {
 		let neos_api_arc = match &self.runtime.neos_api {
 			Some(api) => api.clone(),

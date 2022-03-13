@@ -48,4 +48,21 @@ impl NeosPeepsApp {
 			self.stored.page = Page::Peeps;
 		}
 	}
+
+	pub fn license_page(&mut self, ui: &mut Ui) {
+		for line in crate::LICENSE_TEXT.lines() {
+			let trimmed_line = line.trim_start_matches('#');
+			if trimmed_line == line {
+				ui.label(trimmed_line.trim_start_matches(' '));
+			} else {
+				ui.heading(trimmed_line.trim_start_matches(' '));
+			}
+		}
+
+		ui.separator();
+
+		if ui.button("Back").clicked() {
+			self.stored.page = Page::Peeps;
+		}
+	}
 }

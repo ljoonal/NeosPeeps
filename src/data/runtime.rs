@@ -22,10 +22,10 @@ pub struct RuntimeOnly {
 	pub totp: String,
 	pub default_profile_picture: Option<Rc<TextureHandle>>,
 	pub neos_api: Option<Arc<AnyNeos>>,
-	pub friends: Vec<neos::NeosFriend>,
+	pub friends: Vec<neos::Friend>,
 	/// Searched users.
-	pub users: Vec<neos::NeosUser>,
-	pub sessions: Vec<neos::NeosSession>,
+	pub users: Vec<neos::User>,
+	pub sessions: Vec<neos::SessionInfo>,
 	pub last_background_refresh: SystemTime,
 	pub textures: TexturesMap,
 	used_textures: RefCell<HashSet<String, RandomState>>,

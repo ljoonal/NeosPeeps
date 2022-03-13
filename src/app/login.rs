@@ -4,12 +4,6 @@ use eframe::{
 	egui::{Button, ComboBox, SelectableLabel, TextEdit, Ui},
 	epi,
 };
-use neos::api_client::{
-	NeosRequestUserSession,
-	NeosRequestUserSessionIdentifier,
-};
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
 
 use super::NeosPeepsApp;
 
@@ -22,13 +16,13 @@ impl NeosPeepsApp {
 					.add(SelectableLabel::new(
 						matches!(
 							self.stored.identifier,
-							NeosRequestUserSessionIdentifier::Username(_)
+							neos::LoginCredentialsIdentifier::Username(_)
 						),
 						"Username",
 					))
 					.clicked()
 				{
-					self.stored.identifier = NeosRequestUserSessionIdentifier::Username(
+					self.stored.identifier = neos::LoginCredentialsIdentifier::Username(
 						self.stored.identifier.inner().into(),
 					);
 				}
@@ -37,13 +31,13 @@ impl NeosPeepsApp {
 					.add(SelectableLabel::new(
 						matches!(
 							self.stored.identifier,
-							NeosRequestUserSessionIdentifier::Email(_)
+							neos::LoginCredentialsIdentifier::Email(_)
 						),
 						"Email",
 					))
 					.clicked()
 				{
-					self.stored.identifier = NeosRequestUserSessionIdentifier::Email(
+					self.stored.identifier = neos::LoginCredentialsIdentifier::Email(
 						self.stored.identifier.inner().into(),
 					);
 				}
@@ -52,13 +46,13 @@ impl NeosPeepsApp {
 					.add(SelectableLabel::new(
 						matches!(
 							self.stored.identifier,
-							NeosRequestUserSessionIdentifier::OwnerID(_)
+							neos::LoginCredentialsIdentifier::OwnerID(_)
 						),
 						"OwnerID",
 					))
 					.clicked()
 				{
-					self.stored.identifier = NeosRequestUserSessionIdentifier::OwnerID(
+					self.stored.identifier = neos::LoginCredentialsIdentifier::OwnerID(
 						self.stored.identifier.inner().into(),
 					);
 				}
@@ -122,17 +116,12 @@ impl NeosPeepsApp {
 					&& (self.runtime.totp.is_empty()
 						|| self.runtime.totp.chars().count() == 6)
 				{
-					let rand_string: String = thread_rng()
-						.sample_iter(&Alphanumeric)
-						.take(30)
-						.map(char::from)
-						.collect();
-					let mut session_request = NeosRequestUserSession::with_identifier(
+					let mut session_request = neos::LoginCredentials::new(
 						self.stored.identifier.clone(),
 						std::mem::take(&mut self.runtime.password),
 					)
 					.remember_me(true)
-					.machine_id(rand_string);
+					.use_generated_machine_id();
 
 					if !self.runtime.totp.is_empty() {
 						session_request =

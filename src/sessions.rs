@@ -1,9 +1,5 @@
 use eframe::epi;
-use neos::{
-	api_client::{AnyNeos, Neos},
-	NeosSession,
-	NeosUserStatus,
-};
+use neos::api_client::{AnyNeos, Neos};
 
 use crate::app::NeosPeepsApp;
 
@@ -64,8 +60,8 @@ impl NeosPeepsApp {
 }
 
 pub fn find_focused_session<'a>(
-	id: &neos::id::User, user_status: &'a NeosUserStatus,
-) -> Option<&'a NeosSession> {
+	id: &neos::id::User, user_status: &'a neos::UserStatus,
+) -> Option<&'a neos::SessionInfo> {
 	use rayon::prelude::*;
 
 	user_status.active_sessions.par_iter().find_any(|session| {

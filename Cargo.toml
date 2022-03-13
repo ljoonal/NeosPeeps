@@ -12,7 +12,7 @@ publish = false
 build = "build.rs"
 
 [dependencies]
-neos = { version = "0.2.0", features = ["api_client"] }
+neos = { version = "0.3.0-alpha.1", features = ["api_client"] }
 
 eframe = { version = "0.17", default-features = false, features = [
 	"egui_glow",
@@ -24,7 +24,6 @@ serde_json = "1"
 
 font-kit = { version = "0.10.1" }
 
-rand = { version = "0.8" }
 chrono = "0.4"
 #arc-swap = "^1.5"
 crossbeam = "0.8.1"
@@ -37,7 +36,7 @@ ahash = "0.7.6"
 webp = "0.2.1"
 
 [dependencies.minreq]
-version = "2.5"
+version = "2.6"
 features = ["https-rustls-probe", "json-using-serde"]
 
 [dependencies.image]

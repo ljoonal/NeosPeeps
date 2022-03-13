@@ -9,6 +9,13 @@ use super::NeosPeepsApp;
 use crate::data::Page;
 
 impl NeosPeepsApp {
+	fn add_page_button(&mut self, ui: &mut Ui, label: &str, page: Page) {
+		if ui.add_enabled(self.stored.page != page, Button::new(label)).clicked() {
+			self.stored.page = page;
+			ui.close_menu();
+		}
+	}
+
 	pub fn top_bar(&mut self, ui: &mut Ui, frame: &epi::Frame) {
 		let is_authenticated =
 			self.runtime.neos_api.as_ref().map_or(false, |a| a.is_authenticated());
@@ -17,65 +24,18 @@ impl NeosPeepsApp {
 			// View menu
 			ui.menu_button("View", |ui| {
 				if is_authenticated {
-					if ui
-						.add_enabled(
-							!matches!(self.stored.page, Page::Peeps),
-							Button::new("Peeps"),
-						)
-						.clicked()
-					{
-						self.stored.page = Page::Peeps;
-						ui.close_menu();
-					}
-
-					if ui
-						.add_enabled(
-							!matches!(self.stored.page, Page::Sessions),
-							Button::new("Sessions"),
-						)
-						.clicked()
-					{
-						self.stored.page = Page::Sessions;
-						ui.close_menu();
-					}
+					self.add_page_button(ui, "Peeps", Page::Peeps);
+					ui.separator();
+					self.add_page_button(ui, "Sessions", Page::Sessions);
+					ui.separator();
 				}
-
+				self.add_page_button(ui, "Settings", Page::Settings);
 				ui.separator();
-
-				if ui
-					.add_enabled(
-						!matches!(self.stored.page, Page::Settings),
-						Button::new("Settings"),
-					)
-					.clicked()
-				{
-					self.stored.page = Page::Settings;
-					ui.close_menu();
-				}
-
+				self.add_page_button(ui, "About", Page::About);
 				ui.separator();
-
-				if ui
-					.add_enabled(
-						!matches!(self.stored.page, Page::About),
-						Button::new("About"),
-					)
-					.clicked()
-				{
-					self.stored.page = Page::About;
-					ui.close_menu();
-				}
-
-				if ui
-					.add_enabled(
-						!matches!(self.stored.page, Page::Credits),
-						Button::new("Credits"),
-					)
-					.clicked()
-				{
-					self.stored.page = Page::Credits;
-					ui.close_menu();
-				}
+				self.add_page_button(ui, "Credits", Page::Credits);
+				ui.separator();
+				self.add_page_button(ui, "License", Page::License);
 			});
 
 			ui.separator();
