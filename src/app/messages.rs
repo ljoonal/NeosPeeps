@@ -1,7 +1,8 @@
 //! The friends page of the app
 use eframe::{
-	egui::{Context, Grid, Layout, ScrollArea, Ui},
+	egui::{Context, Grid, Label, Layout, ScrollArea, Sense, TextEdit, Ui},
 	emath::Align,
+	epaint::Vec2,
 	epi,
 };
 
@@ -37,9 +38,19 @@ impl NeosPeepsApp {
 					neos::MessageContents::Text(content) => {
 						ui.label(content);
 					}
-					neos::MessageContents::SessionInvite(inv) => {
-						ui.label("Session invite");
-						ui.label(inv.stripped_name());
+					neos::MessageContents::SessionInvite(session) => {
+						ui.label("Invited to session:");
+						if ui
+							.add(
+								Label::new(session.stripped_name())
+									.wrap(true)
+									.sense(Sense::click()),
+							)
+							.clicked()
+						{
+							*self.runtime.session_window.borrow_mut() =
+								Some((session.id.clone(), Some(*session.clone())));
+						}
 					}
 					neos::MessageContents::CreditTransfer(transaction) => {
 						ui.horizontal(|ui| {
@@ -89,26 +100,48 @@ impl NeosPeepsApp {
 				let mut messages: Vec<&neos::Message> = messages.values().collect();
 				messages.par_sort_unstable_by_key(|m| m.send_time);
 
-				ScrollArea::vertical().stick_to_bottom().show_rows(
-					ui,
-					self.stored.row_height,
-					messages.len(),
-					|ui, row_range| {
-						let width = ui.available_width();
-						Grid::new("messages_list")
-							.start_row(row_range.start)
-							.striped(true)
-							.min_row_height(self.stored.row_height)
-							.num_columns(2)
-							.show(ui, |ui| {
-								for row in row_range {
-									let message = messages[row];
-									self.message_row(ctx, frame, ui, width, friend, message);
-									ui.end_row();
-								}
-							});
-					},
-				);
+				ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
+					ui.set_height(ui.available_height());
+					ui.allocate_ui_with_layout(
+						Vec2::new(ui.available_width(), 36f32),
+						Layout::right_to_left(),
+						|ui| {
+							ui.button("Send");
+							ui.add(
+								TextEdit::singleline(&mut "")
+									.desired_width(ui.available_width()),
+							);
+						},
+					);
+
+					ui.with_layout(Layout::top_down(Align::Center), |ui| {
+						ui.set_height(ui.available_height());
+						ScrollArea::vertical()
+							.max_height(ui.available_height())
+							.stick_to_bottom()
+							.show_rows(
+								ui,
+								self.stored.row_height,
+								messages.len(),
+								|ui, row_range| {
+									let width = ui.available_width();
+									Grid::new("messages_list")
+										.start_row(row_range.start)
+										.striped(true)
+										.min_row_height(self.stored.row_height)
+										.num_columns(2)
+										.show(ui, |ui| {
+											for row in row_range {
+												let message = messages[row];
+												self
+													.message_row(ctx, frame, ui, width, friend, message);
+												ui.end_row();
+											}
+										});
+								},
+							);
+					});
+				});
 			}
 		} else {
 			ui.heading("Peep not found");
