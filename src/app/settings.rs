@@ -37,7 +37,7 @@ impl NeosPeepsApp {
 			Slider::new(&mut self.stored.col_min_width, 100_f32..=500_f32)
 				.fixed_decimals(0)
 				.clamp_to_range(false)
-				.text("Column min width"),
+				.text("Column width"),
 		);
 
 		ui.checkbox(
