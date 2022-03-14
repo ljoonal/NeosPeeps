@@ -75,76 +75,80 @@ impl NeosPeepsApp {
 		});
 	}
 
-	pub fn chat_page(
-		&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
-		user_id: &neos::id::User,
-	) {
+	pub fn chat_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
 		use rayon::prelude::*;
 
-		if ui.button("Back").clicked() {
-			*self.runtime.open_chat.borrow_mut() = None;
-		}
-		if let Some(friend) =
-			self.runtime.friends.par_iter().find_any(|friend| &friend.id == user_id)
-		{
-			self.clickable_username(
-				ui,
-				frame,
-				&friend.id,
-				&friend.username,
-				None,
-				None,
-			);
+		let opt = self.runtime.open_chat.borrow().as_ref().map(|v| v.0.clone());
+		if let Some(user_id) = opt {
+			if ui.button("Back").clicked() {
+				*self.runtime.open_chat.borrow_mut() = None;
+			}
+			if let Some(friend) =
+				self.runtime.friends.par_iter().find_any(|friend| friend.id == user_id)
+			{
+				self.clickable_username(
+					ui,
+					frame,
+					&friend.id,
+					&friend.username,
+					None,
+					None,
+				);
 
-			if let Some(messages) = self.runtime.messages.get(&friend.id) {
-				let mut messages: Vec<&neos::Message> = messages.values().collect();
-				messages.par_sort_unstable_by_key(|m| m.send_time);
+				if let Some(messages) = self.runtime.messages.get(&friend.id) {
+					let mut messages: Vec<&neos::Message> = messages.values().collect();
+					messages.par_sort_unstable_by_key(|m| m.send_time);
 
-				ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
-					ui.set_height(ui.available_height());
-					ui.allocate_ui_with_layout(
-						Vec2::new(ui.available_width(), 36f32),
-						Layout::right_to_left(),
-						|ui| {
-							ui.button("Send");
-							ui.add(
-								TextEdit::singleline(&mut "")
-									.desired_width(ui.available_width()),
-							);
-						},
-					);
-
-					ui.with_layout(Layout::top_down(Align::Center), |ui| {
+					ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
 						ui.set_height(ui.available_height());
-						ScrollArea::vertical()
-							.max_height(ui.available_height())
-							.stick_to_bottom()
-							.show_rows(
-								ui,
-								self.stored.row_height,
-								messages.len(),
-								|ui, row_range| {
-									let width = ui.available_width();
-									Grid::new("messages_list")
-										.start_row(row_range.start)
-										.striped(true)
-										.min_row_height(self.stored.row_height)
-										.num_columns(2)
-										.show(ui, |ui| {
-											for row in row_range {
-												let message = messages[row];
-												self
-													.message_row(ctx, frame, ui, width, friend, message);
-												ui.end_row();
-											}
-										});
-								},
-							);
+						ui.allocate_ui_with_layout(
+							Vec2::new(ui.available_width(), 36f32),
+							Layout::right_to_left(),
+							|ui| {
+								ui.button("Send");
+								ui.add(
+									TextEdit::singleline(&mut "")
+										.desired_width(ui.available_width()),
+								);
+							},
+						);
+
+						ui.with_layout(Layout::top_down(Align::Center), |ui| {
+							ui.set_height(ui.available_height());
+							ScrollArea::vertical()
+								.max_height(ui.available_height())
+								.stick_to_bottom()
+								.show_rows(
+									ui,
+									self.stored.row_height,
+									messages.len(),
+									|ui, row_range| {
+										let width = ui.available_width();
+										Grid::new("messages_list")
+											.start_row(row_range.start)
+											.striped(true)
+											.min_row_height(self.stored.row_height)
+											.num_columns(2)
+											.show(ui, |ui| {
+												for row in row_range {
+													let message = messages[row];
+													self.message_row(
+														ctx, frame, ui, width, friend, message,
+													);
+													ui.end_row();
+												}
+											});
+									},
+								);
+						});
 					});
-				});
+				}
+			} else {
+				ui.heading("Peep not found");
 			}
 		} else {
-			ui.heading("Peep not found");
+			ui.heading("Internal error");
+			ui.label("Chat page is being show even though there is no id for a chat");
 		}
 	}
 }

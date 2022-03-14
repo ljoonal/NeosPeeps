@@ -274,7 +274,8 @@ impl NeosPeepsApp {
 					};
 
 					if response.clicked() {
-						*self.runtime.open_chat.borrow_mut() = Some(friend.id.clone());
+						*self.runtime.open_chat.borrow_mut() =
+							Some((friend.id.clone(), String::new()));
 					}
 				}
 			});
@@ -371,7 +372,9 @@ impl NeosPeepsApp {
 	}
 
 	pub fn peeps_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
-		if self.stored.filter_friends_only {
+		if self.runtime.open_chat.borrow().is_some() {
+			self.chat_page(ctx, frame, ui);
+		} else if self.stored.filter_friends_only {
 			self.friends_page(ctx, frame, ui);
 		} else {
 			self.users_page(ctx, frame, ui);
