@@ -13,6 +13,10 @@ impl NeosPeepsApp {
 		friend: &neos::Friend, message: &neos::Message,
 	) {
 		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
+			ui.set_max_width(self.stored.col_min_width.min(
+				width - self.stored.row_height - ui.style().spacing.item_spacing.x,
+			));
+
 			ui.label(
 				message.send_time.format(&self.stored.datetime_format).to_string(),
 			);
@@ -23,34 +27,40 @@ impl NeosPeepsApp {
 			}
 		});
 
-		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
-			match &message.content {
-				neos::MessageContents::Text(content) => {
-					ui.label(content);
+		ui.with_layout(Layout::left_to_right(), |ui| {
+			ui.set_width(ui.available_width());
+
+			ui.separator();
+
+			ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
+				match &message.content {
+					neos::MessageContents::Text(content) => {
+						ui.label(content);
+					}
+					neos::MessageContents::SessionInvite(inv) => {
+						ui.label("Session invite");
+						ui.label(inv.stripped_name());
+					}
+					neos::MessageContents::CreditTransfer(transaction) => {
+						ui.horizontal(|ui| {
+							ui.label("Sent ");
+							ui.label(&transaction.token);
+							ui.label(":");
+						});
+						ui.label(&transaction.amount.to_string());
+					}
+					neos::MessageContents::Sound(obj) => {
+						ui.label("TODO!!! Sound message");
+					}
+					neos::MessageContents::Object(obj) => {
+						ui.label("TODO!!! obj");
+					}
+					neos::MessageContents::SugarCubes(obj) => {
+						ui.label("Kofi tipping transaction");
+						ui.label("Note: unsupported msg type");
+					}
 				}
-				neos::MessageContents::SessionInvite(inv) => {
-					ui.label("Session invite");
-					ui.label(inv.stripped_name());
-				}
-				neos::MessageContents::CreditTransfer(transaction) => {
-					ui.horizontal(|ui| {
-						ui.label("Sent ");
-						ui.label(&transaction.token);
-						ui.label(":");
-					});
-					ui.label(&transaction.amount.to_string());
-				}
-				neos::MessageContents::Sound(obj) => {
-					ui.label("TODO!!! Sound message");
-				}
-				neos::MessageContents::Object(obj) => {
-					ui.label("TODO!!! obj");
-				}
-				neos::MessageContents::SugarCubes(obj) => {
-					ui.label("Kofi tipping transaction");
-					ui.label("Note: unsupported msg type");
-				}
-			}
+			});
 		});
 	}
 
