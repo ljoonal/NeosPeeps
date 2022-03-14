@@ -131,6 +131,28 @@ impl NeosPeepsApp {
 				Err(e) => println!("Failed to fetch sessions! {}", e),
 			}
 		}
+
+		if let Some(res) = self.threads.channels.try_recv_messages() {
+			self.threads.loading.messages.set(false);
+			match res {
+				Ok(messages) => {
+					for (user_id, fetched_messages) in messages {
+						if let Some(stored_messages) =
+							self.runtime.messages.get_mut(&user_id)
+						{
+							for (message_id, message) in fetched_messages {
+								stored_messages.insert(message_id, message);
+							}
+						} else {
+							self.runtime.messages.insert(user_id, fetched_messages);
+						}
+					}
+
+					*repaint = true;
+				}
+				Err(e) => println!("Failed to fetch messages! {}", e),
+			}
+		}
 	}
 
 	fn try_recv_window(&mut self, repaint: &mut bool) {

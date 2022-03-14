@@ -4,7 +4,7 @@ use crossbeam::channel::{unbounded, Receiver, Sender, TryIter};
 use eframe::egui::TextureHandle;
 use neos::api_client::AnyNeos;
 
-use crate::updating::GiteaReleasesResponse;
+use crate::{messages::AllMessages, updating::GiteaReleasesResponse};
 
 type ImageMsg = (String, Option<TextureHandle>);
 type UserStatusMsg = (neos::id::User, neos::UserStatus);
@@ -16,6 +16,8 @@ type ResReceiver<T> = Receiver<Res<T>>;
 
 #[derive(Debug)]
 pub struct Channels {
+	/// Messages bg refresh
+	messages: (ResSender<AllMessages>, ResReceiver<AllMessages>),
 	/// Friends bg refresh
 	friends: (ResSender<Vec<neos::Friend>>, ResReceiver<Vec<neos::Friend>>),
 	/// Users search
@@ -43,6 +45,7 @@ pub struct Channels {
 impl Default for Channels {
 	fn default() -> Self {
 		Self {
+			messages: unbounded(),
 			friends: unbounded(),
 			users: unbounded(),
 			auth: unbounded(),
@@ -59,6 +62,10 @@ impl Default for Channels {
 
 // Allow trying to receive or getting a sender but nothing more.
 impl Channels {
+	pub fn messages_sender(&self) -> ResSender<AllMessages> {
+		self.messages.0.clone()
+	}
+
 	pub fn friends_sender(&self) -> ResSender<Vec<neos::Friend>> {
 		self.friends.0.clone()
 	}
@@ -91,6 +98,10 @@ impl Channels {
 
 	pub fn update_check_sender(&self) -> Sender<GiteaReleasesResponse> {
 		self.update_check.0.clone()
+	}
+
+	pub fn try_recv_messages(&self) -> Option<Res<AllMessages>> {
+		self.messages.1.try_recv().ok()
 	}
 
 	pub fn try_recv_friends(&self) -> Option<Res<Vec<neos::Friend>>> {

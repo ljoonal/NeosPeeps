@@ -14,6 +14,7 @@ use crate::{
 mod about;
 mod bars;
 mod login;
+mod messages;
 mod peeps;
 mod sessions;
 mod settings;
@@ -111,6 +112,7 @@ impl epi::App for NeosPeepsApp {
 			self.runtime.last_background_refresh = SystemTime::now();
 			self.refresh_friends(frame);
 			self.refresh_sessions(frame);
+			self.refresh_messages(frame);
 		}
 
 		self.try_recv(frame);
@@ -133,13 +135,18 @@ impl epi::App for NeosPeepsApp {
 							self.session_window(ctx, frame);
 						}
 
-						match self.stored.page {
-							Page::About => self.about_page(ui),
-							Page::Credits => self.credits_page(ui),
-							Page::License => self.license_page(ui),
-							Page::Peeps => self.peeps_page(ctx, frame, ui),
-							Page::Sessions => self.sessions_page(ctx, frame, ui),
-							Page::Settings => self.settings_page(ui),
+						let opt = self.runtime.open_chat.borrow().clone();
+						if let Some(chat_user_id) = opt {
+							self.chat_page(ctx, frame, ui, &chat_user_id);
+						} else {
+							match self.stored.page {
+								Page::About => self.about_page(ui),
+								Page::Credits => self.credits_page(ui),
+								Page::License => self.license_page(ui),
+								Page::Peeps => self.peeps_page(ctx, frame, ui),
+								Page::Sessions => self.sessions_page(ctx, frame, ui),
+								Page::Settings => self.settings_page(ui),
+							}
 						}
 					} else {
 						match self.stored.page {

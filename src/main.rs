@@ -31,6 +31,7 @@ mod app;
 mod data;
 mod image;
 mod login;
+mod messages;
 mod sessions;
 mod styling;
 mod threading;

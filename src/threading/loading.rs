@@ -9,6 +9,7 @@ pub struct Tracker {
 	pub user: Cell<bool>,
 	pub user_status: Cell<bool>,
 	pub session: Cell<bool>,
+	pub messages: Cell<bool>,
 }
 
 impl Tracker {
@@ -19,5 +20,6 @@ impl Tracker {
 			|| self.user.get()
 			|| self.user_status.get()
 			|| self.session.get()
+			|| self.messages.get()
 	}
 }

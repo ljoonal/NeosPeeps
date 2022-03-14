@@ -257,11 +257,26 @@ impl NeosPeepsApp {
 					None,
 					None,
 				);
+				self.clickable_user_id(ui, frame, &friend.id, None, None);
 				ui.label(
 					RichText::new(&friend.status.online_status.to_string())
 						.color(Color32::from_rgb(r, g, b)),
 				);
-				self.clickable_user_id(ui, frame, &friend.id, None, None);
+
+				if self.stored.row_height >= 130f32 {
+					let response = if let Some(time) = friend.latest_message_time {
+						ui.add(
+							Label::new(time.format(&self.stored.datetime_format).to_string())
+								.sense(Sense::click()),
+						)
+					} else {
+						ui.add(Label::new("No messages").sense(Sense::click()))
+					};
+
+					if response.clicked() {
+						*self.runtime.open_chat.borrow_mut() = Some(friend.id.clone());
+					}
+				}
 			});
 		});
 
@@ -429,6 +444,10 @@ impl NeosPeepsApp {
 			ui.vertical_centered_justified(|ui| {
 				ui.label("Refreshing friends list");
 			});
+		} else if self.threads.loading.messages.get() {
+			ui.vertical_centered_justified(|ui| {
+				ui.label("Refreshing messages");
+			});
 		}
 
 		let friends: Vec<&neos::Friend> = self
@@ -474,7 +493,7 @@ impl NeosPeepsApp {
 		);
 	}
 
-	fn clickable_username(
+	pub fn clickable_username(
 		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
 		username: &str, user: Option<&neos::User>,
 		user_status: Option<&neos::UserStatus>,
@@ -496,7 +515,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	fn clickable_user_id(
+	pub fn clickable_user_id(
 		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
 		user: Option<&neos::User>, user_status: Option<&neos::UserStatus>,
 	) {

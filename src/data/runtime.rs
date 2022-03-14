@@ -14,7 +14,11 @@ use neos::{
 };
 
 use super::{SessionWindow, TexturesMap, UserWindow};
-use crate::{app::NeosPeepsApp, updating::GiteaReleasesResponse};
+use crate::{
+	app::NeosPeepsApp,
+	messages::AllMessages,
+	updating::GiteaReleasesResponse,
+};
 
 #[allow(clippy::module_name_repetitions)]
 pub struct RuntimeOnly {
@@ -26,12 +30,14 @@ pub struct RuntimeOnly {
 	/// Searched users.
 	pub users: Vec<neos::User>,
 	pub sessions: Vec<neos::SessionInfo>,
+	pub messages: AllMessages,
 	pub last_background_refresh: SystemTime,
 	pub textures: TexturesMap,
 	used_textures: RefCell<HashSet<String, RandomState>>,
 	pub loading_textures: RefCell<HashSet<String, RandomState>>,
 	pub user_window: RefCell<Option<UserWindow>>,
 	pub session_window: RefCell<Option<SessionWindow>>,
+	pub open_chat: RefCell<Option<neos::id::User>>,
 	pub available_update: Option<GiteaReleasesResponse>,
 }
 
@@ -47,12 +53,14 @@ impl Default for RuntimeOnly {
 			friends: Vec::default(),
 			users: Vec::default(),
 			sessions: Vec::default(),
+			messages: HashMap::default(),
 			last_background_refresh: SystemTime::UNIX_EPOCH,
 			textures: HashMap::default(),
 			used_textures: RefCell::default(),
 			loading_textures: RefCell::default(),
 			user_window: RefCell::default(),
 			session_window: RefCell::default(),
+			open_chat: RefCell::default(),
 			available_update: None,
 		}
 	}
