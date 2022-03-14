@@ -27,7 +27,7 @@ impl NeosPeepsApp {
 		}
 
 		ui.add(
-			Slider::new(&mut self.stored.row_height, 100_f32..=500_f32)
+			Slider::new(&mut self.stored.row_height, 100_f32..=300_f32)
 				.fixed_decimals(0)
 				.clamp_to_range(false)
 				.text("Row height"),
