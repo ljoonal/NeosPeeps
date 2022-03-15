@@ -13,8 +13,8 @@ use crate::{
 
 mod about;
 mod bars;
+mod chat;
 mod login;
-mod messages;
 mod peeps;
 mod sessions;
 mod settings;
