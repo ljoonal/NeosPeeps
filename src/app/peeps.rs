@@ -1,4 +1,6 @@
 //! The friends page of the app
+use std::time::SystemTime;
+
 use eframe::{
 	egui::{
 		Color32,
@@ -275,7 +277,7 @@ impl NeosPeepsApp {
 
 					if response.clicked() {
 						*self.runtime.open_chat.borrow_mut() =
-							Some((friend.id.clone(), String::new()));
+							Some((friend.id.clone(), String::new(), SystemTime::UNIX_EPOCH));
 					}
 				}
 			});

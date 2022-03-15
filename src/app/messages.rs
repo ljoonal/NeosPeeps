@@ -82,96 +82,137 @@ impl NeosPeepsApp {
 			*self.runtime.open_chat.borrow_mut() = None;
 		}
 
+		self.check_if_should_refresh_curr(frame);
+		let friend = match self.get_curr_chat_friend() {
+			Some(friend) => friend,
+			None => {
+				ui.heading("Couldn't get chat");
+				return;
+			}
+		};
+
 		let mut send_message = false;
 
-		let mut opt = self.runtime.open_chat.borrow_mut();
-		if let Some((user_id, typed_msg)) = &mut *opt {
-			if let Some(friend) =
-				self.runtime.friends.par_iter().find_any(|friend| &friend.id == user_id)
-			{
-				self.clickable_username(
-					ui,
-					frame,
-					&friend.id,
-					&friend.username,
-					None,
-					None,
-				);
+		self.clickable_username(
+			ui,
+			frame,
+			&friend.id,
+			&friend.username,
+			None,
+			None,
+		);
 
-				ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
-					ui.set_height(ui.available_height());
-					ui.allocate_ui_with_layout(
-						Vec2::new(ui.available_width(), 36f32),
-						Layout::right_to_left(),
-						|ui| {
-							if ui.button("Send").clicked() {
-								send_message = true;
-							}
-							let response = ui.add_sized(
-								ui.available_size(),
-								TextEdit::singleline(typed_msg)
-									.desired_width(ui.available_width()),
-							);
-							if response.lost_focus() && ui.input().key_pressed(Key::Enter) {
-								send_message = true;
-							}
-						},
-					);
-
-					ui.with_layout(Layout::top_down(Align::Center), |ui| {
-						ui.set_height(ui.available_height());
-
-						if let Some(messages) = self.runtime.messages.get(&friend.id) {
-							let mut messages: Vec<&neos::Message> =
-								messages.values().collect();
-							messages.par_sort_unstable_by_key(|m| m.send_time);
-
-							ScrollArea::vertical()
-								.max_height(ui.available_height())
-								.stick_to_bottom()
-								.show_rows(
-									ui,
-									self.stored.row_height,
-									messages.len(),
-									|ui, row_range| {
-										let width = ui.available_width();
-										Grid::new("messages_list")
-											.start_row(row_range.start)
-											.striped(true)
-											.min_row_height(self.stored.row_height)
-											.num_columns(2)
-											.show(ui, |ui| {
-												for row in row_range {
-													let message = messages[row];
-													self.message_row(
-														ctx, frame, ui, width, friend, message,
-													);
-													ui.end_row();
-												}
-											});
-									},
-								);
-						} else {
-							ui.label("No messages yet");
+		ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
+			ui.set_height(ui.available_height());
+			ui.allocate_ui_with_layout(
+				Vec2::new(ui.available_width(), 36f32),
+				Layout::right_to_left(),
+				|ui| {
+					if let Some((_, typed_msg, _)) =
+						&mut *self.runtime.open_chat.borrow_mut()
+					{
+						if ui.button("Send").clicked() {
+							send_message = true;
 						}
-					});
-				});
-			} else {
-				ui.heading("Peep not found");
-			}
-		} else {
-			ui.heading("Internal error");
-			ui.label("Chat page is being show even though there is no id for a chat");
-		}
+						let response = ui.add_sized(
+							ui.available_size(),
+							TextEdit::singleline(typed_msg)
+								.desired_width(ui.available_width()),
+						);
+						if response.lost_focus() && ui.input().key_pressed(Key::Enter) {
+							send_message = true;
+						}
+					}
+				},
+			);
 
-		if send_message && !self.threads.loading.messages.get() {
+			ui.with_layout(Layout::top_down(Align::Center), |ui| {
+				ui.set_height(ui.available_height());
+
+				if let Some(messages) = self.runtime.messages.get(&friend.id) {
+					let mut messages: Vec<&neos::Message> = messages.values().collect();
+					messages.par_sort_unstable_by_key(|m| m.send_time);
+
+					ScrollArea::vertical()
+						.max_height(ui.available_height())
+						.stick_to_bottom()
+						.show_rows(
+							ui,
+							self.stored.row_height,
+							messages.len(),
+							|ui, row_range| {
+								let width = ui.available_width();
+								Grid::new("messages_list")
+									.start_row(row_range.start)
+									.striped(true)
+									.min_row_height(self.stored.row_height)
+									.num_columns(2)
+									.show(ui, |ui| {
+										for row in row_range {
+											let message = messages[row];
+											self.message_row(ctx, frame, ui, width, friend, message);
+											ui.end_row();
+										}
+									});
+							},
+						);
+				} else {
+					ui.label("No messages yet");
+				}
+			});
+		});
+
+		if send_message {
+			self.send_curr_msg(frame);
+		}
+	}
+
+	fn get_curr_chat_friend(&self) -> Option<&neos::Friend> {
+		use rayon::prelude::*;
+
+		let user_id = match &*self.runtime.open_chat.borrow() {
+			Some((id, _, _)) => id.clone(),
+			None => {
+				return None;
+			}
+		};
+
+		match self
+			.runtime
+			.friends
+			.par_iter()
+			.find_any(|friend| friend.id == user_id)
+		{
+			Some(friend) => Some(friend),
+			None => None,
+		}
+	}
+
+	fn check_if_should_refresh_curr(&mut self, frame: &epi::Frame) {
+		if !self.threads.loading.messages.get() {
+			let mut refresh_id = None;
+			if let Some((user_id, _, last_refresh_start)) =
+				&mut *self.runtime.open_chat.borrow_mut()
+			{
+				let now = std::time::SystemTime::now();
+				if *last_refresh_start + std::time::Duration::from_secs(30) < now {
+					*last_refresh_start = now;
+					refresh_id = Some(user_id.clone());
+				}
+			}
+			if let Some(user_id) = refresh_id {
+				self.fetch_user_chat(frame, user_id, None);
+			}
+		}
+	}
+
+	fn send_curr_msg(&mut self, frame: &epi::Frame) {
+		if !self.threads.loading.messages.get() {
 			let mut taken_opt: Option<(neos::id::User, String)> = None;
 
-			if let Some(opt) = &mut *opt {
+			if let Some(opt) = &mut *self.runtime.open_chat.borrow_mut() {
 				taken_opt = Some((opt.0.clone(), std::mem::take(&mut opt.1)));
 			}
-
-			drop(opt);
 
 			if let Some((user_id, typed_msg)) = taken_opt {
 				let message = neos::Message::new(

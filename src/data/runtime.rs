@@ -37,7 +37,7 @@ pub struct RuntimeOnly {
 	pub loading_textures: RefCell<HashSet<String, RandomState>>,
 	pub user_window: RefCell<Option<UserWindow>>,
 	pub session_window: RefCell<Option<SessionWindow>>,
-	pub open_chat: RefCell<Option<(neos::id::User, String)>>,
+	pub open_chat: RefCell<Option<(neos::id::User, String, SystemTime)>>,
 	pub available_update: Option<GiteaReleasesResponse>,
 }
 
