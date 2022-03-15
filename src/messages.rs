@@ -1,8 +1,10 @@
 //! The friends page of the app
 
-use std::collections::HashMap;
+use std::{borrow::Borrow, collections::HashMap, sync::Arc};
 
 use ahash::RandomState;
+use chrono::{DateTime, Utc};
+use crossbeam::channel::Sender;
 use eframe::epi;
 use neos::api_client::AnyNeos;
 
@@ -24,17 +26,53 @@ impl NeosPeepsApp {
 		self.threads.loading.messages.set(true);
 		let messages_sender = self.threads.channels.messages_sender();
 		self.threads.spawn_data_op(move || {
-			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
-				match neos_api.get_messages(100, false, None, None) {
-					Ok(messages) => {
-						messages_sender
-							.send(Ok(Self::sort_all_messages(messages)))
-							.unwrap();
-					}
-					Err(e) => {
-						messages_sender.send(Err(e.to_string())).unwrap();
-					}
+			Self::get_messages(neos_api_arc, messages_sender, 256, true, None, None);
+		});
+
+		frame.request_repaint();
+	}
+
+	#[allow(clippy::needless_pass_by_value)]
+	fn get_messages(
+		neos_api_arc: Arc<AnyNeos>,
+		messages_sender: Sender<Result<AllMessages, String>>, max_amount: u16,
+		unread_only: bool, from_time: impl Borrow<Option<DateTime<Utc>>>,
+		user: impl Borrow<Option<neos::id::User>>,
+	) {
+		if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
+			match neos_api.get_messages(max_amount, unread_only, from_time, user) {
+				Ok(messages) => {
+					messages_sender.send(Ok(Self::sort_all_messages(messages))).unwrap();
 				}
+				Err(e) => {
+					messages_sender.send(Err(e.to_string())).unwrap();
+				}
+			}
+		}
+	}
+
+	pub fn send_message(&mut self, frame: &epi::Frame, message: neos::Message) {
+		let neos_api_arc = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+
+		self.threads.loading.messages.set(true);
+		let messages_sender = self.threads.channels.messages_sender();
+		self.threads.spawn_data_op(move || {
+			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
+				let to_id = message.recipient_id.clone();
+				if let Err(e) = neos_api.send_message(message) {
+					println!("Error sending message! {:?}", e);
+				}
+				Self::get_messages(
+					neos_api_arc,
+					messages_sender,
+					32,
+					false,
+					None,
+					Some(to_id),
+				);
 			}
 		});
 
