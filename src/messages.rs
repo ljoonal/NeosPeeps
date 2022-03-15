@@ -26,7 +26,32 @@ impl NeosPeepsApp {
 		self.threads.loading.messages.set(true);
 		let messages_sender = self.threads.channels.messages_sender();
 		self.threads.spawn_data_op(move || {
-			Self::get_messages(neos_api_arc, messages_sender, 256, true, None, None);
+			Self::get_messages(neos_api_arc, messages_sender, 100, true, None, None);
+		});
+
+		frame.request_repaint();
+	}
+
+	pub fn fetch_user_chat(
+		&mut self, frame: &epi::Frame, user: neos::id::User,
+		from_time: Option<DateTime<Utc>>,
+	) {
+		let neos_api_arc = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+
+		self.threads.loading.messages.set(true);
+		let messages_sender = self.threads.channels.messages_sender();
+		self.threads.spawn_data_op(move || {
+			Self::get_messages(
+				neos_api_arc,
+				messages_sender,
+				100,
+				false,
+				from_time,
+				Some(user),
+			);
 		});
 
 		frame.request_repaint();
