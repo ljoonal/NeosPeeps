@@ -10,7 +10,7 @@ use super::NeosPeepsApp;
 
 impl NeosPeepsApp {
 	fn message_row(
-		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, width: f32,
+		&self, _ctx: &Context, _frame: &epi::Frame, ui: &mut Ui, width: f32,
 		friend: &neos::Friend, message: &neos::Message,
 	) {
 		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
@@ -53,20 +53,26 @@ impl NeosPeepsApp {
 						}
 					}
 					neos::MessageContents::CreditTransfer(transaction) => {
-						ui.horizontal(|ui| {
+						ui.horizontal_wrapped(|ui| {
 							ui.label("Sent ");
 							ui.label(&transaction.token);
 							ui.label(":");
 						});
 						ui.label(&transaction.amount.to_string());
 					}
-					neos::MessageContents::Sound(obj) => {
-						ui.label("TODO!!! Sound message");
+					neos::MessageContents::Sound(record) => {
+						ui.label("Audio message");
+						ui.hyperlink(record.asset_uri.to_string());
 					}
-					neos::MessageContents::Object(obj) => {
-						ui.label("TODO!!! obj");
+					neos::MessageContents::Object(record) => {
+						ui.horizontal_wrapped(|ui| {
+							ui.label("Record: ");
+							ui.label(&record.name)
+						});
+						ui.label(&record.description);
+						ui.hyperlink(record.asset_uri.to_string());
 					}
-					neos::MessageContents::SugarCubes(obj) => {
+					neos::MessageContents::SugarCubes(_) => {
 						ui.label("Kofi tipping transaction");
 						ui.label("Note: unsupported msg type");
 					}
