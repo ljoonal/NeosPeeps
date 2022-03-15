@@ -1,6 +1,6 @@
 //! The friends page of the app
 use eframe::{
-	egui::{Context, Grid, Label, Layout, ScrollArea, Sense, TextEdit, Ui},
+	egui::{Context, Grid, Key, Label, Layout, ScrollArea, Sense, TextEdit, Ui},
 	emath::Align,
 	epaint::Vec2,
 	epi,
@@ -78,13 +78,16 @@ impl NeosPeepsApp {
 	pub fn chat_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
 		use rayon::prelude::*;
 
-		let opt = self.runtime.open_chat.borrow().as_ref().map(|v| v.0.clone());
-		if let Some(user_id) = opt {
-			if ui.button("Back").clicked() {
-				*self.runtime.open_chat.borrow_mut() = None;
-			}
+		if ui.button("Back").clicked() {
+			*self.runtime.open_chat.borrow_mut() = None;
+		}
+
+		let mut send_message = false;
+
+		let mut opt = self.runtime.open_chat.borrow_mut();
+		if let Some((user_id, typed_msg)) = &mut *opt {
 			if let Some(friend) =
-				self.runtime.friends.par_iter().find_any(|friend| friend.id == user_id)
+				self.runtime.friends.par_iter().find_any(|friend| &friend.id == user_id)
 			{
 				self.clickable_username(
 					ui,
@@ -95,26 +98,34 @@ impl NeosPeepsApp {
 					None,
 				);
 
-				if let Some(messages) = self.runtime.messages.get(&friend.id) {
-					let mut messages: Vec<&neos::Message> = messages.values().collect();
-					messages.par_sort_unstable_by_key(|m| m.send_time);
+				ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
+					ui.set_height(ui.available_height());
+					ui.allocate_ui_with_layout(
+						Vec2::new(ui.available_width(), 36f32),
+						Layout::right_to_left(),
+						|ui| {
+							if ui.button("Send").clicked() {
+								send_message = true;
+							}
+							let response = ui.add_sized(
+								ui.available_size(),
+								TextEdit::singleline(typed_msg)
+									.desired_width(ui.available_width()),
+							);
+							if response.lost_focus() && ui.input().key_pressed(Key::Enter) {
+								send_message = true;
+							}
+						},
+					);
 
-					ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
+					ui.with_layout(Layout::top_down(Align::Center), |ui| {
 						ui.set_height(ui.available_height());
-						ui.allocate_ui_with_layout(
-							Vec2::new(ui.available_width(), 36f32),
-							Layout::right_to_left(),
-							|ui| {
-								ui.button("Send");
-								ui.add(
-									TextEdit::singleline(&mut "")
-										.desired_width(ui.available_width()),
-								);
-							},
-						);
 
-						ui.with_layout(Layout::top_down(Align::Center), |ui| {
-							ui.set_height(ui.available_height());
+						if let Some(messages) = self.runtime.messages.get(&friend.id) {
+							let mut messages: Vec<&neos::Message> =
+								messages.values().collect();
+							messages.par_sort_unstable_by_key(|m| m.send_time);
+
 							ScrollArea::vertical()
 								.max_height(ui.available_height())
 								.stick_to_bottom()
@@ -140,15 +151,36 @@ impl NeosPeepsApp {
 											});
 									},
 								);
-						});
+						} else {
+							ui.label("No messages yet");
+						}
 					});
-				}
+				});
 			} else {
 				ui.heading("Peep not found");
 			}
 		} else {
 			ui.heading("Internal error");
 			ui.label("Chat page is being show even though there is no id for a chat");
+		}
+
+		if send_message && !self.threads.loading.messages.get() {
+			let mut taken_opt: Option<(neos::id::User, String)> = None;
+
+			if let Some(opt) = &mut *opt {
+				taken_opt = Some((opt.0.clone(), std::mem::take(&mut opt.1)));
+			}
+
+			drop(opt);
+
+			if let Some((user_id, typed_msg)) = taken_opt {
+				let message = neos::Message::new(
+					neos::MessageContents::Text(typed_msg),
+					self.stored.user_session.as_ref().unwrap().user_id.clone(),
+					user_id,
+				);
+				self.send_message(frame, message);
+			}
 		}
 	}
 }
