@@ -1,12 +1,6 @@
 //! The friends page of the app
 
-use std::{
-	borrow::Borrow,
-	cmp::Ordering,
-	collections::{btree_map::Range, BTreeMap, BTreeSet, HashMap},
-	ops::RangeBounds,
-	sync::Arc,
-};
+use std::{borrow::Borrow, cmp::Ordering, collections::HashMap, sync::Arc};
 
 use ahash::RandomState;
 use chrono::{DateTime, Utc};
@@ -141,7 +135,6 @@ impl NeosPeepsApp {
 			if let Some(set) = sorted_messages.get_mut(&non_owner_id) {
 				set.insert(Message(message));
 			} else {
-				let hash_builder = RandomState::new();
 				let mut set: UserMessages = sorted_vec::SortedSet::new();
 				set.insert(Message(message));
 				sorted_messages.insert(non_owner_id, set);

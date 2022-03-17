@@ -82,8 +82,6 @@ impl NeosPeepsApp {
 	}
 
 	pub fn chat_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
-		use rayon::prelude::*;
-
 		if ui.button("Back").clicked() {
 			*self.runtime.open_chat.borrow_mut() = None;
 		}
