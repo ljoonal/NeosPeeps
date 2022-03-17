@@ -47,7 +47,12 @@ impl Manager {
 	where
 		OP: FnOnce() + Send + 'static,
 	{
-		self.login.spawn(op);
+		if let Err(e) =
+			std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+				self.login.spawn(op);
+			})) {
+			eprintln!("WARNING: Login thread panicked! {:?}", e);
+		}
 	}
 
 	/// Spawns a thread for fetching data from the API & so on.
@@ -55,7 +60,12 @@ impl Manager {
 	where
 		OP: FnOnce() + Send + 'static,
 	{
-		self.data.spawn_fifo(op);
+		if let Err(e) =
+			std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+				self.data.spawn_fifo(op);
+			})) {
+			eprintln!("WARNING: Data thread panicked! {:?}", e);
+		}
 	}
 }
 
