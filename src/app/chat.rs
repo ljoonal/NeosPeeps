@@ -106,6 +106,10 @@ impl NeosPeepsApp {
 			None,
 		);
 
+		if self.threads.loading.messages.get() {
+			ui.label("Loading messages...");
+		}
+
 		ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
 			ui.set_height(ui.available_height());
 			ui.allocate_ui_with_layout(
@@ -158,7 +162,7 @@ impl NeosPeepsApp {
 									});
 							},
 						);
-				} else {
+				} else if !self.threads.loading.messages.get() {
 					ui.label("No messages yet");
 				}
 			});
