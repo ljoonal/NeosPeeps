@@ -68,7 +68,7 @@ fn fetch_asset(url: &AssetUrl) -> Result<Vec<u8>, String> {
 	let data = res.into_bytes();
 
 	if let Err(err) = std::fs::write(path, &data) {
-		println!("Failed to save asset {:?} - {}", url, err);
+		eprintln!("Failed to save asset {:?} - {}", url, err);
 	}
 
 	Ok(data)

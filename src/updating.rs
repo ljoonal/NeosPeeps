@@ -43,9 +43,9 @@ impl NeosPeepsApp {
 						update_check_sender.send(rel).unwrap();
 					}
 				}
-				None => println!("Update check returned wrongly formatted tag name!"),
+				None => eprintln!("Update check returned wrongly formatted tag name!"),
 			},
-			Err(err) => println!("{}", err),
+			Err(err) => eprintln!("{}", err),
 		});
 	}
 }

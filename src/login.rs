@@ -28,7 +28,7 @@ impl NeosPeepsApp {
 				Ok(_) => {
 					match auth_sender.send(Arc::new(neos_api.into())) {
 						Ok(_) => println!("Logged into Neos' API"),
-						Err(err) => println!("Failed to send auth to main thread! {}", err),
+						Err(err) => eprintln!("Failed to send auth to main thread! {}", err),
 					};
 				}
 				Err(err) => {
@@ -36,14 +36,14 @@ impl NeosPeepsApp {
 						Ok(_) => {
 							println!("Error with Neos API user session extension: {}", err);
 						}
-						Err(send_err) => println!(
+						Err(send_err) => eprintln!(
 							"Error with Neos API user session extension, and also to main thread failed! {} - {}",
 							err, send_err
 						),
 					};
 
 					if let Err(err) = user_session_sender.send(None) {
-						println!("Failed to send user_session to main thread! {}", err);
+						eprintln!("Failed to send user_session to main thread! {}", err);
 					}
 				}
 			}
@@ -71,15 +71,17 @@ impl NeosPeepsApp {
 						.send(Arc::new(neos_api.upgrade(neos_user_session.clone()).into()))
 					{
 						Ok(_) => println!("Logged into Neos' API"),
-						Err(err) => println!("Failed to send auth to main thread! {}", err),
+						Err(err) => {
+							eprintln!("Failed to send auth to main thread! {}", err);
+						}
 					};
 
 					if let Err(err) = user_session_sender.send(Some(neos_user_session)) {
-						println!("Failed to send user_session to main thread! {}", err);
+						eprintln!("Failed to send user_session to main thread! {}", err);
 					}
 				}
 				Err(err) => {
-					println!("Error with Neos API login request: {}", err);
+					eprintln!("Error with Neos API login request: {}", err);
 				}
 			}
 		});
@@ -105,11 +107,11 @@ impl NeosPeepsApp {
 			};
 
 			if let Err(err) = auth_sender.send(Arc::new(new_api.into())) {
-				println!("Failed to send auth to main thread! {}", err);
+				eprintln!("Failed to send auth to main thread! {}", err);
 			}
 
 			if let Err(err) = user_session_sender.send(None) {
-				println!("Failed to send user_session to main thread! {}", err);
+				eprintln!("Failed to send user_session to main thread! {}", err);
 			}
 		});
 

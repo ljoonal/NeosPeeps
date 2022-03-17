@@ -26,14 +26,14 @@ impl Default for Manager {
 			loading: loading::Tracker::default(),
 			data: rayon::ThreadPoolBuilder::new()
 				.panic_handler(move |m| {
-					println!("WARNING: Data thread panicked! {:?}", m);
+					eprintln!("WARNING: Data thread panicked! {:?}", m);
 				})
 				.build()
 				.unwrap(),
 			login: rayon::ThreadPoolBuilder::new()
 				.num_threads(1)
 				.panic_handler(move |m| {
-					println!("WARNING: Login thread panicked! {:?}", m);
+					eprintln!("WARNING: Login thread panicked! {:?}", m);
 				})
 				.build()
 				.unwrap(),
@@ -106,7 +106,7 @@ impl NeosPeepsApp {
 					self.runtime.friends = friends;
 					*repaint = true;
 				}
-				Err(e) => println!("Failed to fetch friends! {}", e),
+				Err(e) => eprintln!("Failed to fetch friends! {}", e),
 			}
 		}
 
@@ -117,7 +117,7 @@ impl NeosPeepsApp {
 					self.runtime.users = users;
 					*repaint = true;
 				}
-				Err(e) => println!("Failed to fetch users! {}", e),
+				Err(e) => eprintln!("Failed to fetch users! {}", e),
 			}
 		}
 
@@ -128,7 +128,7 @@ impl NeosPeepsApp {
 					self.runtime.sessions = sessions;
 					*repaint = true;
 				}
-				Err(e) => println!("Failed to fetch sessions! {}", e),
+				Err(e) => eprintln!("Failed to fetch sessions! {}", e),
 			}
 		}
 
@@ -150,7 +150,7 @@ impl NeosPeepsApp {
 
 					*repaint = true;
 				}
-				Err(e) => println!("Failed to fetch messages! {}", e),
+				Err(e) => eprintln!("Failed to fetch messages! {}", e),
 			}
 		}
 	}
@@ -169,7 +169,7 @@ impl NeosPeepsApp {
 					}
 					*repaint = true;
 				}
-				Err(e) => println!("Failed to fetch user! {}", e),
+				Err(e) => eprintln!("Failed to fetch user! {}", e),
 			}
 		}
 
@@ -186,7 +186,7 @@ impl NeosPeepsApp {
 					}
 					*repaint = true;
 				}
-				Err(e) => println!("Failed to fetch user! {}", e),
+				Err(e) => eprintln!("Failed to fetch user! {}", e),
 			}
 		}
 
@@ -203,7 +203,7 @@ impl NeosPeepsApp {
 					}
 					*repaint = true;
 				}
-				Err(e) => println!("Failed to fetch user! {}", e),
+				Err(e) => eprintln!("Failed to fetch user! {}", e),
 			}
 		}
 	}
