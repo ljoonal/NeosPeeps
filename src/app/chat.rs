@@ -147,7 +147,7 @@ impl NeosPeepsApp {
 							messages.len(),
 							|ui, row_range| {
 								let width = ui.available_width();
-								Grid::new("messages_list")
+								Grid::new("messages_list_".to_owned() + friend.id.as_ref())
 									.start_row(row_range.start)
 									.striped(true)
 									.min_row_height(self.stored.row_height)
