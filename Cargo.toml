@@ -33,7 +33,7 @@ lazy_static = "1.4"
 # ~10x faster than default, we don't need cryptographic guarantees for hashmaps
 ahash = "0.7.6"
 
-webp = "0.2.1"
+webp = "0.2.2"
 
 [dependencies.minreq]
 version = "2.6"
@@ -68,7 +68,7 @@ panic = "abort"
 strip = true
 
 [build-dependencies]
-winres = "0.1"
+winres = "0.1.12"
 
 [patch.crates-io]
 #neos = { path = "../neos_rs/" }
