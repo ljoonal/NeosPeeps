@@ -140,8 +140,8 @@ impl NeosPeepsApp {
 						if let Some(stored_messages) =
 							self.runtime.messages.get_mut(&user_id)
 						{
-							for (message_id, message) in fetched_messages {
-								stored_messages.insert(message_id, message);
+							for message in fetched_messages.into_vec() {
+								stored_messages.insert(message);
 							}
 						} else {
 							self.runtime.messages.insert(user_id, fetched_messages);

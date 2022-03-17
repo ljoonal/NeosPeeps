@@ -53,7 +53,7 @@ impl Default for RuntimeOnly {
 			friends: Vec::default(),
 			users: Vec::default(),
 			sessions: Vec::default(),
-			messages: HashMap::default(),
+			messages: AllMessages::default(),
 			last_background_refresh: SystemTime::UNIX_EPOCH,
 			textures: HashMap::default(),
 			used_textures: RefCell::default(),

@@ -30,6 +30,8 @@ crossbeam = "0.8.1"
 rayon = "1.5.1"
 lazy_static = "1.4"
 
+sorted-vec = "0.7"
+
 # ~10x faster than default, we don't need cryptographic guarantees for hashmaps
 ahash = "0.7.6"
 

@@ -136,9 +136,6 @@ impl NeosPeepsApp {
 				ui.set_height(ui.available_height());
 
 				if let Some(messages) = self.runtime.messages.get(&friend.id) {
-					let mut messages: Vec<&neos::Message> = messages.values().collect();
-					messages.par_sort_unstable_by_key(|m| m.send_time);
-
 					ScrollArea::vertical()
 						.max_height(ui.available_height())
 						.stick_to_bottom()
@@ -155,8 +152,9 @@ impl NeosPeepsApp {
 									.num_columns(2)
 									.show(ui, |ui| {
 										for row in row_range {
-											let message = messages[row];
-											self.message_row(ctx, frame, ui, width, friend, message);
+											let message = &messages[row];
+											self
+												.message_row(ctx, frame, ui, width, friend, &message.0);
 											ui.end_row();
 										}
 									});

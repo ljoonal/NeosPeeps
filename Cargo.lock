@@ -1570,6 +1570,7 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
+ "sorted-vec",
  "webp",
  "winres",
 ]
@@ -2370,6 +2371,12 @@ dependencies = [
  "libc",
  "winapi",
 ]
+
+[[package]]
+name = "sorted-vec"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4210e1a17d165a0c1d4a233af1e3b36fb21b1359042767a4d2c73554f5f8c2aa"
 
 [[package]]
 name = "spin"

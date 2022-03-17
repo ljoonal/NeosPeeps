@@ -1,6 +1,12 @@
 //! The friends page of the app
 
-use std::{borrow::Borrow, collections::HashMap, sync::Arc};
+use std::{
+	borrow::Borrow,
+	cmp::Ordering,
+	collections::{btree_map::Range, BTreeMap, BTreeSet, HashMap},
+	ops::RangeBounds,
+	sync::Arc,
+};
 
 use ahash::RandomState;
 use chrono::{DateTime, Utc};
@@ -11,9 +17,29 @@ use neos::api_client::AnyNeos;
 use crate::app::NeosPeepsApp;
 
 #[allow(clippy::module_name_repetitions)]
-pub type UserMessages = HashMap<String, neos::Message, RandomState>;
+pub type UserMessages = sorted_vec::SortedSet<Message>;
 #[allow(clippy::module_name_repetitions)]
 pub type AllMessages = HashMap<neos::id::User, UserMessages, RandomState>;
+
+#[derive(Debug)]
+pub struct Message(pub neos::Message);
+
+impl PartialEq for Message {
+	fn eq(&self, other: &Self) -> bool { self.0.id == other.0.id }
+}
+impl Eq for Message {}
+
+impl Ord for Message {
+	fn cmp(&self, other: &Self) -> Ordering {
+		self.0.send_time.cmp(&other.0.send_time)
+	}
+}
+
+impl PartialOrd for Message {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
+}
 
 impl NeosPeepsApp {
 	/// Refreshes messages in a background thread
@@ -67,7 +93,7 @@ impl NeosPeepsApp {
 		if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 			match neos_api.get_messages(max_amount, unread_only, from_time, user) {
 				Ok(messages) => {
-					messages_sender.send(Ok(Self::sort_all_messages(messages))).unwrap();
+					messages_sender.send(Ok(Self::split_by_user(messages))).unwrap();
 				}
 				Err(e) => {
 					messages_sender.send(Err(e.to_string())).unwrap();
@@ -104,32 +130,24 @@ impl NeosPeepsApp {
 		frame.request_repaint();
 	}
 
-	fn sort_all_messages(messages: Vec<neos::Message>) -> AllMessages {
+	fn split_by_user(messages: Vec<neos::Message>) -> AllMessages {
 		let hash_builder = RandomState::new();
 		let mut sorted_messages: AllMessages = HashMap::with_hasher(hash_builder);
 
 		// TODO: if this is too slow switch to rayon's par iter
-		for (message_id, message) in Self::sort_user_messages(messages) {
+		for message in messages {
 			let non_owner_id = message.non_owner_id().clone();
 
-			if let Some(map) = sorted_messages.get_mut(&non_owner_id) {
-				map.insert(message_id, message);
+			if let Some(set) = sorted_messages.get_mut(&non_owner_id) {
+				set.insert(Message(message));
 			} else {
 				let hash_builder = RandomState::new();
-				let mut map: UserMessages = HashMap::with_hasher(hash_builder);
-				map.insert(message_id, message);
-				sorted_messages.insert(non_owner_id, map);
+				let mut set: UserMessages = sorted_vec::SortedSet::new();
+				set.insert(Message(message));
+				sorted_messages.insert(non_owner_id, set);
 			}
 		}
 
 		sorted_messages
-	}
-
-	fn sort_user_messages(messages: Vec<neos::Message>) -> UserMessages {
-		use rayon::prelude::*;
-		messages
-			.into_par_iter()
-			.map(|message| (message.id.clone(), message))
-			.collect()
 	}
 }
