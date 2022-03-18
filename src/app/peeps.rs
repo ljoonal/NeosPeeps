@@ -214,6 +214,7 @@ impl NeosPeepsApp {
 			ui.collapsing("Sessions", |ui| {
 				for session in &status.active_sessions {
 					self.session_row(ctx, frame, ui, ui.available_width(), session);
+					ui.end_row();
 				}
 			});
 		}
@@ -290,8 +291,6 @@ impl NeosPeepsApp {
 
 			self.friend_row_session_col(ctx, ui, width_for_cols, friend);
 		});
-
-		ui.end_row();
 	}
 
 	fn friend_row_session_col(
@@ -369,8 +368,6 @@ impl NeosPeepsApp {
 				user_bans(ui, user);
 			});
 		});
-
-		ui.end_row();
 	}
 
 	pub fn peeps_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
@@ -432,8 +429,12 @@ impl NeosPeepsApp {
 					.num_columns(2)
 					.show(ui, |ui| {
 						for row in row_range {
-							let user = users[row];
-							self.user_row(ctx, frame, ui, user);
+							let user = users.get(row);
+							if let Some(user) = user {
+								self.user_row(ctx, frame, ui, user);
+							} else {
+								ui.label("An error occurred");
+							}
 						}
 					});
 			},
@@ -490,8 +491,13 @@ impl NeosPeepsApp {
 					.num_columns(3)
 					.show(ui, |ui| {
 						for row in row_range {
-							let friend = friends[row];
-							self.friend_row(ctx, frame, ui, width, friend);
+							let friend = friends.get(row);
+							if let Some(friend) = friend {
+								self.friend_row(ctx, frame, ui, width, friend);
+							} else {
+								ui.label("An error occurred");
+							}
+							ui.end_row();
 						}
 					});
 			},

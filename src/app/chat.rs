@@ -154,9 +154,14 @@ impl NeosPeepsApp {
 									.num_columns(2)
 									.show(ui, |ui| {
 										for row in row_range {
-											let message = &messages[row];
-											self
-												.message_row(ctx, frame, ui, width, friend, &message.0);
+											let message = &messages.get(row);
+											if let Some(message) = message {
+												self.message_row(
+													ctx, frame, ui, width, friend, &message.0,
+												);
+											} else {
+												ui.label("An error occurred");
+											}
 											ui.end_row();
 										}
 									});

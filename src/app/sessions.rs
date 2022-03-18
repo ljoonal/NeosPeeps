@@ -225,8 +225,6 @@ impl NeosPeepsApp {
 			}
 		});
 
-		ui.end_row();
-
 		if open_window {
 			*self.runtime.session_window.borrow_mut() =
 				Some((session.id.clone(), Some(session.clone())));
@@ -276,30 +274,45 @@ impl NeosPeepsApp {
 
 		ui.heading(sessions.len().to_string() + " Sessions");
 
-		self.sessions_table(ctx, frame, ui, &sessions);
+		self.sessions_table(
+			ctx,
+			frame,
+			ui,
+			&sessions,
+			if self.stored.filter_friends_only {
+				"friends_sessions_list"
+			} else {
+				"sessions_list"
+			},
+		);
 	}
 
 	pub fn sessions_table(
 		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
-		sessions: &[&neos::SessionInfo],
+		sessions: &[&neos::SessionInfo], id: &str,
 	) {
 		let sessions_count = sessions.len();
 
-		ScrollArea::both().show_rows(
+		ScrollArea::vertical().show_rows(
 			ui,
 			self.stored.row_height,
 			sessions_count,
 			|ui, row_range| {
 				let width = ui.available_width();
-				Grid::new("sessions_list")
+				Grid::new(id)
 					.striped(true)
 					.start_row(row_range.start)
 					.min_row_height(self.stored.row_height)
 					.num_columns(2)
 					.show(ui, |ui| {
 						for row in row_range {
-							let session = sessions[row];
-							self.session_row(ctx, frame, ui, width, session);
+							let session = sessions.get(row);
+							if let Some(session) = session {
+								self.session_row(ctx, frame, ui, width, session);
+							} else {
+								ui.label("An error occurred");
+							}
+							ui.end_row();
 						}
 					});
 			},
