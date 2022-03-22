@@ -90,6 +90,10 @@ impl NeosPeepsApp {
 				if ui.button("Remove").on_hover_text("Remove from contacts").clicked() {
 					self.remove_friend(user.id.clone());
 				}
+				if ui.button("Chat").on_hover_text("Read/Send messages").clicked() {
+					*self.runtime.open_chat.borrow_mut() =
+						Some((user.id.clone(), String::new(), SystemTime::UNIX_EPOCH));
+				}
 			} else if ui
 				.button("Add")
 				.on_hover_text("Add to contacts (=send friend request)")
