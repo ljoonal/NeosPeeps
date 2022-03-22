@@ -1,7 +1,8 @@
 //! The friends page of the app
 
-use std::{cmp::Ordering, rc::Rc};
+use std::{cmp::Ordering, rc::Rc, sync::Arc};
 
+use crossbeam::channel::Sender;
 use eframe::{
 	egui::{Context, TextureHandle},
 	epi,
@@ -56,20 +57,28 @@ impl NeosPeepsApp {
 		self.threads.loading.friends.set(true);
 		let friends_sender = self.threads.channels.friends_sender();
 		self.threads.spawn_data_op(move || {
-			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
-				match neos_api.get_friends(None) {
-					Ok(mut friends) => {
-						friends.sort_by(|f1, f2| order_users(&f1.status, &f2.status));
-						friends_sender.send(Ok(friends)).unwrap();
-					}
-					Err(e) => {
-						friends_sender.send(Err(e.to_string())).unwrap();
-					}
-				}
-			}
+			Self::fetch_friends(neos_api_arc, friends_sender);
 		});
 
 		frame.request_repaint();
+	}
+
+	#[allow(clippy::needless_pass_by_value)]
+	fn fetch_friends(
+		neos_api_arc: Arc<AnyNeos>,
+		friends_sender: Sender<Result<Vec<neos::Friend>, String>>,
+	) {
+		if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
+			match neos_api.get_friends(None) {
+				Ok(mut friends) => {
+					friends.sort_by(|f1, f2| order_users(&f1.status, &f2.status));
+					friends_sender.send(Ok(friends)).unwrap();
+				}
+				Err(e) => {
+					friends_sender.send(Err(e.to_string())).unwrap();
+				}
+			}
+		}
 	}
 
 	pub fn search_users(&mut self, frame: &epi::Frame) {
@@ -113,6 +122,42 @@ impl NeosPeepsApp {
 			user_sender.send(res.map_err(|e| e.to_string())).unwrap();
 		});
 		frame.request_repaint();
+	}
+
+	/// Sends a friend request
+	pub fn add_friend(&self, id: neos::id::User) {
+		let neos_api_arc = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+
+		let friends_sender = self.threads.channels.friends_sender();
+		self.threads.spawn_data_op(move || {
+			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
+				if let Err(err) = neos_api.add_friend(id) {
+					eprintln!("Failed to send friend request: {:?}", err);
+				}
+				Self::fetch_friends(neos_api_arc, friends_sender);
+			}
+		});
+	}
+
+	/// Sends a friend removal request
+	pub fn remove_friend(&self, id: neos::id::User) {
+		let neos_api_arc = match &self.runtime.neos_api {
+			Some(api) => api.clone(),
+			None => return,
+		};
+
+		let friends_sender = self.threads.channels.friends_sender();
+		self.threads.spawn_data_op(move || {
+			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
+				if let Err(err) = neos_api.remove_friend(id) {
+					eprintln!("Failed to send friend removal request: {:?}", err);
+				}
+				Self::fetch_friends(neos_api_arc, friends_sender);
+			}
+		});
 	}
 
 	/// Gets the user status for the user window

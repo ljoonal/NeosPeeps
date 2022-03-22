@@ -86,6 +86,17 @@ impl NeosPeepsApp {
 		ui.horizontal_wrapped(|ui| {
 			username_decorations(ui, user, friend);
 			ui.heading(&user.username);
+			if friend.is_some() {
+				if ui.button("Remove").on_hover_text("Remove from contacts").clicked() {
+					self.remove_friend(user.id.clone());
+				}
+			} else if ui
+				.button("Add")
+				.on_hover_text("Add to contacts (=send friend request)")
+				.clicked()
+			{
+				self.add_friend(user.id.clone());
+			}
 		});
 
 		if let Some(friend) = friend {

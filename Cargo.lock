@@ -1541,9 +1541,9 @@ dependencies = [
 
 [[package]]
 name = "neos"
-version = "0.3.0-alpha.5"
+version = "0.3.0-alpha.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d0af080ca645d4a7c6aa595e4488e2b0d01d3ea6d2167cff18865138c99f573"
+checksum = "4b6157a14fa6bd482064b8ee60e7984320c6a9d9f6eec916a1f958fe57d9364b"
 dependencies = [
  "chrono",
  "minreq",
