@@ -42,7 +42,7 @@ impl NeosPeepsApp {
 		ui.label("Docs & code used as a reference: PolyLogiX.");
 		ui.label("Pointing out smart screen issues with the .exe file: Ukilop.");
 		ui.label("Good tutorials & smart comments: ProbablePrime.");
-		ui.label("2b2t/4chan meme vibes: The Neos Modding discord");
+		ui.label("Good vibes: The Neos Modding discord");
 
 		if ui.button("Back").clicked() {
 			self.stored.page = Page::Peeps;
