@@ -196,8 +196,14 @@ impl NeosPeepsApp {
 	) {
 		let (missing_user, missing_status) =
 			(user.is_none(), user_status.is_none());
-		*self.runtime.user_window.borrow_mut() =
-			Some((id.clone(), user, user_status));
+
+		match &mut self.runtime.user_window.try_borrow_mut() {
+			Ok(user_window) => {
+				**user_window = Some((id.clone(), user, user_status));
+			}
+			Err(err) => eprintln!("Failed to open user: {:?}", err),
+		};
+
 		if missing_user {
 			self.get_user(frame, id);
 		}
