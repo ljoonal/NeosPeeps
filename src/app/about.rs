@@ -37,11 +37,10 @@ impl NeosPeepsApp {
 		ui.heading("Credits & thanks");
 		ui.label(concat!("Creating the app: ", env!("CARGO_PKG_AUTHORS")));
 		ui.label("Posing for the screenshots: Soap");
-		ui.label("Helping with URLs: kazu0617");
-		ui.label("Initial help with neosdb urls: brodokk.");
-		ui.label("Docs & code used as a reference: PolyLogiX.");
-		ui.label("Pointing out smart screen issues with the .exe file: Ukilop.");
-		ui.label("Good tutorials & smart comments: ProbablePrime.");
+		ui.label("Helping with URLs: brodokk & kazu0617");
+		ui.label("Docs & code used as a reference: PolyLogiX");
+		ui.label("Pointing out smart screen issues with the .exe file: Ukilop");
+		ui.label("Good tutorials & smart comments: ProbablePrime");
 		ui.label("Good vibes: The Neos Modding discord");
 
 		if ui.button("Back").clicked() {
