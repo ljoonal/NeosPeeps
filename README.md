@@ -37,7 +37,7 @@ All the following functionality, in under 5MB:
 
 - CJK font support for all of you JP peeps (requires `Noto Sans CJK JP` font to be installed on the system)
 
-![Screenshot of settings](static/jp-session-search.png)
+![Screenshot of JP sessions list](static/jp-session-search.png)
 
 - Optional (disabled by default) automatic update checking (see [the privacy policy for more details](./PrivacyPolicy.md))
 
