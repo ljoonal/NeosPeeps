@@ -151,7 +151,7 @@ impl NeosPeepsApp {
 							self.runtime.messages.get_mut(&user_id)
 						{
 							for message in fetched_messages.into_vec() {
-								stored_messages.insert(message);
+								stored_messages.replace(message);
 							}
 						} else {
 							self.runtime.messages.insert(user_id, fetched_messages);

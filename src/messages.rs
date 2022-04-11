@@ -133,10 +133,10 @@ impl NeosPeepsApp {
 			let non_owner_id = message.non_owner_id().clone();
 
 			if let Some(set) = sorted_messages.get_mut(&non_owner_id) {
-				set.insert(Message(message));
+				set.replace(Message(message));
 			} else {
 				let mut set: UserMessages = sorted_vec::SortedSet::new();
-				set.insert(Message(message));
+				set.replace(Message(message));
 				sorted_messages.insert(non_owner_id, set);
 			}
 		}
