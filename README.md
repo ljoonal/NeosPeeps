@@ -84,7 +84,7 @@ Requirements:
 - [Git](https://git-scm.com)
 - [Rust](https://www.rust-lang.org/)
 
-#### Ubuntu requirements
+#### Ubuntu (22.04 LTS) requirements
 
 - libfontconfig1-dev
 - pkg-config
