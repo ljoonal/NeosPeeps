@@ -84,6 +84,12 @@ Requirements:
 - [Git](https://git-scm.com)
 - [Rust](https://www.rust-lang.org/)
 
+#### Ubuntu requirements
+
+- libfontconfig1-dev
+- pkg-config
+- libxcb-composite0-dev
+
 Start off by cloning the project with git.
 
 ```sh
