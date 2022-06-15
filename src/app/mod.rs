@@ -1,9 +1,6 @@
 use std::{rc::Rc, time::SystemTime};
 
-use eframe::{
-	egui::{self, Context},
-	epi,
-};
+use eframe::egui::{self, Context};
 
 use crate::{
 	data::{Page, Stored},
@@ -44,54 +41,15 @@ impl Default for NeosPeepsApp {
 	}
 }
 
-impl epi::App for NeosPeepsApp {
-	fn name(&self) -> &str { env!("CARGO_PKG_NAME") }
-
-	/// Called once before the first frame.
-	fn setup(
-		&mut self, ctx: &Context, frame: &epi::Frame,
-		storage: Option<&dyn epi::Storage>,
-	) {
-		crate::styling::setup_styles(ctx);
-
-		if let Some(storage) = storage {
-			*self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default();
-
-			if let Some(user_session) = self.stored.user_session.clone() {
-				self.try_use_session(user_session, frame);
-			}
-		}
-
-		if self.stored.check_updates
-			&& self.stored.last_update_check_time
-				+ std::time::Duration::from_secs(60 * 60 * 24)
-				< SystemTime::now()
-		{
-			self.check_updates();
-		}
-
-		// Request screen updates at least once in a while
-		// As normally egui doesn't update if it doesn't need to.
-		let frame = std::sync::Arc::<
-			std::sync::Mutex<eframe::epi::backend::FrameData>,
-		>::downgrade(&frame.0);
-		std::thread::spawn(move || {
-			while let Some(frame_data) = frame.upgrade() {
-				let frame = epi::Frame(frame_data);
-				frame.request_repaint();
-				std::thread::sleep(std::time::Duration::from_millis(1000));
-			}
-		});
-	}
-
-	fn save(&mut self, storage: &mut dyn epi::Storage) {
-		epi::set_value(storage, epi::APP_KEY, self);
+impl eframe::App for NeosPeepsApp {
+	fn save(&mut self, storage: &mut dyn eframe::Storage) {
+		eframe::set_value(storage, eframe::APP_KEY, self);
 	}
 
 	/// Called each time the UI needs repainting, which may be many times per
 	/// second. Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`,
 	/// `Window` or `Area`.
-	fn update(&mut self, ctx: &Context, frame: &epi::Frame) {
+	fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
 		let is_authenticated =
 			self.runtime.neos_api.as_ref().map_or(false, |a| a.is_authenticated());
 
@@ -110,15 +68,15 @@ impl epi::App for NeosPeepsApp {
 		{
 			self.cull_textures();
 			self.runtime.last_background_refresh = SystemTime::now();
-			self.refresh_friends(frame);
-			self.refresh_sessions(frame);
-			self.refresh_messages(frame);
+			self.refresh_friends(ctx);
+			self.refresh_sessions(ctx);
+			self.refresh_messages(ctx);
 		}
 
-		self.try_recv(frame);
+		self.try_recv(ctx);
 
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-			self.top_bar(ui, frame);
+			self.top_bar(ui, ctx, frame);
 		});
 
 		egui::CentralPanel::default().show(ctx, |ui| {
@@ -129,18 +87,18 @@ impl epi::App for NeosPeepsApp {
 							self.update_window(ctx);
 						}
 						if self.runtime.user_window.borrow().is_some() {
-							self.user_window(ctx, frame);
+							self.user_window(ctx);
 						}
 						if self.runtime.session_window.borrow().is_some() {
-							self.session_window(ctx, frame);
+							self.session_window(ctx);
 						}
 
 						match self.stored.page {
 							Page::About => self.about_page(ui),
 							Page::Credits => self.credits_page(ui),
 							Page::License => self.license_page(ui),
-							Page::Peeps => self.peeps_page(ctx, frame, ui),
-							Page::Sessions => self.sessions_page(ctx, frame, ui),
+							Page::Peeps => self.peeps_page(ctx, ui),
+							Page::Sessions => self.sessions_page(ctx, ui),
 							Page::Settings => self.settings_page(ui),
 						}
 					} else {
@@ -149,11 +107,45 @@ impl epi::App for NeosPeepsApp {
 							Page::Credits => self.credits_page(ui),
 							Page::License => self.license_page(ui),
 							Page::Settings => self.settings_page(ui),
-							_ => self.login_page(ui, frame),
+							_ => self.login_page(ui, ctx),
 						}
 					}
 				});
 			});
 		});
+	}
+}
+
+impl NeosPeepsApp {
+	pub fn new(creation_ctx: &eframe::CreationContext<'_>) -> Self {
+		let mut app = Self::default();
+
+		crate::styling::setup_styles(&creation_ctx.egui_ctx);
+
+		if let Some(storage) = creation_ctx.storage {
+			app = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+
+			if let Some(user_session) = app.stored.user_session.clone() {
+				app.try_use_session(user_session, &creation_ctx.egui_ctx);
+			}
+		}
+
+		if app.stored.check_updates
+			&& app.stored.last_update_check_time
+				+ std::time::Duration::from_secs(60 * 60 * 24)
+				< SystemTime::now()
+		{
+			app.check_updates();
+		}
+
+		let min_fps_ctx = creation_ctx.egui_ctx.clone();
+		std::thread::spawn(move || {
+			loop {
+				std::thread::sleep(std::time::Duration::from_millis(1000));
+				min_fps_ctx.request_repaint();
+			}
+		});
+
+		app
 	}
 }

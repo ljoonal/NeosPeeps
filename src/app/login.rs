@@ -1,9 +1,6 @@
 //! The login page of the app
 
-use eframe::{
-	egui::{Button, ComboBox, SelectableLabel, TextEdit, Ui},
-	epi,
-};
+use eframe::egui::{Button, ComboBox, Context, SelectableLabel, TextEdit, Ui};
 
 use super::NeosPeepsApp;
 
@@ -67,7 +64,7 @@ impl NeosPeepsApp {
 		);
 	}
 
-	pub fn login_page(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+	pub fn login_page(&mut self, ui: &mut Ui, ctx: &Context) {
 		ui.heading("Log in");
 		ui.label("Currently Neos' Oauth doesn't implement the required details for this application, thus logging in is the only way to actually use it.");
 
@@ -128,7 +125,7 @@ impl NeosPeepsApp {
 							session_request.totp(std::mem::take(&mut self.runtime.totp));
 					}
 
-					self.login_new(session_request, frame);
+					self.login_new(session_request, ctx);
 				}
 			});
 		});

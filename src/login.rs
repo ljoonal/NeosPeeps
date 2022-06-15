@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use eframe::epi;
+use eframe::egui::Context;
 use neos::api_client::{AnyNeos, NeosUnauthenticated};
 
 use crate::app::NeosPeepsApp;
@@ -11,7 +11,7 @@ impl NeosPeepsApp {
 	/// Makes the current API try to use a session, or switch to unauthenticated
 	/// on failure.
 	pub fn try_use_session(
-		&mut self, user_session: neos::UserSession, frame: &epi::Frame,
+		&mut self, user_session: neos::UserSession, ctx: &Context,
 	) {
 		let neos_api_arc = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
@@ -49,11 +49,11 @@ impl NeosPeepsApp {
 			}
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	pub fn login_new(
-		&mut self, session_request: neos::LoginCredentials, frame: &epi::Frame,
+		&mut self, session_request: neos::LoginCredentials, ctx: &Context,
 	) {
 		let neos_api_arc = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
@@ -86,10 +86,10 @@ impl NeosPeepsApp {
 			}
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
-	pub fn logout(&mut self, frame: &epi::Frame) {
+	pub fn logout(&mut self, ctx: &Context) {
 		let neos_api_arc = match &mut self.runtime.neos_api {
 			Some(api) => api.clone(),
 			None => return,
@@ -115,6 +115,6 @@ impl NeosPeepsApp {
 			}
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 }

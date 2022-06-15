@@ -19,7 +19,7 @@ pub struct Stored {
 	pub datetime_format: String,
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq)]
 pub enum Page {
 	About,
 	Credits,

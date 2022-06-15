@@ -1,20 +1,17 @@
-use eframe::{
-	egui::{
-		Align,
-		Color32,
-		Context,
-		Grid,
-		Id,
-		Label,
-		Layout,
-		RichText,
-		ScrollArea,
-		Sense,
-		Ui,
-		Vec2,
-		Window,
-	},
-	epi,
+use eframe::egui::{
+	Align,
+	Color32,
+	Context,
+	Grid,
+	Id,
+	Label,
+	Layout,
+	RichText,
+	ScrollArea,
+	Sense,
+	Ui,
+	Vec2,
+	Window,
 };
 
 use super::NeosPeepsApp;
@@ -36,7 +33,7 @@ pub fn session_users_count(ui: &mut Ui, session: &neos::SessionInfo) {
 }
 
 impl NeosPeepsApp {
-	pub fn session_window(&mut self, ctx: &Context, frame: &epi::Frame) {
+	pub fn session_window(&mut self, ctx: &Context) {
 		let mut open = true;
 		if let Some((id, session)) = &*self.runtime.session_window.borrow() {
 			Window::new(RichText::new(id.as_ref()).small())
@@ -51,7 +48,7 @@ impl NeosPeepsApp {
 					} else {
 						ui.vertical_centered(|ui| {
 							if ui.button("Refresh").clicked() {
-								self.get_session(frame, id);
+								self.get_session(ctx, id);
 							}
 						});
 					}
@@ -89,7 +86,7 @@ impl NeosPeepsApp {
 						});
 						if !session.users.is_empty() {
 							ui.horizontal_wrapped(|ui| {
-								self.session_users(ui, frame, &session.users);
+								self.session_users(ui, ctx, &session.users);
 							});
 						}
 
@@ -151,8 +148,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn session_row(
-		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, width: f32,
-		session: &neos::SessionInfo,
+		&self, ctx: &Context, ui: &mut Ui, width: f32, session: &neos::SessionInfo,
 	) {
 		let mut open_window = false;
 		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
@@ -195,14 +191,14 @@ impl NeosPeepsApp {
 					.clicked()
 				{
 					if let Some(user_id) = &session.host_id {
-						self.open_user(frame, user_id, None, None);
+						self.open_user(ctx, user_id, None, None);
 					}
 				}
 			});
 
 			ui.horizontal_wrapped(|ui| {
 				ui.label("Users:");
-				self.session_users(ui, frame, &session.users);
+				self.session_users(ui, ctx, &session.users);
 			});
 			ui.horizontal_wrapped(|ui| {
 				ui.label("Tags:");
@@ -231,9 +227,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	pub fn sessions_page(
-		&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
-	) {
+	pub fn sessions_page(&mut self, ctx: &Context, ui: &mut Ui) {
 		use rayon::prelude::*;
 
 		self.search_bar(ui);
@@ -276,7 +270,6 @@ impl NeosPeepsApp {
 
 		self.sessions_table(
 			ctx,
-			frame,
 			ui,
 			&sessions,
 			if self.stored.filter_friends_only {
@@ -288,8 +281,8 @@ impl NeosPeepsApp {
 	}
 
 	pub fn sessions_table(
-		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
-		sessions: &[&neos::SessionInfo], id: &str,
+		&self, ctx: &Context, ui: &mut Ui, sessions: &[&neos::SessionInfo],
+		id: &str,
 	) {
 		let sessions_count = sessions.len();
 
@@ -308,7 +301,7 @@ impl NeosPeepsApp {
 						for row in row_range {
 							let session = sessions.get(row);
 							if let Some(session) = session {
-								self.session_row(ctx, frame, ui, width, session);
+								self.session_row(ctx, ui, width, session);
 							} else {
 								ui.label("An error occurred");
 							}
@@ -320,7 +313,7 @@ impl NeosPeepsApp {
 	}
 
 	fn session_users(
-		&self, ui: &mut Ui, frame: &epi::Frame, users: &[neos::SessionUser],
+		&self, ui: &mut Ui, ctx: &Context, users: &[neos::SessionUser],
 	) {
 		use rayon::prelude::*;
 
@@ -358,7 +351,7 @@ impl NeosPeepsApp {
 				.clicked()
 			{
 				if let Some(user_id) = &user.id {
-					self.open_user(frame, user_id, None, None);
+					self.open_user(ctx, user_id, None, None);
 				}
 			}
 		}

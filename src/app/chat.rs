@@ -3,15 +3,14 @@ use eframe::{
 	egui::{Context, Grid, Key, Label, Layout, ScrollArea, Sense, TextEdit, Ui},
 	emath::Align,
 	epaint::Vec2,
-	epi,
 };
 
 use super::NeosPeepsApp;
 
 impl NeosPeepsApp {
 	fn message_row(
-		&self, _ctx: &Context, _frame: &epi::Frame, ui: &mut Ui, width: f32,
-		friend: &neos::Friend, message: &neos::Message,
+		&self, _ctx: &Context, ui: &mut Ui, width: f32, friend: &neos::Friend,
+		message: &neos::Message,
 	) {
 		ui.with_layout(Layout::top_down(Align::LEFT), |ui| {
 			ui.set_max_width(self.stored.col_min_width.min(
@@ -81,12 +80,12 @@ impl NeosPeepsApp {
 		});
 	}
 
-	pub fn chat_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
+	pub fn chat_page(&mut self, ctx: &Context, ui: &mut Ui) {
 		if ui.button("Back").clicked() {
 			*self.runtime.open_chat.borrow_mut() = None;
 		}
 
-		self.check_if_should_refresh_curr(frame);
+		self.check_if_should_refresh_curr(ctx);
 		let friend = match self.get_curr_chat_friend() {
 			Some(friend) => friend,
 			None => {
@@ -97,14 +96,7 @@ impl NeosPeepsApp {
 
 		let mut send_message = false;
 
-		self.clickable_username(
-			ui,
-			frame,
-			&friend.id,
-			&friend.username,
-			None,
-			None,
-		);
+		self.clickable_username(ui, ctx, &friend.id, &friend.username, None, None);
 
 		if self.threads.loading.messages.get() {
 			ui.label("Loading messages...");
@@ -156,9 +148,7 @@ impl NeosPeepsApp {
 										for row in row_range {
 											let message = &messages.get(row);
 											if let Some(message) = message {
-												self.message_row(
-													ctx, frame, ui, width, friend, &message.0,
-												);
+												self.message_row(ctx, ui, width, friend, &message.0);
 											} else {
 												ui.label("An error occurred");
 											}
@@ -174,7 +164,7 @@ impl NeosPeepsApp {
 		});
 
 		if send_message {
-			self.send_curr_msg(frame);
+			self.send_curr_msg(ctx);
 		}
 	}
 
@@ -199,7 +189,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	fn check_if_should_refresh_curr(&mut self, frame: &epi::Frame) {
+	fn check_if_should_refresh_curr(&mut self, ctx: &Context) {
 		if !self.threads.loading.messages.get() {
 			let mut refresh_id = None;
 			if let Some((user_id, _, last_refresh_start)) =
@@ -212,12 +202,12 @@ impl NeosPeepsApp {
 				}
 			}
 			if let Some(user_id) = refresh_id {
-				self.fetch_user_chat(frame, user_id, None);
+				self.fetch_user_chat(ctx, user_id, None);
 			}
 		}
 	}
 
-	fn send_curr_msg(&mut self, frame: &epi::Frame) {
+	fn send_curr_msg(&mut self, ctx: &Context) {
 		if !self.threads.loading.messages.get() {
 			let mut taken_opt: Option<(neos::id::User, String)> = None;
 
@@ -231,7 +221,7 @@ impl NeosPeepsApp {
 					self.stored.user_session.as_ref().unwrap().user_id.clone(),
 					user_id,
 				);
-				self.send_message(frame, message);
+				self.send_message(ctx, message);
 			}
 		}
 	}

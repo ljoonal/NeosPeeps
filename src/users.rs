@@ -3,10 +3,7 @@
 use std::{cmp::Ordering, rc::Rc, sync::Arc};
 
 use crossbeam::channel::Sender;
-use eframe::{
-	egui::{Context, TextureHandle},
-	epi,
-};
+use eframe::egui::{Context, TextureHandle};
 use neos::api_client::{AnyNeos, Neos};
 
 use crate::app::NeosPeepsApp;
@@ -48,7 +45,7 @@ fn order_users(s1: &neos::UserStatus, s2: &neos::UserStatus) -> Ordering {
 
 impl NeosPeepsApp {
 	/// Refreshes friends in a background thread
-	pub fn refresh_friends(&mut self, frame: &epi::Frame) {
+	pub fn refresh_friends(&mut self, ctx: &Context) {
 		let neos_api_arc = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
 			None => return,
@@ -60,7 +57,7 @@ impl NeosPeepsApp {
 			Self::fetch_friends(neos_api_arc, friends_sender);
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	#[allow(clippy::needless_pass_by_value)]
@@ -81,7 +78,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	pub fn search_users(&mut self, frame: &epi::Frame) {
+	pub fn search_users(&mut self, ctx: &Context) {
 		let neos_api = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
 			None => return,
@@ -95,11 +92,11 @@ impl NeosPeepsApp {
 			users_sender.send(res.map_err(|e| e.to_string())).unwrap();
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	/// Gets the user for the user window
-	pub fn get_user(&self, frame: &epi::Frame, id: &neos::id::User) {
+	pub fn get_user(&self, ctx: &Context, id: &neos::id::User) {
 		let neos_api = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
 			None => return,
@@ -121,7 +118,7 @@ impl NeosPeepsApp {
 			let res = neos_api.get_user(id);
 			user_sender.send(res.map_err(|e| e.to_string())).unwrap();
 		});
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	/// Sends a friend request
@@ -161,7 +158,7 @@ impl NeosPeepsApp {
 	}
 
 	/// Gets the user status for the user window
-	pub fn get_user_status(&self, frame: &epi::Frame, id: &neos::id::User) {
+	pub fn get_user_status(&self, ctx: &Context, id: &neos::id::User) {
 		let neos_api = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
 			None => return,
@@ -187,11 +184,11 @@ impl NeosPeepsApp {
 			}
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	pub fn open_user(
-		&self, frame: &epi::Frame, id: &neos::id::User, user: Option<neos::User>,
+		&self, ctx: &Context, id: &neos::id::User, user: Option<neos::User>,
 		user_status: Option<neos::UserStatus>,
 	) {
 		let (missing_user, missing_status) =
@@ -205,10 +202,10 @@ impl NeosPeepsApp {
 		};
 
 		if missing_user {
-			self.get_user(frame, id);
+			self.get_user(ctx, id);
 		}
 		if missing_status {
-			self.get_user_status(frame, id);
+			self.get_user_status(ctx, id);
 		}
 	}
 

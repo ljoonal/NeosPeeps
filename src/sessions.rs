@@ -1,11 +1,11 @@
-use eframe::epi;
+use eframe::egui::Context;
 use neos::api_client::{AnyNeos, Neos};
 
 use crate::app::NeosPeepsApp;
 
 impl NeosPeepsApp {
 	/// Refreshes sessions in a background thread
-	pub fn refresh_sessions(&mut self, frame: &epi::Frame) {
+	pub fn refresh_sessions(&mut self, ctx: &Context) {
 		use rayon::prelude::*;
 
 		let neos_api_arc = match &self.runtime.neos_api {
@@ -29,11 +29,11 @@ impl NeosPeepsApp {
 			}
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	/// Gets the session status for the session window
-	pub fn get_session(&self, frame: &epi::Frame, id: &neos::id::Session) {
+	pub fn get_session(&self, ctx: &Context, id: &neos::id::Session) {
 		let neos_api = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
 			None => return,
@@ -55,7 +55,7 @@ impl NeosPeepsApp {
 			session_sender.send(res.map_err(|e| e.to_string())).unwrap();
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 }
 

@@ -39,8 +39,8 @@ mod updating;
 mod users;
 
 fn main() {
-	let app = app::NeosPeepsApp::default();
-	let boxed_app = Box::new(app);
 	let native_options = eframe::NativeOptions::default();
-	eframe::run_native(boxed_app, native_options);
+	let app_creator: eframe::AppCreator =
+		Box::new(|creation_ctx| Box::new(app::NeosPeepsApp::new(creation_ctx)));
+	eframe::run_native(env!("CARGO_PKG_NAME"), native_options, app_creator);
 }

@@ -1,9 +1,6 @@
 use std::time::SystemTime;
 
-use eframe::{
-	egui::{Button, Layout, Response, TextEdit, Ui},
-	epi,
-};
+use eframe::egui::{Button, Context, Layout, Response, TextEdit, Ui};
 
 use super::NeosPeepsApp;
 use crate::data::Page;
@@ -16,7 +13,9 @@ impl NeosPeepsApp {
 		}
 	}
 
-	pub fn top_bar(&mut self, ui: &mut Ui, frame: &epi::Frame) {
+	pub fn top_bar(
+		&mut self, ui: &mut Ui, ctx: &Context, frame: &mut eframe::Frame,
+	) {
 		let is_authenticated =
 			self.runtime.neos_api.as_ref().map_or(false, |a| a.is_authenticated());
 
@@ -49,7 +48,7 @@ impl NeosPeepsApp {
 					ui.separator();
 					if ui.add(Button::new("Log out")).clicked() {
 						ui.close_menu();
-						self.logout(frame);
+						self.logout(ctx);
 					}
 					ui.separator();
 				}
@@ -75,12 +74,11 @@ impl NeosPeepsApp {
 	pub fn search_bar(&mut self, ui: &mut Ui) -> Response {
 		let mut resp = None;
 		ui.horizontal(|ui| {
-			resp = Some(
-				ui.add(
+			resp =
+				Some(ui.add(
 					TextEdit::singleline(&mut self.stored.filter_search)
 						.hint_text("Filter"),
-				),
-			);
+				));
 			ui.checkbox(&mut self.stored.filter_friends_only, "Friends only?");
 		});
 		resp.unwrap()

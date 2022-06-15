@@ -14,8 +14,8 @@ build = "build.rs"
 [dependencies]
 neos = { version = "0.3.0", features = ["api_client"] }
 
-eframe = { version = "0.17", default-features = false, features = [
-	"egui_glow",
+eframe = { version = "0.18", default-features = false, features = [
+	#	"glow",
 	"persistence",
 ] }
 
@@ -27,7 +27,7 @@ font-kit = { version = "0.11" }
 chrono = "0.4"
 #arc-swap = "^1.5"
 crossbeam = "0.8.1"
-rayon = "1.5.1"
+rayon = "1.5.3"
 lazy_static = "1.4"
 
 sorted-vec = "0.8"
@@ -42,7 +42,7 @@ version = "2.6"
 features = ["https-rustls-probe", "json-using-serde"]
 
 [dependencies.image]
-version = "0.24.1"
+version = "0.24.2"
 default-features = false
 
 features = [

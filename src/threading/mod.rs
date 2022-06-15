@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use eframe::epi;
+use eframe::egui::Context;
 use rayon::ThreadPool;
 
 mod channels;
@@ -71,7 +71,7 @@ impl Manager {
 
 impl NeosPeepsApp {
 	/// Tries to receive messages from other threads
-	pub fn try_recv(&mut self, frame: &epi::Frame) {
+	pub fn try_recv(&mut self, ctx: &Context) {
 		let mut repaint = false;
 
 		self.try_recv_auth(&mut repaint);
@@ -91,7 +91,7 @@ impl NeosPeepsApp {
 		}
 
 		if repaint {
-			frame.request_repaint();
+			ctx.request_repaint();
 		}
 	}
 

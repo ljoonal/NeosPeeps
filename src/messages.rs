@@ -5,7 +5,7 @@ use std::{borrow::Borrow, cmp::Ordering, collections::HashMap, sync::Arc};
 use ahash::RandomState;
 use chrono::{DateTime, Utc};
 use crossbeam::channel::Sender;
-use eframe::epi;
+use eframe::egui::Context;
 use neos::api_client::AnyNeos;
 
 use crate::app::NeosPeepsApp;
@@ -37,7 +37,7 @@ impl PartialOrd for Message {
 
 impl NeosPeepsApp {
 	/// Refreshes messages in a background thread
-	pub fn refresh_messages(&mut self, frame: &epi::Frame) {
+	pub fn refresh_messages(&mut self, ctx: &Context) {
 		let neos_api_arc = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
 			None => return,
@@ -49,11 +49,11 @@ impl NeosPeepsApp {
 			Self::get_messages(neos_api_arc, messages_sender, 100, true, None, None);
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	pub fn fetch_user_chat(
-		&mut self, frame: &epi::Frame, user: neos::id::User,
+		&mut self, ctx: &Context, user: neos::id::User,
 		from_time: Option<DateTime<Utc>>,
 	) {
 		let neos_api_arc = match &self.runtime.neos_api {
@@ -74,7 +74,7 @@ impl NeosPeepsApp {
 			);
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	#[allow(clippy::needless_pass_by_value)]
@@ -96,7 +96,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	pub fn send_message(&mut self, frame: &epi::Frame, message: neos::Message) {
+	pub fn send_message(&mut self, ctx: &Context, message: neos::Message) {
 		let neos_api_arc = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
 			None => return,
@@ -121,7 +121,7 @@ impl NeosPeepsApp {
 			}
 		});
 
-		frame.request_repaint();
+		ctx.request_repaint();
 	}
 
 	fn split_by_user(messages: Vec<neos::Message>) -> AllMessages {

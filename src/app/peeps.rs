@@ -1,30 +1,27 @@
 //! The friends page of the app
 use std::time::SystemTime;
 
-use eframe::{
-	egui::{
-		Color32,
-		Context,
-		Grid,
-		Id,
-		Key,
-		Label,
-		Layout,
-		RichText,
-		ScrollArea,
-		Sense,
-		Ui,
-		Vec2,
-		Window,
-	},
-	epi,
+use eframe::egui::{
+	Color32,
+	Context,
+	Grid,
+	Id,
+	Key,
+	Label,
+	Layout,
+	RichText,
+	ScrollArea,
+	Sense,
+	Ui,
+	Vec2,
+	Window,
 };
 
 use super::{sessions::session_users_count, NeosPeepsApp};
 use crate::sessions::find_focused_session;
 
 impl NeosPeepsApp {
-	pub fn user_window(&mut self, ctx: &Context, frame: &epi::Frame) {
+	pub fn user_window(&mut self, ctx: &Context) {
 		let mut open = true;
 		if let Some((id, user, status)) = &*self.runtime.user_window.borrow() {
 			Window::new(id.as_ref())
@@ -39,7 +36,7 @@ impl NeosPeepsApp {
 					} else {
 						ui.vertical_centered(|ui| {
 							if ui.button("Refresh user").clicked() {
-								self.get_user(frame, id);
+								self.get_user(ctx, id);
 							}
 						});
 					}
@@ -57,13 +54,13 @@ impl NeosPeepsApp {
 					} else {
 						ui.vertical_centered(|ui| {
 							if ui.button("Refresh status").clicked() {
-								self.get_user_status(frame, id);
+								self.get_user_status(ctx, id);
 							}
 						});
 					}
 
 					if let Some(status) = status {
-						self.user_window_section_status(ctx, frame, ui, status);
+						self.user_window_section_status(ctx, ui, status);
 					}
 				});
 		}
@@ -173,8 +170,7 @@ impl NeosPeepsApp {
 	}
 
 	fn user_window_section_status(
-		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui,
-		status: &neos::UserStatus,
+		&self, ctx: &Context, ui: &mut Ui, status: &neos::UserStatus,
 	) {
 		let (r, g, b) = status.online_status.color();
 		ui.label(
@@ -228,7 +224,7 @@ impl NeosPeepsApp {
 		if !status.active_sessions.is_empty() {
 			ui.collapsing("Sessions", |ui| {
 				for session in &status.active_sessions {
-					self.session_row(ctx, frame, ui, ui.available_width(), session);
+					self.session_row(ctx, ui, ui.available_width(), session);
 					ui.end_row();
 				}
 			});
@@ -236,8 +232,7 @@ impl NeosPeepsApp {
 	}
 
 	fn friend_row(
-		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, width: f32,
-		friend: &neos::Friend,
+		&self, ctx: &Context, ui: &mut Ui, width: f32, friend: &neos::Friend,
 	) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			let pfp = self.get_pfp(ctx, &friend.profile);
@@ -248,7 +243,7 @@ impl NeosPeepsApp {
 			);
 
 			if response.interact(Sense::click()).clicked() {
-				self.open_user(frame, &friend.id, None, None);
+				self.open_user(ctx, &friend.id, None, None);
 			}
 		});
 		// The width for 2 each of the "columns" (last one not really) before
@@ -269,13 +264,13 @@ impl NeosPeepsApp {
 				let (r, g, b) = friend.status.online_status.color();
 				self.clickable_username(
 					ui,
-					frame,
+					ctx,
 					&friend.id,
 					&friend.username,
 					None,
 					None,
 				);
-				self.clickable_user_id(ui, frame, &friend.id, None, None);
+				self.clickable_user_id(ui, ctx, &friend.id, None, None);
 				ui.label(
 					RichText::new(&friend.status.online_status.to_string())
 						.color(Color32::from_rgb(r, g, b)),
@@ -344,9 +339,7 @@ impl NeosPeepsApp {
 		}
 	}
 
-	fn user_row(
-		&self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui, user: &neos::User,
-	) {
+	fn user_row(&self, ctx: &Context, ui: &mut Ui, user: &neos::User) {
 		ui.with_layout(Layout::left_to_right(), |ui| {
 			let pfp = self.get_pfp(ctx, &user.profile);
 
@@ -356,7 +349,7 @@ impl NeosPeepsApp {
 			);
 
 			if response.interact(Sense::click()).clicked() {
-				self.open_user(frame, &user.id, Some(user.clone()), None);
+				self.open_user(ctx, &user.id, Some(user.clone()), None);
 			}
 		});
 
@@ -370,7 +363,7 @@ impl NeosPeepsApp {
 					username_decorations(ui, user, self.user_to_friend(user));
 					self.clickable_username(
 						ui,
-						frame,
+						ctx,
 						&user.id,
 						&user.username,
 						Some(user),
@@ -378,30 +371,30 @@ impl NeosPeepsApp {
 					);
 				});
 
-				self.clickable_user_id(ui, frame, &user.id, Some(user), None);
+				self.clickable_user_id(ui, ctx, &user.id, Some(user), None);
 				user_tags(ui, user);
 				user_bans(ui, user);
 			});
 		});
 	}
 
-	pub fn peeps_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
+	pub fn peeps_page(&mut self, ctx: &Context, ui: &mut Ui) {
 		if self.runtime.open_chat.borrow().is_some() {
-			self.chat_page(ctx, frame, ui);
+			self.chat_page(ctx, ui);
 		} else if self.stored.filter_friends_only {
-			self.friends_page(ctx, frame, ui);
+			self.friends_page(ctx, ui);
 		} else {
-			self.users_page(ctx, frame, ui);
+			self.users_page(ctx, ui);
 		}
 	}
 
-	fn users_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
+	fn users_page(&mut self, ctx: &Context, ui: &mut Ui) {
 		use rayon::prelude::*;
 
 		let bar_response = self.search_bar(ui);
 
 		if bar_response.lost_focus() || ui.input().key_pressed(Key::Enter) {
-			self.search_users(frame);
+			self.search_users(ctx);
 		}
 
 		if self.threads.loading.users.get() {
@@ -446,7 +439,7 @@ impl NeosPeepsApp {
 						for row in row_range {
 							let user = users.get(row);
 							if let Some(user) = user {
-								self.user_row(ctx, frame, ui, user);
+								self.user_row(ctx, ui, user);
 							} else {
 								ui.label("An error occurred");
 							}
@@ -456,7 +449,7 @@ impl NeosPeepsApp {
 		);
 	}
 
-	fn friends_page(&mut self, ctx: &Context, frame: &epi::Frame, ui: &mut Ui) {
+	fn friends_page(&mut self, ctx: &Context, ui: &mut Ui) {
 		use rayon::prelude::*;
 
 		self.search_bar(ui);
@@ -508,7 +501,7 @@ impl NeosPeepsApp {
 						for row in row_range {
 							let friend = friends.get(row);
 							if let Some(friend) = friend {
-								self.friend_row(ctx, frame, ui, width, friend);
+								self.friend_row(ctx, ui, width, friend);
 							} else {
 								ui.label("An error occurred");
 							}
@@ -520,9 +513,8 @@ impl NeosPeepsApp {
 	}
 
 	pub fn clickable_username(
-		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
-		username: &str, user: Option<&neos::User>,
-		user_status: Option<&neos::UserStatus>,
+		&self, ui: &mut Ui, ctx: &Context, id: &neos::id::User, username: &str,
+		user: Option<&neos::User>, user_status: Option<&neos::UserStatus>,
 	) {
 		if ui
 			.add(
@@ -533,7 +525,7 @@ impl NeosPeepsApp {
 			.clicked()
 		{
 			self.open_user(
-				frame,
+				ctx,
 				id,
 				user.map(Clone::clone),
 				user_status.map(Clone::clone),
@@ -542,7 +534,7 @@ impl NeosPeepsApp {
 	}
 
 	pub fn clickable_user_id(
-		&self, ui: &mut Ui, frame: &epi::Frame, id: &neos::id::User,
+		&self, ui: &mut Ui, ctx: &Context, id: &neos::id::User,
 		user: Option<&neos::User>, user_status: Option<&neos::UserStatus>,
 	) {
 		if ui
@@ -554,7 +546,7 @@ impl NeosPeepsApp {
 			.clicked()
 		{
 			self.open_user(
-				frame,
+				ctx,
 				id,
 				user.map(Clone::clone),
 				user_status.map(Clone::clone),
