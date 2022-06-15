@@ -77,18 +77,22 @@ This isn't legal advice of course, just my interpretation of the license.
 
 If you encounter bugs or have any other feedback, you can find me `ljoonal#2847` in the NeosVR discord as well as the Neos Modding discord server.
 
-### Building
+### Requirements
 
-Requirements:
+Basic requirements:
 
 - [Git](https://git-scm.com)
 - [Rust](https://www.rust-lang.org/)
 
-#### Ubuntu (22.04 LTS) requirements
+#### Ubuntu (22.04 LTS) specificities
+
+For Ubuntu (22.04 LTS) you will need the following requirements:
 
 - libfontconfig1-dev
 - pkg-config
 - libxcb-composite0-dev
+
+### Building
 
 Start off by cloning the project with git.
 
