@@ -121,22 +121,12 @@ impl NeosPeepsApp {
 
 						ui.horizontal_wrapped(|ui| {
 							ui.label("Started at: ");
-							ui.label(
-								session
-									.session_begin_time
-									.format(&self.stored.datetime_format)
-									.to_string(),
-							);
+							ui.label(self.runtime.format_time(&session.session_begin_time));
 						});
 
 						ui.horizontal_wrapped(|ui| {
 							ui.label("Last update at: ");
-							ui.label(
-								session
-									.last_update_time
-									.format(&self.stored.datetime_format)
-									.to_string(),
-							);
+							ui.label(self.runtime.format_time(&session.last_update_time));
 						});
 					}
 				});

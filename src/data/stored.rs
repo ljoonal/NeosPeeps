@@ -1,6 +1,13 @@
 use std::time::{Duration, SystemTime};
 
 use serde::{Deserialize, Serialize};
+use time::format_description::FormatItem;
+use time::macros::format_description;
+
+pub const DEFAULT_TIME_FORMAT_STR: &str =
+	"[hour]:[minute]:[second] [day].[month].[year]";
+pub const DEFAULT_TIME_FORMAT: &[FormatItem<'static>] =
+	format_description!("[hour]:[minute]:[second] [day].[month].[year]");
 
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
@@ -15,8 +22,8 @@ pub struct Stored {
 	pub col_min_width: f32,
 	pub filter_friends_only: bool,
 	pub filter_search: String,
-	/// For formats, see https://docs.rs/chrono/latest/chrono/format/strftime/index.html
-	pub datetime_format: String,
+	/// For formats, see https://time-rs.github.io/book/api/format-description.html
+	pub time_format: String,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq)]
@@ -46,7 +53,7 @@ impl Default for Stored {
 			col_min_width: 200f32,
 			filter_friends_only: true,
 			filter_search: String::new(),
-			datetime_format: String::from("%X %x"),
+			time_format: DEFAULT_TIME_FORMAT_STR.to_owned(),
 		}
 	}
 }

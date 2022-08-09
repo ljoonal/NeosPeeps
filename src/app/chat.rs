@@ -17,9 +17,7 @@ impl NeosPeepsApp {
 				width - self.stored.row_height - ui.style().spacing.item_spacing.x,
 			));
 
-			ui.label(
-				message.send_time.format(&self.stored.datetime_format).to_string(),
-			);
+			ui.label(self.runtime.format_time(&message.send_time));
 			if message.sender_id == friend.id {
 				ui.label(&friend.username);
 			} else {

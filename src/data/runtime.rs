@@ -12,8 +12,9 @@ use neos::{
 	api_client::{AnyNeos, NeosUnauthenticated},
 	AssetUrl,
 };
+use time::{format_description::FormatItem, OffsetDateTime};
 
-use super::{SessionWindow, TexturesMap, UserWindow};
+use super::{SessionWindow, TexturesMap, UserWindow, DEFAULT_TIME_FORMAT};
 use crate::{
 	app::NeosPeepsApp,
 	messages::AllMessages,
@@ -39,6 +40,15 @@ pub struct RuntimeOnly {
 	pub session_window: RefCell<Option<SessionWindow>>,
 	pub open_chat: RefCell<Option<(neos::id::User, String, SystemTime)>>,
 	pub available_update: Option<GiteaReleasesResponse>,
+	pub time_format: Vec<FormatItem<'static>>,
+}
+
+impl RuntimeOnly {
+	pub fn format_time(&self, time: &OffsetDateTime) -> String {
+		time
+			.format(&self.time_format)
+			.unwrap_or_else(|_| "Time format err".to_string())
+	}
 }
 
 impl Default for RuntimeOnly {
@@ -62,6 +72,7 @@ impl Default for RuntimeOnly {
 			session_window: RefCell::default(),
 			open_chat: RefCell::default(),
 			available_update: None,
+			time_format: DEFAULT_TIME_FORMAT.to_owned(),
 		}
 	}
 }

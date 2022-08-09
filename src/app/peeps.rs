@@ -104,7 +104,7 @@ impl NeosPeepsApp {
 			if let Some(msg_time) = &friend.latest_message_time {
 				ui.horizontal_wrapped(|ui| {
 					ui.label("Last message time: ");
-					ui.label(msg_time.format(&self.stored.datetime_format).to_string());
+					ui.label(self.runtime.format_time(msg_time));
 				});
 			}
 		}
@@ -181,9 +181,7 @@ impl NeosPeepsApp {
 		if let Some(status_change) = status.last_status_change_time {
 			ui.horizontal_wrapped(|ui| {
 				ui.label("Status last changed on:");
-				ui.label(
-					status_change.format(&self.stored.datetime_format).to_string(),
-				);
+				ui.label(self.runtime.format_time(&status_change));
 			});
 		}
 
@@ -279,8 +277,7 @@ impl NeosPeepsApp {
 				if self.stored.row_height >= 130f32 {
 					let response = if let Some(time) = friend.latest_message_time {
 						ui.add(
-							Label::new(time.format(&self.stored.datetime_format).to_string())
-								.sense(Sense::click()),
+							Label::new(self.runtime.format_time(&time)).sense(Sense::click()),
 						)
 					} else {
 						ui.add(Label::new("No messages").sense(Sense::click()))

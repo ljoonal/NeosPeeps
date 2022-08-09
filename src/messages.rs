@@ -3,10 +3,10 @@
 use std::{borrow::Borrow, cmp::Ordering, collections::HashMap, sync::Arc};
 
 use ahash::RandomState;
-use chrono::{DateTime, Utc};
 use crossbeam::channel::Sender;
 use eframe::egui::Context;
 use neos::api_client::AnyNeos;
+use time::OffsetDateTime;
 
 use crate::app::NeosPeepsApp;
 
@@ -54,7 +54,7 @@ impl NeosPeepsApp {
 
 	pub fn fetch_user_chat(
 		&mut self, ctx: &Context, user: neos::id::User,
-		from_time: Option<DateTime<Utc>>,
+		from_time: Option<OffsetDateTime>,
 	) {
 		let neos_api_arc = match &self.runtime.neos_api {
 			Some(api) => api.clone(),
@@ -81,7 +81,7 @@ impl NeosPeepsApp {
 	fn get_messages(
 		neos_api_arc: Arc<AnyNeos>,
 		messages_sender: Sender<Result<AllMessages, String>>, max_amount: u16,
-		unread_only: bool, from_time: impl Borrow<Option<DateTime<Utc>>>,
+		unread_only: bool, from_time: impl Borrow<Option<OffsetDateTime>>,
 		user: impl Borrow<Option<neos::id::User>>,
 	) {
 		if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
