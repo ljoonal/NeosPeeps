@@ -74,11 +74,12 @@ impl NeosPeepsApp {
 	pub fn search_bar(&mut self, ui: &mut Ui) -> Response {
 		let mut resp = None;
 		ui.horizontal(|ui| {
-			resp =
-				Some(ui.add(
+			resp = Some(
+				ui.add(
 					TextEdit::singleline(&mut self.stored.filter_search)
 						.hint_text("Filter"),
-				));
+				),
+			);
 			ui.checkbox(&mut self.stored.filter_friends_only, "Friends only?");
 		});
 		resp.unwrap()
