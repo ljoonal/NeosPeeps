@@ -7,5 +7,5 @@ Comment=An app that lists NeosVR peeps and sessions
 Exec=neos_peeps
 Terminal=false
 # Replace with full path to the logo.png file.
-Icon=neos_peeps
+Icon=xyz.ljoonal.neospeeps
 Categories=Utility;Game;Monitor;

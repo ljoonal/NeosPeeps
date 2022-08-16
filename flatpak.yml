@@ -1,0 +1,58 @@
+app-id: xyz.ljoonal.neospeeps
+runtime: org.freedesktop.Platform
+runtime-version: '21.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+  - org.freedesktop.Sdk.Extension.llvm13
+command: neos_peeps
+finish-args:
+  # Needs to talk to the network:
+  - --share=network
+  # X11 + XShm access
+  - --share=ipc
+  - --socket=x11
+  - --device=dri
+  # Wayland access
+  - --socket=wayland
+build-options:
+  build-args:
+    - --share=network
+  append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm13/bin
+  env: 
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: clang
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS: -C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold
+    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: clang,
+    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS: -C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold
+modules:
+  - name: neos_peeps
+    buildsystem: simple
+    build-commands:
+      - cargo build --release
+      - install -D target/release/neos_peeps /app/bin/neos_peeps
+      - cp *.md /app/
+      - mkdir -p /app/share/metainfo/
+      - cp static/appdata.xml /app/share/metainfo/xyz.ljoonal.neospeeps.appdata.xml
+      - mkdir -p /app/share/icons/hicolor/512x512/apps/
+      - cp static/logo-512.png /app/share/icons/hicolor/512x512/apps/xyz.ljoonal.neospeeps.png
+      - mkdir -p /app/share/applications/
+      - cp static/neos_peeps.desktop /app/share/applications/xyz.ljoonal.neospeeps.desktop
+    sources:
+      - type: dir
+        path: src
+        dest: src
+      - type: dir
+        path: static
+        dest: static
+      - type: file
+        path: Cargo.toml
+      - type: file
+        path: build.rs
+      - type: file
+        path: Cargo.lock
+      - type: file
+        path: LICENSE.md
+      - type: file
+        path: README.md
+      - type: file
+        path: PrivacyPolicy.md
