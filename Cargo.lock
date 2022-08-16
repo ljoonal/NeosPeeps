@@ -1326,7 +1326,7 @@ dependencies = [
 
 [[package]]
 name = "neos_peeps"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "ahash 0.8.0",
  "crossbeam",
