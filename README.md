@@ -1,6 +1,6 @@
 # Neos Peeps
 
-<img align="right" width="128" height="128" src="./static/logo.png"/>
+<img align="right" width="128" height="128" src="./static/logo-0128.png"/>
 
 NeosPeeps is tool that allows for listing your [NeosVR](https://steamcommunity.com/app/740250) friends quickly, without having to actually open the whole game. It also has a bunch of other features that you can find below, but that's how the project got it's name.
 
