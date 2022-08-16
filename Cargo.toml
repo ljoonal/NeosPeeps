@@ -33,7 +33,7 @@ lazy_static = "1.4"
 sorted-vec = "0.8"
 
 # ~10x faster than default, we don't need cryptographic guarantees for hashmaps
-ahash = "0.7.6"
+ahash = "0.8.0"
 
 webp = "0.2.2"
 
