@@ -1,6 +1,5 @@
 [Desktop Entry]
 Type=Application
-Version=1.5
 Name=Neos Peeps
 Comment=An app that lists NeosVR peeps and sessions
 # Replace with full path to the target/release/neos_peeps file if not in path.
