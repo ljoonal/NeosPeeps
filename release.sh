@@ -25,7 +25,7 @@ echo "		</ul>"
 echo "	</description>"
 echo "</release>"
 echo ""
-echo "Then run 'git add . && git commit -m \"Release v$VERSION\"'"
+echo "Then run 'git add . && git commit -m \"Release v$VERSION\"', after which I'll create the tag for you"
 read
 git tag "v$VERSION"
 
@@ -55,6 +55,8 @@ CHANGES_MARKDOWN="$CHANGES_MARKDOWN
 
 [Full changelog](https://git.ljoonal.xyz/ljoonal/NeosPeeps/compare/$LAST_TAG...v$VERSION)"
 
+git push --tags && git push
+
 # Create a gitea release draft
 tea release create --draft --target main \
   --tag "v$VERSION" --title "v$VERSION" --note "$CHANGES_MARKDOWN" \
@@ -67,3 +69,7 @@ tea release create --draft --target main \
 # Upload to itch.io
 butler push target/release/neos_peeps ljoonal/neospeeps:linux --userversion "$VERSION"
 butler push target/x86_64-pc-windows-gnu/release/win-neos_peeps.exe ljoonal/neospeeps:win --userversion "$VERSION"
+
+echo "Remember to publish gitea release & update flathub"
+echo "https://git.ljoonal.xyz/ljoonal/NeosPeeps/releases/edit/v$VERSION"
+echo "https://github.com/flathub/xyz.ljoonal.neospeeps"
