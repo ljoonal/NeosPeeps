@@ -68,7 +68,14 @@
 	</provides>
 
 	<releases>
-		<release version="0.4.3" date="2022.08.16" timestamp="1660680880">
+		<release version="0.4.4" date="2022-08-18" timestamp="1660773145">
+			<url>https://neos.ljoonal.xyz/peeps/releases/tag/v0.4.4</url>
+			<description>
+				<p>Bumped deps and ensuring the new flatpak release script works</p>
+			</description>
+		</release>
+
+		<release version="0.4.3" date="2022-08-16" timestamp="1660680880">
 			<url>https://neos.ljoonal.xyz/peeps/releases/tag/v0.4.3</url>
 			<description>
 				<p>Updates a few deps and hopefully adds flatpak support</p>
