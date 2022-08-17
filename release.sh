@@ -9,13 +9,13 @@ TODAY=$(date --iso-8601)
 UNIX_TIME=$(date +%s)
 LAST_TAG=$(git describe --tags --abbrev=0 @^)
 
-echo "Last tag was $LAST_TAG, bump ./Cargo.toml version"
+echo "Last tag was $LAST_TAG, bump ./Cargo.toml version & run 'cargo update'"
 read
 # Get current version
 VERSION=$(sed -n -r 's/version = "(.*)"/\1/p' Cargo.toml | head -n 1)
-echo "New release tag will be v$VERSION"
-echo "Write a changelog ./static/xyz.ljoonal.neospeeps.metainfo.xml changelog"
 CHANGES=$(git log --pretty=format:%s "$LAST_TAG..HEAD")
+echo "Modify & add to ./static/xyz.ljoonal.neospeeps.metainfo.xml changelog"
+echo ""
 echo "<release version=\"$VERSION\" date=\"$TODAY\" timestamp=\"$UNIX_TIME\">"
 echo "	<url>https://neos.ljoonal.xyz/peeps/releases/tag/v$VERSION</url>"
 echo "	<description>"
@@ -25,10 +25,9 @@ echo "		</ul>"
 echo "	</description>"
 echo "</release>"
 echo ""
-echo "Modify & add to ./static/xyz.ljoonal.neospeeps.metainfo.xml"
-echo "git add . && git commit -m \"Release v$VERSION\""
+echo "Then run 'git add . && git commit -m \"Release v$VERSION\"'"
 read
-#git tag "$VERSION"
+git tag "v$VERSION"
 
 # Build for linux
 cargo +stable build --release
@@ -52,15 +51,13 @@ rm "target/x86_64-pc-windows-gnu/release/win-neos_peeps.exe" \
 	&& cd ../../..
 
 CHANGES_MARKDOWN=$(echo "$CHANGES" | sed "s/\(.*\)/- \\1/g")
-CHANGES_MARKDOWN="$CHANGES_MARKDOWN\n\n[Full changelog](https://git.ljoonal.xyz/ljoonal/NeosPeeps/compare/$LAST_TAG...v$VERSION)"
+CHANGES_MARKDOWN="$CHANGES_MARKDOWN
 
-echo "$CHANGES_MARKDOWN"
-
-exit 0
+[Full changelog](https://git.ljoonal.xyz/ljoonal/NeosPeeps/compare/$LAST_TAG...v$VERSION)"
 
 # Create a gitea release draft
 tea release create --draft --target main \
-  --tag "v$VERSION" --title "v$VERSION" \
+  --tag "v$VERSION" --title "v$VERSION" --note "$CHANGES_MARKDOWN" \
   -a target/release/neos_peeps \
   -a target/release/neos_peeps.sha256\
   -a target/x86_64-pc-windows-gnu/release/win-neos_peeps.exe \
