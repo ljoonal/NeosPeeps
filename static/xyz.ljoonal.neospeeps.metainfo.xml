@@ -68,6 +68,12 @@
 	</provides>
 
 	<releases>
+		<release version="0.4.5" date="2022-09-18" timestamp="1663529608">
+			<url>https://neos.ljoonal.xyz/peeps/releases/tag/v0.4.5</url>
+			<description>
+				<p>Updated dependencies, including egui</p>
+			</description>
+		</release>
 		<release version="0.4.4" date="2022-08-18" timestamp="1660773145">
 			<url>https://neos.ljoonal.xyz/peeps/releases/tag/v0.4.4</url>
 			<description>
