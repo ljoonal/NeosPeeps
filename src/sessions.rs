@@ -68,9 +68,11 @@ pub fn find_focused_session<'a>(
 		session
 			.users
 			.par_iter()
-			.find_any(|user| match &user.id {
-				Some(user_id) => user_id == id && user.is_present,
-				None => false,
+			.find_any(|user| {
+				user
+					.id
+					.as_ref()
+					.map_or(false, |user_id| user_id == id && user.is_present)
 			})
 			.is_some()
 	})

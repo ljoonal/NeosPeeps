@@ -332,10 +332,10 @@ impl NeosPeepsApp {
 			if ui
 				.add(label)
 				.on_hover_text(
-					match &user.id {
-						Some(id) => id.as_ref().to_owned() + " is in ",
-						None => "User is in ".to_owned(),
-					} + user.output_device.as_ref()
+					user.id.as_ref().map_or_else(
+						|| "User is in ".to_owned(),
+						|id| id.as_ref().to_owned() + " is in ",
+					) + user.output_device.as_ref()
 						+ " mode",
 				)
 				.clicked()

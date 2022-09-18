@@ -84,12 +84,11 @@ impl NeosPeepsApp {
 		}
 
 		self.check_if_should_refresh_curr(ctx);
-		let friend = match self.get_curr_chat_friend() {
-			Some(friend) => friend,
-			None => {
-				ui.heading("Couldn't get chat");
-				return;
-			}
+		let friend = if let Some(friend) = self.get_curr_chat_friend() {
+			friend
+		} else {
+			ui.heading("Couldn't get chat");
+			return;
 		};
 
 		let mut send_message = false;
