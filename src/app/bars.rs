@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use eframe::egui::{Button, Context, Layout, Response, TextEdit, Ui};
+use eframe::egui::{Align, Button, Context, Layout, Response, TextEdit, Ui};
 
 use super::NeosPeepsApp;
 use crate::data::Page;
@@ -60,9 +60,9 @@ impl NeosPeepsApp {
 
 			ui.separator();
 
-			ui.with_layout(Layout::right_to_left(), |ui| {
+			ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
 				if ui.button("Quit").clicked() {
-					frame.quit();
+					frame.close();
 				}
 				if self.threads.loading.any() {
 					ui.label("...");

@@ -1,6 +1,6 @@
 use std::{rc::Rc, time::SystemTime};
 
-use eframe::egui::{self, Context};
+use eframe::egui::{self, Context, TextureFilter};
 
 use crate::{
 	data::{Page, Stored},
@@ -57,9 +57,11 @@ impl eframe::App for NeosPeepsApp {
 			let user_img =
 				image::load_from_memory(include_bytes!("../../static/user.png"))
 					.expect("Failed to load image");
-			self.runtime.default_profile_picture = Some(Rc::new(
-				ctx.load_texture("default-pfp", from_dynamic_image(&user_img)),
-			));
+			self.runtime.default_profile_picture = Some(Rc::new(ctx.load_texture(
+				"default-pfp",
+				from_dynamic_image(&user_img),
+				TextureFilter::Linear,
+			)));
 		}
 
 		if is_authenticated

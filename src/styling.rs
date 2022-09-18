@@ -61,10 +61,6 @@ fn setup_style(_ctx: &Context, style: &mut Style) {
 }
 
 fn setup_fonts(ctx: &Context, style: &mut Style) {
-	use font_kit::family_name::FamilyName;
-	use font_kit::properties::{Properties, Style, Weight};
-	use font_kit::source::SystemSource;
-
 	const JP_FONT_ERR: &str = "This might cause some characters, like japanese ones, to not render properly.";
 	const JP_FONT: &str = "Noto Sans CJK JP font";
 
@@ -104,34 +100,40 @@ fn setup_fonts(ctx: &Context, style: &mut Style) {
 		.unwrap()
 		.push("raleway".to_owned());
 
-	if let Ok(font_handle) = SystemSource::new().select_best_match(
-		&[FamilyName::Title("Noto Sans CJK JP".to_string())],
-		Properties::new().style(Style::Normal).weight(Weight::LIGHT),
-	) {
-		if let Ok(font) = font_handle.load() {
-			if let Some(font_data) = font.copy_font_data() {
-				fonts.font_data.insert(
-					"noto-cjk-jp".to_owned(),
-					FontData::from_owned((*font_data).clone()),
-				);
-				fonts
-					.families
-					.get_mut(&FontFamily::Proportional)
-					.unwrap()
-					.push("noto-cjk-jp".to_owned());
-				fonts
-					.families
-					.get_mut(&FontFamily::Monospace)
-					.unwrap()
-					.push("noto-cjk-jp".to_owned());
+	#[cfg(feature = "font-kit")]
+	{
+		use font_kit::family_name::FamilyName;
+		use font_kit::properties::{Properties, Style, Weight};
+		use font_kit::source::SystemSource;
+		if let Ok(font_handle) = SystemSource::new().select_best_match(
+			&[FamilyName::Title("Noto Sans CJK JP".to_string())],
+			Properties::new().style(Style::Normal).weight(Weight::LIGHT),
+		) {
+			if let Ok(font) = font_handle.load() {
+				if let Some(font_data) = font.copy_font_data() {
+					fonts.font_data.insert(
+						"noto-cjk-jp".to_owned(),
+						FontData::from_owned((*font_data).clone()),
+					);
+					fonts
+						.families
+						.get_mut(&FontFamily::Proportional)
+						.unwrap()
+						.push("noto-cjk-jp".to_owned());
+					fonts
+						.families
+						.get_mut(&FontFamily::Monospace)
+						.unwrap()
+						.push("noto-cjk-jp".to_owned());
+				} else {
+					eprintln!("Failed to load the data of {}. {}", JP_FONT, JP_FONT_ERR);
+				}
 			} else {
-				eprintln!("Failed to load the data of {}. {}", JP_FONT, JP_FONT_ERR);
+				eprintln!("Failed to load {}. {}", JP_FONT, JP_FONT_ERR);
 			}
 		} else {
-			eprintln!("Failed to load {}. {}", JP_FONT, JP_FONT_ERR);
+			eprintln!("Couldn't find {}. {}", JP_FONT, JP_FONT_ERR);
 		}
-	} else {
-		eprintln!("Couldn't find {}. {}", JP_FONT, JP_FONT_ERR);
 	}
 
 	ctx.set_fonts(fonts);

@@ -25,7 +25,7 @@ impl NeosPeepsApp {
 			}
 		});
 
-		ui.with_layout(Layout::left_to_right(), |ui| {
+		ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
 			ui.set_width(ui.available_width());
 
 			ui.separator();
@@ -104,7 +104,7 @@ impl NeosPeepsApp {
 			ui.set_height(ui.available_height());
 			ui.allocate_ui_with_layout(
 				Vec2::new(ui.available_width(), 36f32),
-				Layout::right_to_left(),
+				Layout::right_to_left(Align::Center),
 				|ui| {
 					if let Some((_, typed_msg, _)) =
 						&mut *self.runtime.open_chat.borrow_mut()
@@ -130,7 +130,7 @@ impl NeosPeepsApp {
 				if let Some(messages) = self.runtime.messages.get(&friend.id) {
 					ScrollArea::vertical()
 						.max_height(ui.available_height())
-						.stick_to_bottom()
+						.stick_to_bottom(true)
 						.show_rows(
 							ui,
 							self.stored.row_height,

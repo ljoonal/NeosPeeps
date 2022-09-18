@@ -2,6 +2,7 @@
 use std::time::SystemTime;
 
 use eframe::egui::{
+	Align,
 	Color32,
 	Context,
 	Grid,
@@ -232,7 +233,7 @@ impl NeosPeepsApp {
 	fn friend_row(
 		&self, ctx: &Context, ui: &mut Ui, width: f32, friend: &neos::Friend,
 	) {
-		ui.with_layout(Layout::left_to_right(), |ui| {
+		ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
 			let pfp = self.get_pfp(ctx, &friend.profile);
 
 			let response = ui.image(
@@ -254,7 +255,7 @@ impl NeosPeepsApp {
 				/ 2_f32,
 		);
 
-		ui.with_layout(Layout::left_to_right(), |ui| {
+		ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
 			ui.set_width(width_for_cols);
 
 			ui.separator();
@@ -291,7 +292,7 @@ impl NeosPeepsApp {
 			});
 		});
 
-		ui.with_layout(Layout::left_to_right(), |ui| {
+		ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
 			ui.set_width(ui.available_width());
 
 			ui.separator();
@@ -337,7 +338,7 @@ impl NeosPeepsApp {
 	}
 
 	fn user_row(&self, ctx: &Context, ui: &mut Ui, user: &neos::User) {
-		ui.with_layout(Layout::left_to_right(), |ui| {
+		ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
 			let pfp = self.get_pfp(ctx, &user.profile);
 
 			let response = ui.image(
@@ -351,7 +352,7 @@ impl NeosPeepsApp {
 		});
 
 		// User details
-		ui.with_layout(Layout::left_to_right(), |ui| {
+		ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
 			ui.set_width(ui.available_width());
 
 			ui.separator();
@@ -555,7 +556,7 @@ impl NeosPeepsApp {
 		&self, ctx: &Context, ui: &mut Ui, session: &neos::SessionInfo,
 	) {
 		if let Some(thumbnail) = &session.thumbnail {
-			ui.with_layout(Layout::right_to_left(), |ui| {
+			ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
 				ui.set_width(ui.available_width());
 				let session_pics = self.load_texture(thumbnail, ctx);
 				if let Some(session_pic) = session_pics {

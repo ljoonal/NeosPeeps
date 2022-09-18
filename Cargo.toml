@@ -11,20 +11,25 @@ categories = ["games"]
 publish = false
 build = "build.rs"
 
+[features]
+default = ["font-kit"]
+font-kit = ["dep:font-kit"]
+
 [dependencies]
 neos = { version = "0.4.0-alpha.0", features = ["api_client"] }
 
-eframe = { version = "0.18", default-features = false, features = [
-	#	"glow",
+eframe = { version = "0.19", default-features = false, features = [
+	"glow",
+	#"wgpu",
 	"persistence",
 ] }
 
 serde = "1"
 serde_json = "1"
 
-font-kit = { version = "0.11" }
+font-kit = { version = "0.10.1", optional = true }
 
-time = { version = "0.3.13", features = ["serde-well-known", "macros"] }
+time = { version = "0.3.14", features = ["serde-well-known", "macros"] }
 #arc-swap = "^1.5"
 crossbeam = "0.8.2"
 rayon = "1.5.3"
