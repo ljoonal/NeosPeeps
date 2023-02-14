@@ -1,6 +1,6 @@
 use std::{rc::Rc, time::SystemTime};
 
-use eframe::egui::{self, Context, TextureFilter};
+use eframe::egui::{self, Context, TextureOptions};
 
 use crate::{
 	data::{Page, Stored},
@@ -60,7 +60,7 @@ impl eframe::App for NeosPeepsApp {
 			self.runtime.default_profile_picture = Some(Rc::new(ctx.load_texture(
 				"default-pfp",
 				from_dynamic_image(&user_img),
-				TextureFilter::Linear,
+				TextureOptions::LINEAR,
 			)));
 		}
 

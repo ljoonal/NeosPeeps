@@ -7,7 +7,7 @@ use std::{
 };
 
 use ahash::RandomState;
-use eframe::egui::{Context, TextureFilter, TextureHandle};
+use eframe::egui::{Context, TextureHandle, TextureOptions};
 use neos::{
 	api_client::{AnyNeos, NeosUnauthenticated},
 	AssetUrl,
@@ -112,7 +112,7 @@ impl NeosPeepsApp {
 				Ok(image) => {
 					let image = crate::image::from_dynamic_image(&image);
 					let image =
-						ctx.load_texture(asset_url.id(), image, TextureFilter::Linear);
+						ctx.load_texture(asset_url.id(), image, TextureOptions::LINEAR);
 					image_sender.send((asset_url.id().to_owned(), Some(image))).unwrap();
 				}
 				Err(err) => {

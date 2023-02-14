@@ -116,7 +116,7 @@ impl NeosPeepsApp {
 							TextEdit::singleline(typed_msg)
 								.desired_width(ui.available_width()),
 						);
-						if response.lost_focus() && ui.input().key_pressed(Key::Enter) {
+						if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
 							send_message = true;
 						}
 					}

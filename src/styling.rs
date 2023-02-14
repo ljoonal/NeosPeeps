@@ -34,15 +34,19 @@ fn setup_style(_ctx: &Context, style: &mut Style) {
 	style.visuals.extreme_bg_color = Color32::BLACK;
 	style.visuals.code_bg_color = Color32::BLACK;
 
+	style.visuals.widgets.open.weak_bg_fill = bg_faint;
 	style.visuals.widgets.open.bg_fill = bg_faint;
 
+	style.visuals.widgets.active.weak_bg_fill = Color32::BLACK;
 	style.visuals.widgets.active.bg_fill = Color32::BLACK;
 	style.visuals.widgets.active.fg_stroke.color = fg;
 
+	style.visuals.widgets.hovered.weak_bg_fill = Color32::BLACK;
 	style.visuals.widgets.hovered.bg_fill = Color32::BLACK;
 	style.visuals.widgets.hovered.bg_stroke.color = fg;
 	style.visuals.widgets.hovered.fg_stroke.color = fg;
 
+	style.visuals.widgets.inactive.weak_bg_fill = Color32::BLACK;
 	// Because scrollbar also uses this need to have it be a bit different from
 	// extreme_bg_color which is the BG of it.
 	style.visuals.widgets.inactive.bg_fill = Color32::from_rgb(10, 10, 14);
@@ -51,7 +55,11 @@ fn setup_style(_ctx: &Context, style: &mut Style) {
 	style.visuals.widgets.inactive.fg_stroke.color = fg;
 
 	style.visuals.widgets.noninteractive.fg_stroke.color = fg;
+
+	style.visuals.panel_fill = bg;
+	style.visuals.window_fill = bg;
 	style.visuals.widgets.noninteractive.bg_fill = bg;
+	style.visuals.widgets.noninteractive.weak_bg_fill = bg;
 
 	style.visuals.selection.bg_fill = Color32::BLACK;
 	style.visuals.selection.stroke.color = fg;

@@ -391,7 +391,7 @@ impl NeosPeepsApp {
 
 		let bar_response = self.search_bar(ui);
 
-		if bar_response.lost_focus() || ui.input().key_pressed(Key::Enter) {
+		if bar_response.lost_focus() || ui.input(|i| i.key_pressed(Key::Enter)) {
 			self.search_users(ctx);
 		}
 
