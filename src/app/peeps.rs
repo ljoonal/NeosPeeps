@@ -175,7 +175,7 @@ impl NeosPeepsApp {
 	) {
 		let (r, g, b) = status.online_status.color();
 		ui.label(
-			RichText::new(&status.online_status.to_string())
+			RichText::new(status.online_status.to_string())
 				.color(Color32::from_rgb(r, g, b)),
 		);
 
@@ -248,11 +248,13 @@ impl NeosPeepsApp {
 		// The width for 2 each of the "columns" (last one not really) before
 		// the thumbnail.
 		let width_for_cols = self.stored.col_min_width.max(
-			(width
-				- self.stored.row_height
-				- (self.stored.col_min_width * 2_f32)
-				- (ui.style().spacing.item_spacing.x * 3_f32))
-				/ 2_f32,
+			ui.style().spacing.item_spacing.x.mul_add(
+				-3_f32,
+				self
+					.stored
+					.col_min_width
+					.mul_add(-2_f32, width - self.stored.row_height),
+			) / 2_f32,
 		);
 
 		ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
@@ -271,7 +273,7 @@ impl NeosPeepsApp {
 				);
 				self.clickable_user_id(ui, ctx, &friend.id, None, None);
 				ui.label(
-					RichText::new(&friend.status.online_status.to_string())
+					RichText::new(friend.status.online_status.to_string())
 						.color(Color32::from_rgb(r, g, b)),
 				);
 
@@ -604,7 +606,7 @@ fn username_decorations(
 fn user_tags(ui: &mut Ui, user: &neos::User) {
 	ui.label(
 		RichText::new(
-			&user
+			user
 				.tags
 				.iter()
 				.filter(|tag| !tag.starts_with("custom badge"))

@@ -134,13 +134,13 @@ fn setup_fonts(ctx: &Context, style: &mut Style) {
 						.unwrap()
 						.push("noto-cjk-jp".to_owned());
 				} else {
-					eprintln!("Failed to load the data of {}. {}", JP_FONT, JP_FONT_ERR);
+					eprintln!("Failed to load the data of {JP_FONT}. {JP_FONT_ERR}");
 				}
 			} else {
-				eprintln!("Failed to load {}. {}", JP_FONT, JP_FONT_ERR);
+				eprintln!("Failed to load {JP_FONT}. {JP_FONT_ERR}");
 			}
 		} else {
-			eprintln!("Couldn't find {}. {}", JP_FONT, JP_FONT_ERR);
+			eprintln!("Couldn't find {JP_FONT}. {JP_FONT_ERR}");
 		}
 	}
 

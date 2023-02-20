@@ -132,7 +132,7 @@ impl NeosPeepsApp {
 		self.threads.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				if let Err(err) = neos_api.add_friend(id) {
-					eprintln!("Failed to send friend request: {:?}", err);
+					eprintln!("Failed to send friend request: {err:?}");
 				}
 				Self::fetch_friends(neos_api_arc, friends_sender);
 			}
@@ -150,7 +150,7 @@ impl NeosPeepsApp {
 		self.threads.spawn_data_op(move || {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				if let Err(err) = neos_api.remove_friend(id) {
-					eprintln!("Failed to send friend removal request: {:?}", err);
+					eprintln!("Failed to send friend removal request: {err:?}");
 				}
 				Self::fetch_friends(neos_api_arc, friends_sender);
 			}
@@ -198,7 +198,7 @@ impl NeosPeepsApp {
 			Ok(user_window) => {
 				**user_window = Some((id.clone(), user, user_status));
 			}
-			Err(err) => eprintln!("Failed to open user: {:?}", err),
+			Err(err) => eprintln!("Failed to open user: {err:?}"),
 		};
 
 		if missing_user {
@@ -212,14 +212,10 @@ impl NeosPeepsApp {
 	pub fn get_pfp(
 		&self, ctx: &Context, profile: &Option<neos::UserProfile>,
 	) -> Rc<TextureHandle> {
-		let pfp_url = match profile {
-			Some(profile) => &profile.icon_url,
-			None => &None,
-		};
-		let pfp = match pfp_url {
-			Some(pfp_url) => self.load_texture(pfp_url, ctx),
-			None => None,
-		};
+		let pfp_url = profile.as_ref().map_or(&None, |profile| &profile.icon_url);
+		let pfp = pfp_url
+			.as_ref()
+			.map_or_else(|| None, |pfp_url| self.load_texture(pfp_url, ctx));
 
 		pfp.unwrap_or_else(|| self.runtime.default_profile_picture.clone().unwrap())
 	}

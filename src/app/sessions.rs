@@ -19,15 +19,15 @@ use super::NeosPeepsApp;
 pub fn session_users_count(ui: &mut Ui, session: &neos::SessionInfo) {
 	ui.horizontal(|ui| {
 		ui.style_mut().spacing.item_spacing = Vec2::ZERO;
-		ui.label(RichText::new(&session.active_users.to_string()))
+		ui.label(RichText::new(session.active_users.to_string()))
 			.on_hover_text("Active users");
 		ui.label("/");
 		ui.label(
-			RichText::new(&session.joined_users.to_string()).color(Color32::GRAY),
+			RichText::new(session.joined_users.to_string()).color(Color32::GRAY),
 		)
 		.on_hover_text("Joined users");
 		ui.label("/");
-		ui.label(RichText::new(&session.max_users.to_string()))
+		ui.label(RichText::new(session.max_users.to_string()))
 			.on_hover_text("Max users");
 	});
 }
@@ -147,7 +147,7 @@ impl NeosPeepsApp {
 				self
 					.stored
 					.col_min_width
-					.max(width - (self.stored.row_height * 2_f32) - spacing_width),
+					.max(self.stored.row_height.mul_add(-2_f32, width) - spacing_width),
 			);
 
 			ui.horizontal_wrapped(|ui| {

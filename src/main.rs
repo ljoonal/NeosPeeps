@@ -42,5 +42,6 @@ fn main() {
 	let native_options = eframe::NativeOptions::default();
 	let app_creator: eframe::AppCreator =
 		Box::new(|creation_ctx| Box::new(app::NeosPeepsApp::new(creation_ctx)));
-	eframe::run_native(env!("CARGO_PKG_NAME"), native_options, app_creator).expect("starting the app");
+	eframe::run_native(env!("CARGO_PKG_NAME"), native_options, app_creator)
+		.expect("starting the app");
 }

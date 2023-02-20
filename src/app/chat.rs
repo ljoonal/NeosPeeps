@@ -84,9 +84,7 @@ impl NeosPeepsApp {
 		}
 
 		self.check_if_should_refresh_curr(ctx);
-		let friend = if let Some(friend) = self.get_curr_chat_friend() {
-			friend
-		} else {
+		let Some(friend) = self.get_curr_chat_friend() else {
 			ui.heading("Couldn't get chat");
 			return;
 		};
@@ -116,7 +114,8 @@ impl NeosPeepsApp {
 							TextEdit::singleline(typed_msg)
 								.desired_width(ui.available_width()),
 						);
-						if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
+						if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter))
+						{
 							send_message = true;
 						}
 					}
@@ -175,15 +174,7 @@ impl NeosPeepsApp {
 			}
 		};
 
-		match self
-			.runtime
-			.friends
-			.par_iter()
-			.find_any(|friend| friend.id == user_id)
-		{
-			Some(friend) => Some(friend),
-			None => None,
-		}
+		self.runtime.friends.par_iter().find_any(|friend| friend.id == user_id)
 	}
 
 	fn check_if_should_refresh_curr(&mut self, ctx: &Context) {

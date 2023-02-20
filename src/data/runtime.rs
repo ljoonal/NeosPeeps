@@ -117,7 +117,7 @@ impl NeosPeepsApp {
 				}
 				Err(err) => {
 					image_sender.send((asset_url.id().to_owned(), None)).unwrap();
-					eprintln!("Failed to fetch image! {}", err);
+					eprintln!("Failed to fetch image! {err}");
 				}
 			}
 		});

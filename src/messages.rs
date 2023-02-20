@@ -108,7 +108,7 @@ impl NeosPeepsApp {
 			if let AnyNeos::Authenticated(neos_api) = &*neos_api_arc {
 				let to_id = message.recipient_id.clone();
 				if let Err(e) = neos_api.send_message(message) {
-					eprintln!("Error sending message! {:?}", e);
+					eprintln!("Error sending message! {e:?}");
 				}
 				Self::get_messages(
 					neos_api_arc,

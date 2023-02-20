@@ -27,12 +27,12 @@ pub fn retrieve(url: &AssetUrl) -> Result<DynamicImage, String> {
 	};
 
 	let format = image::guess_format(&bytes).map_err(|err| {
-		format!("Failed to guess format of fetched image {:?} - {}", url, err)
+		format!("Failed to guess format of fetched image {url:?} - {err}")
 	})?;
 
 	if format != ImageFormat::WebP {
 		return image::load_from_memory_with_format(&bytes, format).map_err(
-			|err| format!("Failed to decode fetched image {:?} - {}", url, err),
+			|err| format!("Failed to decode fetched image {url:?} - {err}"),
 		);
 	}
 
@@ -41,7 +41,7 @@ pub fn retrieve(url: &AssetUrl) -> Result<DynamicImage, String> {
 	Ok(
 		decoder
 			.decode()
-			.ok_or_else(|| format!("Failed to decode fetched webp image {:?}", url))?
+			.ok_or_else(|| format!("Failed to decode fetched webp image {url:?}"))?
 			.to_image(),
 	)
 }
@@ -54,9 +54,7 @@ fn fetch_asset(url: &AssetUrl) -> Result<Vec<u8>, String> {
 	let res = minreq::get(url.to_string())
 		.with_header("User-Agent", crate::USER_AGENT)
 		.send()
-		.map_err(|err| {
-			format!("Failed to send image request {:?} - {}", url, err)
-		})?;
+		.map_err(|err| format!("Failed to send image request {url:?} - {err}"))?;
 
 	if res.status_code < 200 || res.status_code >= 300 {
 		return Err(format!(
@@ -68,7 +66,7 @@ fn fetch_asset(url: &AssetUrl) -> Result<Vec<u8>, String> {
 	let data = res.into_bytes();
 
 	if let Err(err) = std::fs::write(path, &data) {
-		eprintln!("Failed to save asset {:?} - {}", url, err);
+		eprintln!("Failed to save asset {url:?} - {err}");
 	}
 
 	Ok(data)
